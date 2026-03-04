@@ -6,18 +6,111 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id            String         @id @default(uuid())
-  steamId       String         @unique
-  steamUsername  String?
-  avatarUrl     String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+enum Platform {
+  STEAM
+  APPLE
+  PRISM
+  PCSX2
+  PPSSPP
+  RPCS3
+}
 
-  libraryGames    LibraryGame[]
-  wishlistGames   SteamWishlist[]
+model User {
+  id             String   @id @default(uuid())
+  steamId        String   @unique
+  steamUsername  String?
+  avatarUrl      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Existing Steam relations (unchanged)
+  libraryGames   LibraryGame[]
+  wishlistGames  SteamWishlist[]
+
+  // New multi-platform relation
+  games          Game[]
 
   @@map("users")
+}
+
+model Game {
+  id              String    @id @default(uuid())
+  userId          String
+
+  platform        Platform
+  platformGameId  String    // Steam appId, ROM filename, instance name, etc.
+
+  name            String
+
+  playtimeForever Int       @default(0) // minutes
+
+  pricePaid       Float?
+  pricePerHour    Float?
+
+  genres          String[]
+  userTags        String[]
+
+  status          String?   @default("unplayed")
+  rating          Int?
+  tier            String?
+  review          String?
+
+  imgIconUrl      String?
+  imgLogoUrl      String?
+  headerImage     String?
+
+  totalAchievements      Int?   @default(0)
+  completedAchievements  Int?   @default(0)
+  achievementPercentage  Float? @default(0)
+
+  completedAt     DateTime?
+  lastPlayedAt    DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  sessions        PlaySession[]
+  achievements    Achievement[]
+
+  @@unique([userId, platform, platformGameId])
+  @@index([userId])
+  @@index([platform])
+  @@index([status])
+  @@index([tier])
+  @@index([rating])
+  @@map("games")
+}
+
+model PlaySession {
+  id        String   @id @default(uuid())
+  gameId    String
+
+  startedAt DateTime
+  endedAt   DateTime?
+  duration  Int?     // minutes
+
+  game      Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([gameId])
+  @@map("play_sessions")
+}
+
+model Achievement {
+  id         String   @id @default(uuid())
+  gameId     String
+
+  externalId String?  // Steam ID / RetroAchievements ID / null for Apple
+
+  name       String?
+  unlocked   Boolean  @default(false)
+  unlockedAt DateTime?
+
+  game       Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([gameId])
+  @@map("achievements")
 }
 
 model LibraryGame {
@@ -30,20 +123,20 @@ model LibraryGame {
   pricePerHour    Float?
   genres          String[]
   userTags        String[]
-  
+
   status          String?  @default("unplayed")
   rating          Int?
   tier            String?
   review          String?
-  
+
   imgIconUrl      String?
   imgLogoUrl      String?
   headerImage     String?
-  
-  totalAchievements      Int?  @default(0)
-  completedAchievements  Int?  @default(0)
+
+  totalAchievements      Int?   @default(0)
+  completedAchievements  Int?   @default(0)
   achievementPercentage  Float? @default(0)
-  
+
   completedAt    DateTime?
   lastPlayedAt   DateTime?
   createdAt      DateTime  @default(now())
@@ -66,17 +159,16 @@ model SteamWishlist {
   tags            String[]
   listPrice       Float
   currentPrice    Float
-  
-  // Recommendation metadata (computed, not user input)
-  recommendationScore Float    @default(0)
-  discountPercent     Float    @default(0)
-  
+
+  recommendationScore Float @default(0)
+  discountPercent     Float @default(0)
+
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, name]) 
+  @@unique([userId, name])
   @@index([userId])
   @@index([recommendationScore])
   @@map("steam_wishlist")
