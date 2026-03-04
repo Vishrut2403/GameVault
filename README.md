@@ -100,6 +100,10 @@ A full-stack web application for tracking your Steam game library with journal, 
 - PostgreSQL 14+
 - npm or yarn
 - Steam API Key
+- Make sure PostgreSQL service is running:
+```
+sudo systemctl start postgresql
+```
 
 ---
 
@@ -112,7 +116,7 @@ cd Steam-Tracker
 ## 2. Database Setup
 ```
 psql -U postgres
-CREATE DATABASE steam_tracker;
+CREATE DATABASE salesense;
 \q
 ```
 
@@ -125,12 +129,14 @@ cp .env.example .env
 ```
 edit backend/ .env:
 ```
-DATABASE_URL="postgresql://postgres:your_password@localhost:5432/steam_tracker"
+DATABASE_URL="postgresql://postgres:your_password@localhost:5432/salesense"
 STEAM_API_KEY="your_steam_api_key_here"
-SESSION_SECRET="your_random_secure_string"
-FRONTEND_URL="http://localhost:5173"
-BACKEND_URL="http://localhost:3001"
 PORT=3001
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:5173
+STEAM_RETURN_URL=http://localhost:3001/api/auth/callback
+FRONTEND_URL=http://localhost:5173
+
 ```
 Run Prisma Migrations
 
@@ -144,6 +150,11 @@ Start Backend
 npm run dev
 ```
 ---
+
+Make sure the `prisma/migrations` directory exists.
+If it does not, run:
+
+npx prisma migrate dev --name init
 
 ## 4. Frontend Setup
 
@@ -171,6 +182,63 @@ npm run dev
 5. Explore Journal, Dashboard, Wishlist & Recommendations 
 
 ---
+
+## Frontend Build
+
+From the project root
+```
+cd frontend
+npm install
+npm run build
+```
+
+---
+
+## Backend Build
+
+In the backend Folder
+```
+npm install
+npx prisma migrate deploy
+```
+
+---
+
+## Electron Build
+
+In the Desktop folder
+
+For Linux
+```
+npm run build:linux
+```
+
+For Windows
+```
+npm run build:win
+```
+
+For Mac
+```
+npm run build:mac
+```
+
+Output will be in 
+```
+desktop/dist/
+```
+
+---
+
+## Run AppImage
+
+```
+STEAM_API_KEY=your_key \
+DATABASE_URL="postgresql://postgres:password@localhost:5432/salesense" \
+./Steam\ Tracker-1.0.0.AppImage
+```
+
+Or you can create a bash file which does this for you.
 
 ## Author
 
