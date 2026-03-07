@@ -25,10 +25,14 @@ const SyncPCSX2Modal: React.FC<SyncPCSX2ModalProps> = ({ isOpen, onClose, onSync
     setSyncResult(null);
 
     try {
+      console.log('🕹️ Starting PCSX2 playtime sync...');
+      
       const response = await axios.post('http://localhost:3001/api/pcsx2/sync', { userId });
       
+      console.log('✅ PCSX2 sync complete:', response.data);
       setSyncResult(response.data.summary);
       
+      // Auto-close after showing results
       setTimeout(() => {
         onSync();
         onClose();
@@ -43,8 +47,14 @@ const SyncPCSX2Modal: React.FC<SyncPCSX2ModalProps> = ({ isOpen, onClose, onSync
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60">
-      <div className="bg-slate-900/95 border border-slate-700/50 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-slate-900/95 border border-slate-700/50 rounded-2xl p-6 max-w-md w-full shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="text-2xl font-bold text-white mb-4">Sync PCSX2 Playtime</h2>
         
         {!syncResult && !isLoading && (
@@ -86,7 +96,7 @@ const SyncPCSX2Modal: React.FC<SyncPCSX2ModalProps> = ({ isOpen, onClose, onSync
 
         {syncResult && (
           <div className="mb-4 p-4 bg-green-900/50 border border-green-500/30 rounded-lg">
-            <h3 className="text-green-200 font-semibold mb-2">Sync Successful!</h3>
+            <h3 className="text-green-200 font-semibold mb-2">✅ Sync Successful!</h3>
             <div className="text-sm text-gray-300 space-y-1">
               <p>Total Games Found: {syncResult.total}</p>
               <p>Updated: {syncResult.updated}</p>

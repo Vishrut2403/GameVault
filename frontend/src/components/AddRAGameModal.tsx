@@ -35,13 +35,17 @@ const AddRAGameModal: React.FC<AddRAGameModalProps> = ({
     setError('');
 
     try {
+      console.log('➕ Adding RA game:', gameIdNum);
       await retroAchievementsService.addGame(userId, gameIdNum, username.trim() || undefined);
       
+      console.log('✅ Game added successfully');
+      
+      // Refresh library and close
       onAdd();
       handleClose();
       
     } catch (err: any) {
-      console.error('Failed to add game:', err);
+      console.error('❌ Failed to add game:', err);
       setError(err.response?.data?.error || 'Failed to add game. Check the game ID.');
     } finally {
       setIsLoading(false);
@@ -58,8 +62,14 @@ const AddRAGameModal: React.FC<AddRAGameModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onClick={handleClose}
+    >
+      <div 
+        className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="text-2xl font-bold mb-4 text-white">
           Add RetroAchievements Game
         </h2>

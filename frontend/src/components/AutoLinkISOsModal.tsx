@@ -32,21 +32,24 @@ const AutoLinkISOsModal: React.FC<AutoLinkISOsModalProps> = ({ isOpen, onClose, 
     setLinkResult(null);
 
     try {
+      console.log('🔗 Starting auto-link...');
       
       const response = await axios.post('http://localhost:3001/api/pcsx2/auto-link', {
         userId,
         isoDirectory: isoDirectory.trim()
       });
       
+      console.log('✅ Auto-link complete:', response.data);
       setLinkResult(response.data.summary);
       
+      // Auto-close after showing results
       setTimeout(() => {
         onLink();
         onClose();
       }, 3000);
       
     } catch (err: any) {
-      console.error('Auto-link failed:', err);
+      console.error('❌ Auto-link failed:', err);
       setError(err.response?.data?.error || 'Failed to auto-link ISOs. Check the directory path.');
     } finally {
       setIsLoading(false);
@@ -54,8 +57,14 @@ const AutoLinkISOsModal: React.FC<AutoLinkISOsModalProps> = ({ isOpen, onClose, 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60">
-      <div className="bg-slate-900/95 border border-slate-700/50 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-slate-900/95 border border-slate-700/50 rounded-2xl p-6 max-w-md w-full shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="text-2xl font-bold text-white mb-4">Auto-Link PS2 ISOs</h2>
         
         {!linkResult && !isLoading && (
@@ -114,7 +123,7 @@ const AutoLinkISOsModal: React.FC<AutoLinkISOsModalProps> = ({ isOpen, onClose, 
 
         {linkResult && (
           <div className="mb-4 p-4 bg-green-900/50 border border-green-500/30 rounded-lg">
-            <h3 className="text-green-200 font-semibold mb-2">Auto-Link Complete!</h3>
+            <h3 className="text-green-200 font-semibold mb-2">✅ Auto-Link Complete!</h3>
             <div className="text-sm text-gray-300 space-y-1">
               <p>RA Games: {linkResult.totalGames}</p>
               <p>ISOs Found: {linkResult.totalISOs}</p>
