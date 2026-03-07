@@ -220,7 +220,7 @@ router.post('/game', async (req: Request, res: Response): Promise<void> => {
       return;
     }
     
-    if (!gameInfo || !gameInfo.Title) {
+    if (!gameInfo || !gameInfo.title) {
       res.status(404).json({
         success: false,
         error: `Game ${gameId} not found or incomplete data from RetroAchievements`
@@ -244,27 +244,27 @@ router.post('/game', async (req: Request, res: Response): Promise<void> => {
     const numPossible = gameInfo.achievements ? Object.keys(gameInfo.achievements).length : 0;
     const completionPercent = retroAchievementsService.calculateCompletion(numAchieved, numPossible);
     
-    const headerImage = gameInfo.ImageBoxArt 
-      ? retroAchievementsService.getGameBoxArtUrl(gameInfo.ImageBoxArt)
-      : gameInfo.ImageIcon 
-        ? retroAchievementsService.getGameIconUrl(gameInfo.ImageIcon)
+    const headerImage = gameInfo.imageBoxArt 
+      ? retroAchievementsService.getGameBoxArtUrl(gameInfo.imageBoxArt)
+      : gameInfo.imageIcon 
+        ? retroAchievementsService.getGameIconUrl(gameInfo.imageIcon)
         : null;
     
-    const ps2Serial = getSerialByGameId(gameId) || getSerialByName(gameInfo.Title);
+    const ps2Serial = getSerialByGameId(gameId) || getSerialByName(gameInfo.title);
     
     const platformData = {
-      consoleId: gameInfo.ConsoleID,
-      consoleName: gameInfo.ConsoleName,
+      consoleId: gameInfo.consoleId,
+      consoleName: gameInfo.consoleName,
       consoleDisplayName: retroAchievementsService.getConsoleDisplayName(
-        gameInfo.ConsoleID,
-        gameInfo.ConsoleName
+        gameInfo.consoleId,
+        gameInfo.consoleName
       ),
-      developer: gameInfo.Developer,
-      publisher: gameInfo.Publisher,
-      genre: gameInfo.Genre,
-      released: gameInfo.Released,
-      imageIcon: gameInfo.ImageIcon,
-      imageBoxArt: gameInfo.ImageBoxArt,
+      developer: gameInfo.developer,
+      publisher: gameInfo.publisher,
+      genre: gameInfo.genre,
+      released: gameInfo.released,
+      imageIcon: gameInfo.imageIcon,
+      imageBoxArt: gameInfo.imageBoxArt,
       numAchieved: numAchieved,
       scoreAchieved: userProgress?.scoreAchieved || 0,
       numAchievedHardcore: userProgress?.numAchievedHardcore || 0,
@@ -284,7 +284,7 @@ router.post('/game', async (req: Request, res: Response): Promise<void> => {
         userId,
         platform: 'retroachievements',
         platformGameId: String(gameId),
-        name: gameInfo.Title,
+        name: gameInfo.title,
         headerImage,
         totalAchievements: numPossible,
         completedAchievements: numAchieved,
@@ -295,7 +295,7 @@ router.post('/game', async (req: Request, res: Response): Promise<void> => {
         status: 'unplayed'
       },
       update: {
-        name: gameInfo.Title,
+        name: gameInfo.title,
         headerImage,
         totalAchievements: numPossible,
         completedAchievements: numAchieved,
