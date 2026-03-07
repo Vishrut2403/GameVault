@@ -1,5 +1,3 @@
-// frontend/src/components/AddAppleGameModal.tsx
-
 import { useState } from 'react';
 import steamService from '../services/steam.service';
 
