@@ -161,7 +161,6 @@ class RecommendationService {
     return (avgRating / 5) * 100;
   }
 
-  // Tier score (0-100) 
   private calculateTierScore(gameTags: string[], profile: TagProfile): number {
     if (Object.keys(profile).length === 0) return 50;
 
@@ -175,7 +174,6 @@ class RecommendationService {
     return maxTierMultiplier > 0 ? (maxTierMultiplier / 1.2) * 100 : 40;
   }
 
-  // Estimate playtime 
   private estimatePlaytime(gameTags: string[], profile: TagProfile): number {
     if (Object.keys(profile).length === 0) return 600;
 

@@ -40,7 +40,6 @@ export class MinecraftService {
   async getInstances(): Promise<MinecraftInstance[]> {
     try {
       if (!fs.existsSync(this.prismLauncherPath)) {
-        console.log('Prism Launcher directory not found:', this.prismLauncherPath);
         return [];
       }
 
@@ -301,8 +300,6 @@ export class MinecraftService {
             return advancement.done === true;
           }).length;
           
-          console.log(`\nFINAL COUNT: ${completedAdvancements}/${totalAdvancements} advancements`);
-          console.log('Completion:', Math.round((completedAdvancements / totalAdvancements) * 100) + '%');
         } catch (err) {
           console.error('Failed to parse advancements:', err);
         }

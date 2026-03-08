@@ -21,7 +21,6 @@ export class ISOSerialDetector {
         const serial = this.parseSystemCNF(stdout);
         if (serial) return serial;
       } catch (err) {
-        // 7z not available or failed
       }
 
       try {
@@ -29,7 +28,6 @@ export class ISOSerialDetector {
         const serial = this.parseSystemCNF(stdout);
         if (serial) return serial;
       } catch (err) {
-        // isoinfo not available
       }
 
       return await this.searchSerialInBinary(isoPath);

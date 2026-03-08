@@ -13,6 +13,7 @@ import multiplatformRoutes from './routes/multiplatform.routes';
 import retroAchievementsRoutes from './routes/retroachievements.routes';
 import pcsx2Routes from './routes/pcsx2.routes';
 import rpcs3Routes from './routes/rpcs3.routes';
+import ppssppRoutes from './routes/ppsspp.routes';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
@@ -44,6 +45,7 @@ app.use('/api/multiplatform', multiplatformRoutes);
 app.use('/api/retroachievements', retroAchievementsRoutes);
 app.use('/api/pcsx2', pcsx2Routes);
 app.use('/api/rpcs3', rpcs3Routes);
+app.use('/api/ppsspp', ppssppRoutes);
 
 if (isProd) {
   const frontendPath = path.join(__dirname, '../../frontend');

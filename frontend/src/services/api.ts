@@ -10,14 +10,12 @@ const api = axios.create({
   },
 });
 
-// Log requests
 api.interceptors.request.use(
   (config) => {
     return config;
   }
 );
 
-// Log responses
 api.interceptors.response.use(
   (response) => {
     return response;

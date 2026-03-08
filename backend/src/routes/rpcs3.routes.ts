@@ -7,7 +7,6 @@ const router = Router();
 const rpcs3Service = new RPCS3Service();
 const trophyService = new RPCS3TrophyService();
 
-// GET /api/rpcs3/playtimes - Get all RPCS3 playtimes
 router.get('/playtimes', async (req: Request, res: Response) => {
   try {
     if (!rpcs3Service.fileExists()) {
@@ -33,7 +32,6 @@ router.get('/playtimes', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/rpcs3/trophies - Get all RPCS3 trophy sets
 router.get('/trophies', async (req: Request, res: Response) => {
   try {
     if (!trophyService.trophyDirExists()) {
@@ -44,9 +42,7 @@ router.get('/trophies', async (req: Request, res: Response) => {
       return;
     }
 
-    console.log('📁 Reading RPCS3 trophies...');
     const trophySets = await trophyService.getAllTrophySets();
-    console.log(`✅ Found ${trophySets.length} trophy sets`);
 
     res.json({
       success: true,
@@ -61,7 +57,6 @@ router.get('/trophies', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/rpcs3/sync - Sync RPCS3 playtimes to database
 router.post('/sync', async (req: Request, res: Response) => {
   try {
     const { userId, configPath } = req.body;
@@ -74,13 +69,9 @@ router.post('/sync', async (req: Request, res: Response) => {
       return;
     }
 
-    // Allow custom path if provided
     if (configPath) {
       rpcs3Service.setConfigPath(configPath);
     }
-
-    console.log(`🎮 Checking RPCS3 games file...`);
-    console.log(`📁 Looking at: ${rpcs3Service.getConfigPath()}/games.yml`);
 
     if (!rpcs3Service.fileExists()) {
       console.error(`❌ File not found at: ${rpcs3Service.getConfigPath()}/games.yml`);
@@ -91,11 +82,7 @@ router.post('/sync', async (req: Request, res: Response) => {
       return;
     }
 
-    console.log(`✅ File exists!`);
-    console.log(`🎮 Syncing RPCS3 playtimes for user ${userId}...`);
-
     const rpcs3Playtimes = rpcs3Service.getAllPlaytimes();
-    console.log(`📊 Found ${rpcs3Playtimes.length} PS3 games in RPCS3`);
 
     if (rpcs3Playtimes.length === 0) {
       res.json({
@@ -113,7 +100,6 @@ router.post('/sync', async (req: Request, res: Response) => {
     let notFound = 0;
 
     for (const entry of rpcs3Playtimes) {
-      // Try to find matching game by serial or name
       const game = await prisma.libraryGame.findFirst({
         where: {
           userId,
@@ -141,7 +127,6 @@ router.post('/sync', async (req: Request, res: Response) => {
       });
 
       if (game) {
-        // Update playtime (convert seconds to minutes for consistency)
         const playtimeMinutes = Math.round(entry.playtimeSeconds / 60);
         
         await prisma.libraryGame.update({
@@ -157,15 +142,11 @@ router.post('/sync', async (req: Request, res: Response) => {
           }
         });
 
-        console.log(`✅ Updated ${game.name}: ${playtimeMinutes} minutes`);
         updated++;
       } else {
-        console.log(`⚠️ No matching game found for: ${entry.gameName} (${entry.serial})`);
         notFound++;
       }
     }
-
-    console.log(`✅ Playtime sync complete: ${updated} updated, ${notFound} not found`);
 
     res.json({
       success: true,
@@ -176,8 +157,6 @@ router.post('/sync', async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('❌ Error syncing RPCS3 playtimes:', error);
-    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to sync RPCS3 playtimes'
@@ -185,7 +164,6 @@ router.post('/sync', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/rpcs3/sync-trophies - Sync RPCS3 trophies to database
 router.post('/sync-trophies', async (req: Request, res: Response) => {
   try {
     const { userId } = req.body;
@@ -198,10 +176,7 @@ router.post('/sync-trophies', async (req: Request, res: Response) => {
       return;
     }
 
-    console.log(`🏆 Syncing RPCS3 trophies for user ${userId}...`);
-
     if (!trophyService.trophyDirExists()) {
-      console.log('⚠️ Trophy directory not found - no trophies to sync');
       res.json({
         success: true,
         summary: {
@@ -214,13 +189,11 @@ router.post('/sync-trophies', async (req: Request, res: Response) => {
     }
 
     const trophySets = await trophyService.getAllTrophySets();
-    console.log(`📊 Found ${trophySets.length} trophy sets`);
 
     let updated = 0;
     let notFound = 0;
 
     for (const trophySet of trophySets) {
-      // Find matching game by NP Comm ID or game name
       const game = await prisma.libraryGame.findFirst({
         where: {
           userId,
@@ -242,7 +215,6 @@ router.post('/sync-trophies', async (req: Request, res: Response) => {
       });
 
       if (game) {
-        // Update with trophy data
         await prisma.libraryGame.update({
           where: { id: game.id },
           data: {
@@ -263,15 +235,11 @@ router.post('/sync-trophies', async (req: Request, res: Response) => {
           }
         });
 
-        console.log(`✅ Updated ${game.name}: ${trophySet.unlockedTrophies}/${trophySet.totalTrophies} trophies (${trophySet.completionPercent}%)`);
         updated++;
       } else {
-        console.log(`⚠️ No matching game found for: ${trophySet.gameName} (${trophySet.npCommId})`);
         notFound++;
       }
     }
-
-    console.log(`✅ Trophy sync complete: ${updated} updated, ${notFound} not found`);
 
     res.json({
       success: true,
@@ -282,8 +250,6 @@ router.post('/sync-trophies', async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('❌ Error syncing RPCS3 trophies:', error);
-    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to sync RPCS3 trophies'

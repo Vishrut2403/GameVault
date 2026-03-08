@@ -8,8 +8,9 @@ interface AddGameMenuProps {
   onSyncRA?: () => void;
   onAddRAGame?: () => void;
   onSyncPCSX2?: () => void;
-  onSyncRPCS3?: () => void;  // NEW
+  onSyncRPCS3?: () => void;
   onAutoLinkISOs?: () => void;
+  onLinkPPSSPP?: () => void;
 }
 
 export const AddGameMenu: React.FC<AddGameMenuProps> = ({ 
@@ -18,8 +19,9 @@ export const AddGameMenu: React.FC<AddGameMenuProps> = ({
   onSyncRA,
   onAddRAGame,
   onSyncPCSX2,
-  onSyncRPCS3,  // NEW
-  onAutoLinkISOs  // NEW
+  onSyncRPCS3,
+  onAutoLinkISOs,
+  onLinkPPSSPP
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showMinecraftModal, setShowMinecraftModal] = useState(false);
@@ -135,6 +137,25 @@ export const AddGameMenu: React.FC<AddGameMenuProps> = ({
                   onClick={() => {
                     setShowMenu(false);
                     onSyncRPCS3();
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-slate-700/50 text-gray-300 hover:text-white transition-colors"
+                >
+                  🎮 Sync Playtime
+                </button>
+              </div>
+            )}
+
+            {/* PPSSPP Section */}
+            {onLinkPPSSPP && (
+              <div className="border-t border-slate-700/50">
+                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  PPSSPP (PSP)
+                </div>
+
+                <button
+                  onClick={() => {
+                    setShowMenu(false);
+                    onLinkPPSSPP();
                   }}
                   className="w-full text-left px-4 py-2 hover:bg-slate-700/50 text-gray-300 hover:text-white transition-colors"
                 >

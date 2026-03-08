@@ -10,6 +10,7 @@ import AddRAGameModal from '../components/AddRAGameModal';
 import SyncPCSX2Modal from '../components/SyncPCSX2Modal';
 import SyncRPCS3Modal from '../components/SyncRPCS3Modal';
 import AutoLinkISOsModal from '../components/AutoLinkISOsModal';
+import LinkPPSSPPModal from '../components/LinkPPSSPPModal';
 import { GameCard } from '../components/GameCard';
 import { GameModal } from '../components/GameModal';
 import { GameTable } from '../components/GameTable';
@@ -32,6 +33,7 @@ function Home() {
   const [showSyncPCSX2Modal, setShowSyncPCSX2Modal] = useState(false);
   const [showAutoLinkISOsModal, setShowAutoLinkISOsModal] = useState(false);
   const [showSyncRPCS3Modal, setShowSyncRPCS3Modal] = useState(false);
+  const [showLinkPPSSPPModal, setShowLinkPPSSPPModal] = useState(false);
   
   const [sortField, setSortField] = useState<SortField>('playtime');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -222,6 +224,7 @@ function Home() {
                       onSyncPCSX2={() => setShowSyncPCSX2Modal(true)}
                       onSyncRPCS3={() => setShowSyncRPCS3Modal(true)}
                       onAutoLinkISOs={() => setShowAutoLinkISOsModal(true)}
+                      onLinkPPSSPP={() => setShowLinkPPSSPPModal(true)}
                     />
 
                     <button
@@ -388,6 +391,14 @@ function Home() {
         isOpen={showSyncRPCS3Modal}
         onClose={() => setShowSyncRPCS3Modal(false)}
         onSync={refreshFromDB}
+        userId={library?.userId || ''}
+      />
+
+      {/* PPSSPP Modal */}
+      <LinkPPSSPPModal
+        isOpen={showLinkPPSSPPModal}
+        onClose={() => setShowLinkPPSSPPModal(false)}
+        onLink={refreshFromDB}
         userId={library?.userId || ''}
       />
     </div>

@@ -225,9 +225,6 @@ function SteamWishlist({ userId }: SteamWishlistProps) {
       {items.length === 0 ? (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center mx-auto px-6">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-3xl bg-slate-800/50 backdrop-blur-2xl border border-slate-700/50 flex items-center justify-center shadow-xl">
-              <span className="text-4xl">⭐</span>
-            </div>
             <p className="text-gray-400 text-lg font-medium mb-2">Your wishlist is empty</p>
             <p className="text-sm text-gray-500">Click "Add Game" to get started</p>
           </div>

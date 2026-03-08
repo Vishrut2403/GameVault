@@ -45,16 +45,10 @@ export class RPCS3TrophyService {
     }
   }
 
-  /**
-   * Check if trophy directory exists
-   */
   trophyDirExists(): boolean {
     return fs.existsSync(this.trophyPath);
   }
 
-  /**
-   * Get all trophy sets (one per game)
-   */
   async getAllTrophySets(): Promise<RPCS3TrophySet[]> {
     if (!this.trophyDirExists()) {
       throw new Error(`RPCS3 trophy directory not found at: ${this.trophyPath}`);
@@ -79,9 +73,6 @@ export class RPCS3TrophyService {
     return trophySets;
   }
 
-  /**
-   * Parse a single trophy set (game)
-   */
   private async parseTrophySet(npCommId: string): Promise<RPCS3TrophySet | null> {
     const setPath = path.join(this.trophyPath, npCommId);
     const tropConfPath = path.join(setPath, 'TROPCONF.SFM');
@@ -92,18 +83,14 @@ export class RPCS3TrophyService {
     }
 
     try {
-      // Parse TROPCONF.SFM (XML format)
       const tropConfData = fs.readFileSync(tropConfPath, 'utf8');
       const tropConf = await parseStringPromise(tropConfData);
 
-      // Extract game name and trophy definitions
       const gameName = tropConf?.trophyconf?.title?.[0]?.['_'] || npCommId;
       const trophyDefs = tropConf?.trophyconf?.trophy || [];
 
-      // Parse TROPUSR.DAT if it exists (binary format)
       const unlockedTrophies = this.parseUserTrophyData(tropUsrPath);
 
-      // Build trophy list
       const trophies: RPCS3Trophy[] = trophyDefs.map((def: any, index: number) => {
         const trophyId = parseInt(def.$.id, 10);
         const isUnlocked = unlockedTrophies.has(trophyId);
@@ -119,7 +106,6 @@ export class RPCS3TrophyService {
         };
       });
 
-      // Calculate stats
       const stats = this.calculateTrophyStats(trophies);
 
       return {
@@ -134,10 +120,6 @@ export class RPCS3TrophyService {
     }
   }
 
-  /**
-   * Parse TROPUSR.DAT binary file
-   * Returns Map of trophy ID -> unlock date
-   */
   private parseUserTrophyData(tropUsrPath: string): Map<number, Date> {
     const unlockedTrophies = new Map<number, Date>();
 
@@ -147,26 +129,15 @@ export class RPCS3TrophyService {
 
     try {
       const buffer = fs.readFileSync(tropUsrPath);
-
-      // TROPUSR.DAT format (simplified):
-      // Header: 0x00-0x40
-      // Trophy entries start at offset 0x40
-      // Each entry is ~0x30 bytes
-      
-      // This is a simplified parser - actual format is more complex
-      // For a production implementation, you'd need full binary parsing
       
       let offset = 0x40;
       const entrySize = 0x30;
       
       while (offset + entrySize <= buffer.length) {
-        // Trophy ID at offset + 0x04 (4 bytes)
         const trophyId = buffer.readUInt32LE(offset + 0x04);
         
-        // Unlocked flag at offset + 0x08 (1 byte)
         const unlocked = buffer.readUInt8(offset + 0x08);
         
-        // Timestamp at offset + 0x0C (8 bytes, Unix timestamp)
         const timestamp = Number(buffer.readBigUInt64LE(offset + 0x0C));
         
         if (unlocked && timestamp > 0) {
@@ -182,9 +153,6 @@ export class RPCS3TrophyService {
     return unlockedTrophies;
   }
 
-  /**
-   * Calculate trophy statistics
-   */
   private calculateTrophyStats(trophies: RPCS3Trophy[]) {
     const stats = {
       totalTrophies: trophies.length,
@@ -213,23 +181,14 @@ export class RPCS3TrophyService {
     return stats;
   }
 
-  /**
-   * Get trophy set for specific game
-   */
   async getTrophySetByNpCommId(npCommId: string): Promise<RPCS3TrophySet | null> {
     return this.parseTrophySet(npCommId);
   }
 
-  /**
-   * Get trophy set path
-   */
   getTrophyPath(): string {
     return this.trophyPath;
   }
 
-  /**
-   * Set custom trophy path
-   */
   setTrophyPath(customPath: string) {
     this.trophyPath = customPath;
   }

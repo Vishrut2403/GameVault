@@ -5,6 +5,7 @@ import { getSerialByGameId, getSerialByName } from '../utils/ps2-serials';
 
 const router = express.Router();
 
+// GET /api/retroachievements/user/:username - Get user summary
 router.get('/user/:username', async (req: Request, res: Response): Promise<void> => {
   try {
     const username = Array.isArray(req.params.username) ? req.params.username[0] : req.params.username;
@@ -24,11 +25,10 @@ router.get('/user/:username', async (req: Request, res: Response): Promise<void>
   }
 });
 
+// GET /api/retroachievements/games/:username - Get user's game progress
 router.get('/games/:username', async (req: Request, res: Response): Promise<void> => {
   try {
     const username = Array.isArray(req.params.username) ? req.params.username[0] : req.params.username;
-    
-    console.log(`🎮 Fetching RA games for: ${username}`);
     
     const games = await retroAchievementsService.getUserProgress(username);
     
@@ -59,8 +59,6 @@ router.get('/game/:gameId', async (req: Request, res: Response): Promise<void> =
       return;
     }
     
-    console.log(`🎮 Fetching RA game info for ID: ${gameId}`);
-    
     const gameInfo = await retroAchievementsService.getGameInfoExtended(gameId);
     
     res.json({
@@ -87,7 +85,7 @@ router.post('/sync', async (req: Request, res: Response): Promise<void> => {
       });
       return;
     }
-
+    
     const { summary, games } = await retroAchievementsService.syncUserLibrary(username);
     
     let added = 0;
@@ -96,10 +94,6 @@ router.post('/sync', async (req: Request, res: Response): Promise<void> => {
     
     for (const game of games) {
       try {
-        if (game.numAchieved === 0 && game.numAchievedHardcore === 0) {
-          skipped++;
-          continue;
-        }
         
         const completionPercent = retroAchievementsService.calculateCompletion(
           game.numAchieved,
@@ -110,7 +104,7 @@ router.post('/sync', async (req: Request, res: Response): Promise<void> => {
           game.numAchievedHardcore,
           game.numPossibleAchievements
         );
-
+        
         const headerImage = retroAchievementsService.getGameIconUrl(game.imageIcon);
         
         const platformData = {
@@ -170,7 +164,7 @@ router.post('/sync', async (req: Request, res: Response): Promise<void> => {
         }
         
       } catch (gameError: any) {
-        console.error(`Failed to process game ${game.title}:`, gameError.message);
+        console.error(`   ❌ Failed to process game ${game.title}:`, gameError.message);
         skipped++;
       }
     }
@@ -213,6 +207,7 @@ router.post('/game', async (req: Request, res: Response): Promise<void> => {
     try {
       gameInfo = await retroAchievementsService.getGameInfo(parseInt(gameId));
     } catch (err: any) {
+      console.error('❌ Failed to fetch game info:', err.message);
       res.status(404).json({
         success: false,
         error: `Failed to fetch game ${gameId} from RetroAchievements. Check if game ID is valid.`
@@ -220,14 +215,27 @@ router.post('/game', async (req: Request, res: Response): Promise<void> => {
       return;
     }
     
-    if (!gameInfo || !gameInfo.title) {
+    const title = gameInfo.Title || gameInfo.GameTitle;
+    const consoleId = gameInfo.ConsoleID;
+    const consoleName = gameInfo.ConsoleName;
+    const imageIcon = gameInfo.ImageIcon || gameInfo.GameIcon;
+    const imageBoxArt = gameInfo.ImageBoxArt;
+    const imageTitle = gameInfo.ImageTitle;
+    const imageIngame = gameInfo.ImageIngame;
+    const developer = gameInfo.Developer;
+    const publisher = gameInfo.Publisher;
+    const genre = gameInfo.Genre;
+    const released = gameInfo.Released;
+    
+    if (!gameInfo || !title) {
+      console.error('❌ Game info incomplete:', gameInfo);
       res.status(404).json({
         success: false,
         error: `Game ${gameId} not found or incomplete data from RetroAchievements`
       });
       return;
     }
-    
+
     let userProgress = null;
     if (username) {
       try {
@@ -239,32 +247,36 @@ router.post('/game', async (req: Request, res: Response): Promise<void> => {
         console.log('⚠️ Could not fetch user progress, using defaults');
       }
     }
-    
+
     const numAchieved = userProgress?.numAchieved || 0;
-    const numPossible = gameInfo.achievements ? Object.keys(gameInfo.achievements).length : 0;
+    const numPossible = userProgress?.numPossibleAchievements || 0;
     const completionPercent = retroAchievementsService.calculateCompletion(numAchieved, numPossible);
     
-    const headerImage = gameInfo.imageBoxArt 
-      ? retroAchievementsService.getGameBoxArtUrl(gameInfo.imageBoxArt)
-      : gameInfo.imageIcon 
-        ? retroAchievementsService.getGameIconUrl(gameInfo.imageIcon)
+    const headerImage = imageBoxArt 
+      ? retroAchievementsService.getGameBoxArtUrl(imageBoxArt)
+      : imageIcon 
+        ? retroAchievementsService.getGameIconUrl(imageIcon)
         : null;
     
-    const ps2Serial = getSerialByGameId(gameId) || getSerialByName(gameInfo.title);
+    const ps2Serial = getSerialByGameId(gameId) || getSerialByName(title);
+    if (ps2Serial) {
+    }
     
     const platformData = {
-      consoleId: gameInfo.consoleId,
-      consoleName: gameInfo.consoleName,
+      consoleId: consoleId,
+      consoleName: consoleName,
       consoleDisplayName: retroAchievementsService.getConsoleDisplayName(
-        gameInfo.consoleId,
-        gameInfo.consoleName
+        consoleId,
+        consoleName
       ),
-      developer: gameInfo.developer,
-      publisher: gameInfo.publisher,
-      genre: gameInfo.genre,
-      released: gameInfo.released,
-      imageIcon: gameInfo.imageIcon,
-      imageBoxArt: gameInfo.imageBoxArt,
+      developer: developer,
+      publisher: publisher,
+      genre: genre,
+      released: released,
+      imageIcon: imageIcon,
+      imageBoxArt: imageBoxArt,
+      imageTitle: imageTitle,
+      imageIngame: imageIngame,
       numAchieved: numAchieved,
       scoreAchieved: userProgress?.scoreAchieved || 0,
       numAchievedHardcore: userProgress?.numAchievedHardcore || 0,
@@ -284,7 +296,7 @@ router.post('/game', async (req: Request, res: Response): Promise<void> => {
         userId,
         platform: 'retroachievements',
         platformGameId: String(gameId),
-        name: gameInfo.title,
+        name: title,
         headerImage,
         totalAchievements: numPossible,
         completedAchievements: numAchieved,
@@ -295,7 +307,7 @@ router.post('/game', async (req: Request, res: Response): Promise<void> => {
         status: 'unplayed'
       },
       update: {
-        name: gameInfo.title,
+        name: title,
         headerImage,
         totalAchievements: numPossible,
         completedAchievements: numAchieved,
@@ -312,7 +324,7 @@ router.post('/game', async (req: Request, res: Response): Promise<void> => {
     });
     
   } catch (error: any) {
-    console.error('❌ Error adding RA game:', error);
+    console.error('Error adding RA game:', error);
     console.error('Error details:', {
       message: error.message,
       stack: error.stack?.split('\n').slice(0, 3).join('\n')

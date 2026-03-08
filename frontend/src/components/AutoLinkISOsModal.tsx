@@ -32,24 +32,18 @@ const AutoLinkISOsModal: React.FC<AutoLinkISOsModalProps> = ({ isOpen, onClose, 
     setLinkResult(null);
 
     try {
-      console.log('🔗 Starting auto-link...');
-      
       const response = await axios.post('http://localhost:3001/api/pcsx2/auto-link', {
         userId,
         isoDirectory: isoDirectory.trim()
       });
-      
-      console.log('✅ Auto-link complete:', response.data);
       setLinkResult(response.data.summary);
       
-      // Auto-close after showing results
       setTimeout(() => {
         onLink();
         onClose();
       }, 3000);
       
     } catch (err: any) {
-      console.error('❌ Auto-link failed:', err);
       setError(err.response?.data?.error || 'Failed to auto-link ISOs. Check the directory path.');
     } finally {
       setIsLoading(false);
@@ -123,7 +117,7 @@ const AutoLinkISOsModal: React.FC<AutoLinkISOsModalProps> = ({ isOpen, onClose, 
 
         {linkResult && (
           <div className="mb-4 p-4 bg-green-900/50 border border-green-500/30 rounded-lg">
-            <h3 className="text-green-200 font-semibold mb-2">✅ Auto-Link Complete!</h3>
+            <h3 className="text-green-200 font-semibold mb-2">Auto-Link Complete!</h3>
             <div className="text-sm text-gray-300 space-y-1">
               <p>RA Games: {linkResult.totalGames}</p>
               <p>ISOs Found: {linkResult.totalISOs}</p>

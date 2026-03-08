@@ -44,7 +44,6 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
   };
 
   const updateRating = async (rating: number) => {
-    // Update local state immediately for instant visual feedback
     setCurrentRating(rating);
     
     try {
@@ -61,7 +60,6 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
       await onUpdate();
     } catch (err) {
       console.error('Failed to update rating');
-      // Revert on error
       setCurrentRating(game.rating || 0);
     }
   };

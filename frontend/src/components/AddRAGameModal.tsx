@@ -38,14 +38,14 @@ const AddRAGameModal: React.FC<AddRAGameModalProps> = ({
       console.log('➕ Adding RA game:', gameIdNum);
       await retroAchievementsService.addGame(userId, gameIdNum, username.trim() || undefined);
       
-      console.log('✅ Game added successfully');
+      console.log('Game added successfully');
       
       // Refresh library and close
       onAdd();
       handleClose();
       
     } catch (err: any) {
-      console.error('❌ Failed to add game:', err);
+      console.error('Failed to add game:', err);
       setError(err.response?.data?.error || 'Failed to add game. Check the game ID.');
     } finally {
       setIsLoading(false);

@@ -49,7 +49,6 @@ router.post('/sync', async (req: Request, res: Response) => {
     }
 
     if (!pcsx2Service.fileExists()) {
-      console.error(`File not found at: ${pcsx2Service['playtimeFilePath']}`);
       res.status(404).json({
         success: false,
         error: `PCSX2 playtime file not found at: ${pcsx2Service['playtimeFilePath']}. Make sure PCSX2 has been run at least once.`
@@ -75,6 +74,7 @@ router.post('/sync', async (req: Request, res: Response) => {
     let notFound = 0;
 
     for (const entry of pcsx2Playtimes) {
+      
       const game = await prisma.libraryGame.findFirst({
         where: {
           userId,
@@ -105,11 +105,11 @@ router.post('/sync', async (req: Request, res: Response) => {
             platformData: {
               ...(game.platformData as any),
               serial: entry.serial,
-              lastPlayedPCSX2: entry.lastPlayed
+              lastPlayedPCSX2: entry.lastPlayed,
+              pcsx2PlaytimeSeconds: entry.playtimeSeconds
             }
           }
         });
-
         updated++;
       } else {
         notFound++;
