@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import prisma from '../prisma';
 import { RPCS3Service } from '../services/rpcs3.service';
 import { RPCS3TrophyService } from '../services/rpcs3-trophy.service';
+import { sessionTrackingService } from '../services/session-tracking.service';
 
 const router = Router();
 const rpcs3Service = new RPCS3Service();
@@ -87,6 +88,7 @@ router.post('/sync', async (req: Request, res: Response) => {
     if (rpcs3Playtimes.length === 0) {
       res.json({
         success: true,
+        message: 'No RPCS3 games found',
         summary: {
           total: 0,
           updated: 0,
@@ -100,6 +102,7 @@ router.post('/sync', async (req: Request, res: Response) => {
     let notFound = 0;
 
     for (const entry of rpcs3Playtimes) {
+      
       const game = await prisma.libraryGame.findFirst({
         where: {
           userId,
@@ -128,6 +131,21 @@ router.post('/sync', async (req: Request, res: Response) => {
 
       if (game) {
         const playtimeMinutes = Math.round(entry.playtimeSeconds / 60);
+        const oldPlaytime = game.playtimeForever || 0;
+
+        if (playtimeMinutes > oldPlaytime) {
+
+          const sessionDate = entry.lastPlayed;
+          
+          await sessionTrackingService.trackSession({
+            userId: game.userId,
+            gameId: game.id,
+            platform: game.platform,
+            newPlaytimeMinutes: playtimeMinutes,
+            oldPlaytimeMinutes: oldPlaytime,
+            sessionDate
+          });
+        }
         
         await prisma.libraryGame.update({
           where: { id: game.id },
@@ -150,6 +168,7 @@ router.post('/sync', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
+      message: `Synced ${updated} PS3 games`,
       summary: {
         total: rpcs3Playtimes.length,
         updated,
@@ -157,6 +176,7 @@ router.post('/sync', async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
+    console.error('❌ Error syncing RPCS3:', error);
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to sync RPCS3 playtimes'

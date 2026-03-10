@@ -50,7 +50,6 @@ router.post('/sync', async (req: Request, res: Response) => {
     }
 
     if (!pcsx2Service.fileExists()) {
-      console.error(`File not found at: ${pcsx2Service['playtimeFilePath']}`);
       res.status(404).json({
         success: false,
         error: `PCSX2 playtime file not found at: ${pcsx2Service['playtimeFilePath']}. Make sure PCSX2 has been run at least once.`
@@ -100,14 +99,18 @@ router.post('/sync', async (req: Request, res: Response) => {
       if (game) {
         const playtimeMinutes = Math.round(entry.playtimeSeconds / 60);
         const oldPlaytime = game.playtimeForever || 0;
-        
+
         if (playtimeMinutes > oldPlaytime) {
+          
+          const sessionDate = entry.lastPlayed;
+          
           await sessionTrackingService.trackSession({
             userId: game.userId,
             gameId: game.id,
             platform: game.platform,
             newPlaytimeMinutes: playtimeMinutes,
-            oldPlaytimeMinutes: oldPlaytime
+            oldPlaytimeMinutes: oldPlaytime,
+            sessionDate
           });
         }
         
@@ -123,6 +126,7 @@ router.post('/sync', async (req: Request, res: Response) => {
             }
           }
         });
+
         updated++;
       } else {
         notFound++;
@@ -138,7 +142,7 @@ router.post('/sync', async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('Error syncing PCSX2 playtimes:', error);
+    console.error('❌ Error syncing PCSX2 playtimes:', error);
     console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,

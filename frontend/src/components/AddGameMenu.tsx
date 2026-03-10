@@ -1,191 +1,104 @@
-import { useState } from 'react';
-import { AddMinecraftWorldModal } from './AddMinecraftWorldModal';
-import { AddAppleGameModal } from './AddAppleGameModal';
+import { useState, useRef, useEffect } from 'react';
 
 interface AddGameMenuProps {
   userId: string;
   onGameAdded: () => void;
-  onSyncRA?: () => void;
-  onAddRAGame?: () => void;
+  onSyncRA: () => void;
+  onAddRAGame: () => void;
   onSyncPCSX2?: () => void;
   onSyncRPCS3?: () => void;
   onAutoLinkISOs?: () => void;
   onLinkPPSSPP?: () => void;
 }
 
-export const AddGameMenu: React.FC<AddGameMenuProps> = ({ 
-  userId, 
-  onGameAdded,
+export const AddGameMenu: React.FC<AddGameMenuProps> = ({
   onSyncRA,
   onAddRAGame,
-  onSyncPCSX2,
-  onSyncRPCS3,
   onAutoLinkISOs,
-  onLinkPPSSPP
 }) => {
-  const [showMenu, setShowMenu] = useState(false);
-  const [showMinecraftModal, setShowMinecraftModal] = useState(false);
-  const [showAppleModal, setShowAppleModal] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   return (
-    <>
-      <div className="relative">
-        <button
-          onClick={() => setShowMenu(!showMenu)}
-          className="px-6 py-2.5 bg-slate-800/50 rounded-xl border border-slate-700/50 font-semibold hover:bg-slate-700/50 transition-all duration-300 shadow-md text-white"
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="px-6 py-2.5 bg-slate-800/50 rounded-xl border border-slate-700/50 font-semibold hover:bg-slate-700/50 transition-all duration-300 shadow-md text-white flex items-center gap-2"
+      >
+        <span>+ Add Game</span>
+        <svg
+          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
         >
-          + Add Game
-        </button>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
 
-        {showMenu && (
-          <div className="absolute right-0 mt-2 w-64 bg-slate-800/95 border border-slate-700/50 rounded-xl shadow-xl z-50 overflow-hidden">
-            {/* Main Games Section */}
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-64 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+          {/* RetroAchievements Section */}
+          <div className="border-b border-slate-700/50">
+            <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              RetroAchievements
+            </div>
             <button
               onClick={() => {
-                setShowMenu(false);
-                setShowMinecraftModal(true);
+                onSyncRA();
+                setIsOpen(false);
               }}
-              className="w-full text-left px-4 py-2 hover:bg-slate-700/50 text-gray-300 hover:text-white transition-colors"
+              className="w-full px-4 py-3 text-left hover:bg-slate-700/50 transition-colors flex items-center gap-3 text-white"
             >
-              ⛏️ Add Minecraft World
+              <span className="text-lg">🎮</span>
+              <span className="font-medium">Sync RA Library</span>
             </button>
-
             <button
               onClick={() => {
-                setShowMenu(false);
-                setShowAppleModal(true);
+                onAddRAGame();
+                setIsOpen(false);
               }}
-              className="w-full text-left px-4 py-2 hover:bg-slate-700/50 text-gray-300 hover:text-white transition-colors"
+              className="w-full px-4 py-3 text-left hover:bg-slate-700/50 transition-colors flex items-center gap-3 text-white"
             >
-              🍎 Add Apple Game
+              <span className="text-lg">➕</span>
+              <span className="font-medium">Add RA Game</span>
             </button>
-
-            {/* RetroAchievements Section */}
-            {(onSyncRA || onAddRAGame || onSyncPCSX2 || onAutoLinkISOs) && (
-              <div className="border-t border-slate-700/50">
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  RetroAchievements
-                </div>
-
-                {onSyncRA && (
-                  <button
-                    onClick={() => {
-                      setShowMenu(false);
-                      onSyncRA();
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-slate-700/50 text-gray-300 hover:text-white transition-colors"
-                  >
-                    🎮 Sync RA Library
-                  </button>
-                )}
-
-                {onAddRAGame && (
-                  <button
-                    onClick={() => {
-                      setShowMenu(false);
-                      onAddRAGame();
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-slate-700/50 text-gray-300 hover:text-white transition-colors"
-                  >
-                    ➕ Add RA Game
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* PCSX2 Section */}
-            {(onSyncPCSX2 || onAutoLinkISOs) && (
-              <div className="border-t border-slate-700/50">
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  PCSX2 (PS2)
-                </div>
-
-                {onAutoLinkISOs && (
-                  <button
-                    onClick={() => {
-                      setShowMenu(false);
-                      onAutoLinkISOs();
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-slate-700/50 text-gray-300 hover:text-white transition-colors"
-                  >
-                    🔗 Auto-Link ISOs
-                  </button>
-                )}
-
-                {onSyncPCSX2 && (
-                  <button
-                    onClick={() => {
-                      setShowMenu(false);
-                      onSyncPCSX2();
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-slate-700/50 text-gray-300 hover:text-white transition-colors"
-                  >
-                    🕹️ Sync Playtime
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* RPCS3 Section */}
-            {onSyncRPCS3 && (
-              <div className="border-t border-slate-700/50">
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  RPCS3 (PS3)
-                </div>
-
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
-                    onSyncRPCS3();
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-slate-700/50 text-gray-300 hover:text-white transition-colors"
-                >
-                  🎮 Sync Playtime
-                </button>
-              </div>
-            )}
-
-            {/* PPSSPP Section */}
-            {onLinkPPSSPP && (
-              <div className="border-t border-slate-700/50">
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  PPSSPP (PSP)
-                </div>
-
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
-                    onLinkPPSSPP();
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-slate-700/50 text-gray-300 hover:text-white transition-colors"
-                >
-                  🎮 Sync Playtime
-                </button>
-              </div>
-            )}
           </div>
-        )}
-      </div>
 
-      {showMinecraftModal && (
-        <AddMinecraftWorldModal
-          userId={userId}
-          onClose={() => setShowMinecraftModal(false)}
-          onAdd={async () => {
-            await onGameAdded();
-          }}
-        />
+          {/* PCSX2 Section */}
+          <div className="border-b border-slate-700/50">
+            <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              PCSX2 (PS2)
+            </div>
+            <button
+              onClick={() => {
+                onAutoLinkISOs?.();
+                setIsOpen(false);
+              }}
+              className="w-full px-4 py-3 text-left hover:bg-slate-700/50 transition-colors flex items-center gap-3 text-white"
+            >
+              <span className="text-lg">🔗</span>
+              <span className="font-medium">Auto-Link ISOs</span>
+            </button>
+          </div>
+        </div>
       )}
-
-      {showAppleModal && (
-        <AddAppleGameModal
-          userId={userId}
-          onClose={() => setShowAppleModal(false)}
-          onAdd={async () => {
-            await onGameAdded();
-          }}
-        />
-      )}
-    </>
+    </div>
   );
 };

@@ -3,38 +3,39 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export class SessionTrackingService {
-
+  
   async trackSession(params: {
     userId: string;
     gameId: string;
     platform: string;
     newPlaytimeMinutes: number;
     oldPlaytimeMinutes: number;
+    sessionDate?: Date;
   }): Promise<void> {
-    const { userId, gameId, platform, newPlaytimeMinutes, oldPlaytimeMinutes } = params;
+    const { userId, gameId, platform, newPlaytimeMinutes, oldPlaytimeMinutes, sessionDate } = params;
     
     const deltaMinutes = newPlaytimeMinutes - oldPlaytimeMinutes;
-
+    
     if (deltaMinutes <= 0) {
       return;
     }
 
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
-    
+    const date = sessionDate ? new Date(sessionDate) : new Date();
+    date.setUTCHours(0, 0, 0, 0);
+
     await prisma.gameSession.upsert({
       where: {
         userId_gameId_date: {
           userId,
           gameId,
-          date: today
+          date
         }
       },
       create: {
         userId,
         gameId,
         platform,
-        date: today,
+        date,
         minutes: deltaMinutes
       },
       update: {
@@ -47,7 +48,7 @@ export class SessionTrackingService {
     await prisma.libraryGame.update({
       where: { id: gameId },
       data: {
-        lastPlayedAt: new Date()
+        lastPlayedAt: sessionDate || new Date()
       }
     });
   }
@@ -90,7 +91,7 @@ export class SessionTrackingService {
       }
     });
   }
-  
+
   async getDailyActivity(userId: string, days: number = 365) {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
@@ -114,7 +115,7 @@ export class SessionTrackingService {
         date: 'asc'
       }
     });
-
+    
     const activityMap = new Map<string, {
       date: string;
       hours: number;
@@ -161,4 +162,4 @@ export class SessionTrackingService {
   }
 }
 
-export const sessionTrackingService = new SessionTrackingService();
+export const sessionTrackingService = new SessionTrackingService();   

@@ -7,16 +7,14 @@ import { PlatformBadge } from '../components/PlatformBadge';
 import { SortButton } from '../components/SortButton';
 import SyncRALibraryModal from '../components/SyncRALibraryModal';
 import AddRAGameModal from '../components/AddRAGameModal';
-import SyncPCSX2Modal from '../components/SyncPCSX2Modal';
-import SyncRPCS3Modal from '../components/SyncRPCS3Modal';
 import AutoLinkISOsModal from '../components/AutoLinkISOsModal';
-import LinkPPSSPPModal from '../components/LinkPPSSPPModal';
 import { GameCard } from '../components/GameCard';
 import { GameModal } from '../components/GameModal';
 import { GameTable } from '../components/GameTable';
 import { useGameFilters } from '../hooks/useGameFilters';
 import type { LibraryGame, TabType, SortField, SortDirection } from '../types/games.types';
 import { Analytics } from '../components/Analytics';
+import { TierList } from '../components/TierList';
 
 function Home() {
   const [steamId, setSteamId] = useState('');
@@ -31,10 +29,7 @@ function Home() {
   
   const [showSyncRAModal, setShowSyncRAModal] = useState(false);
   const [showAddRAGameModal, setShowAddRAGameModal] = useState(false);
-  const [showSyncPCSX2Modal, setShowSyncPCSX2Modal] = useState(false);
   const [showAutoLinkISOsModal, setShowAutoLinkISOsModal] = useState(false);
-  const [showSyncRPCS3Modal, setShowSyncRPCS3Modal] = useState(false);
-  const [showLinkPPSSPPModal, setShowLinkPPSSPPModal] = useState(false);
   
   const [sortField, setSortField] = useState<SortField>('playtime');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -100,28 +95,67 @@ function Home() {
     }
   };
 
-  // PCSX2 Sync Handler
-  const handleSyncPCSX2 = async () => {
+  // Unified Sync All Emulators Handler
+  const handleSyncAllEmulators = async () => {
     try {
       setLoading(true);
+      console.log('🎮 Syncing all emulators (PCSX2, PPSSPP, RPCS3)...');
       
-      const response = await fetch(`${API_URL}/api/pcsx2/sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: library?.userId })
+      const syncResults = {
+        pcsx2: { success: false, message: '' },
+        ppsspp: { success: false, message: '' },
+        rpcs3: { success: false, message: '' }
+      };
+
+      // Sync all three in parallel
+      const results = await Promise.allSettled([
+        fetch(`${API_URL}/api/pcsx2/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: library?.userId })
+        }).then(r => r.json()),
+        
+        fetch(`${API_URL}/api/ppsspp/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: library?.userId })
+        }).then(r => r.json()),
+        
+        fetch(`${API_URL}/api/rpcs3/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: library?.userId })
+        }).then(r => r.json())
+      ]);
+
+      // Process results
+      results.forEach((result, index) => {
+        const platform = ['pcsx2', 'ppsspp', 'rpcs3'][index];
+        if (result.status === 'fulfilled') {
+          syncResults[platform as keyof typeof syncResults] = {
+            success: result.value.success || false,
+            message: result.value.message || result.value.error || 'Unknown'
+          };
+        } else {
+          syncResults[platform as keyof typeof syncResults] = {
+            success: false,
+            message: result.reason?.message || 'Failed to sync'
+          };
+        }
       });
+
+      // Log results
+      console.log('📊 Sync Results:', syncResults);
       
-      const data = await response.json();
+      const successCount = Object.values(syncResults).filter(r => r.success).length;
+      console.log(`✅ ${successCount}/3 emulators synced successfully`);
+
+      // Refresh library regardless of results
+      await refreshFromDB();
       
-      if (data.success) {
-        console.log('✅ PCSX2 sync complete:', data.summary);
-        await refreshFromDB(); // Refresh library to show updated playtime
-        setShowSyncPCSX2Modal(false);
-      } else {
-        console.error('❌ PCSX2 sync failed:', data.error);
-      }
     } catch (error) {
-      console.error('❌ Error syncing PCSX2:', error);
+      console.error('❌ Error syncing emulators:', error);
+      alert('❌ Failed to sync emulators');
     } finally {
       setLoading(false);
     }
@@ -197,6 +231,7 @@ function Home() {
                 { key: 'wishlist', label: 'Wishlist' },
                 { key: 'recommendations', label: 'Recommendations' },
                 { key: 'analytics', label: 'Analytics' },
+                { key: 'tierlist', label: '🏆 Tier List' },
               ].map(({ key, label }) => (
                 <button
                   key={key}
@@ -216,7 +251,7 @@ function Home() {
             </div>
 
             {/* Toolbar */}
-            {activeTab !== 'wishlist' && activeTab !== 'recommendations' && activeTab !== 'analytics' && (
+            {activeTab !== 'wishlist' && activeTab !== 'recommendations' && activeTab !== 'analytics' && activeTab !== 'tierlist' && (
               <div className="mb-8 space-y-4">
                 {/* Status Filters */}
                 <div className="flex items-center justify-between gap-4">
@@ -252,10 +287,7 @@ function Home() {
                       onGameAdded={refreshFromDB}
                       onSyncRA={() => setShowSyncRAModal(true)}
                       onAddRAGame={() => setShowAddRAGameModal(true)}
-                      onSyncPCSX2={() => setShowSyncPCSX2Modal(true)}
-                      onSyncRPCS3={() => setShowSyncRPCS3Modal(true)}
                       onAutoLinkISOs={() => setShowAutoLinkISOsModal(true)}
-                      onLinkPPSSPP={() => setShowLinkPPSSPPModal(true)}
                     />
 
                     <button
@@ -264,6 +296,14 @@ function Home() {
                       className="px-6 py-2.5 bg-slate-800/50 rounded-xl border border-slate-700/50 font-semibold hover:bg-slate-700/50 transition-all duration-300 shadow-md disabled:opacity-50 text-white"
                     >
                       {syncing ? '⟳ Syncing...' : '⟳ Sync Steam'}
+                    </button>
+
+                    <button
+                      onClick={handleSyncAllEmulators}
+                      disabled={loading}
+                      className="px-6 py-2.5 bg-slate-800/50 rounded-xl border border-slate-700/50 font-semibold hover:bg-slate-700/50 transition-all duration-300 shadow-md disabled:opacity-50 text-white"
+                    >
+                      {loading ? '⟳ Syncing...' : '🕹️ Sync All Emulators'}
                     </button>
                   </div>
                 </div>
@@ -367,8 +407,13 @@ function Home() {
               <Analytics games={library?.games || []} />
             )}
 
+            {/* Tier List */}
+            {activeTab === 'tierlist' && !loading && (
+              <TierList games={library?.games || []} />
+            )}
+
             {/* Empty State */}
-            {filteredGames.length === 0 && !loading && activeTab !== 'wishlist' && activeTab !== 'recommendations' && activeTab !== 'analytics' && (
+            {filteredGames.length === 0 && !loading && activeTab !== 'wishlist' && activeTab !== 'recommendations' && activeTab !== 'analytics' && activeTab !== 'tierlist' && (
               <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center mx-auto px-6">
                   <div className="w-20 h-20 mx-auto mb-4 rounded-3xl bg-slate-800/50 border border-slate-700/50 flex items-center justify-center shadow-md">
@@ -408,32 +453,9 @@ function Home() {
       />
 
       {/* PCSX2 Modals */}
-      <SyncPCSX2Modal
-        isOpen={showSyncPCSX2Modal}
-        onClose={() => setShowSyncPCSX2Modal(false)}
-        onSync={handleSyncPCSX2}
-        userId={library?.userId || ''}
-      />
-
       <AutoLinkISOsModal
         isOpen={showAutoLinkISOsModal}
         onClose={() => setShowAutoLinkISOsModal(false)}
-        onLink={refreshFromDB}
-        userId={library?.userId || ''}
-      />
-
-      {/* RPCS3 Modal */}
-      <SyncRPCS3Modal
-        isOpen={showSyncRPCS3Modal}
-        onClose={() => setShowSyncRPCS3Modal(false)}
-        onSync={refreshFromDB}
-        userId={library?.userId || ''}
-      />
-
-      {/* PPSSPP Modal */}
-      <LinkPPSSPPModal
-        isOpen={showLinkPPSSPPModal}
-        onClose={() => setShowLinkPPSSPPModal(false)}
         onLink={refreshFromDB}
         userId={library?.userId || ''}
       />

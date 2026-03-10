@@ -22,6 +22,6 @@ export interface LibraryGame {
   platformData?: any;
 }
 
-export type TabType = 'journal' | 'dashboard' | 'wishlist' | 'recommendations' | 'analytics';
+export type TabType = 'journal' | 'dashboard' | 'wishlist' | 'recommendations' | 'analytics' | 'tierlist';
 export type SortField = 'name' | 'playtime' | 'pricePaid' | 'pricePerHour' | 'rating' | 'status';
 export type SortDirection = 'asc' | 'desc';

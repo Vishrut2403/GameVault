@@ -51,12 +51,17 @@ router.get('/library/:steamId', async (req: Request, res: Response) => {
             if (newPlaytime > oldPlaytime) {
               const delta = newPlaytime - oldPlaytime;
               
+              const sessionDate = (steamGame as any).rtime_last_played 
+                ? new Date((steamGame as any).rtime_last_played * 1000) 
+                : undefined;
+              
               await sessionTrackingService.trackSession({
                 userId: user.id,
                 gameId: existingGame.id,
                 platform: 'steam',
                 newPlaytimeMinutes: newPlaytime,
-                oldPlaytimeMinutes: oldPlaytime
+                oldPlaytimeMinutes: oldPlaytime,
+                sessionDate
               });
             }
           }
