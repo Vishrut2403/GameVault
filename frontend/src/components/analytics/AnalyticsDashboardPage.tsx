@@ -110,8 +110,11 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 
   const heatmapData = useMemo(() => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     const yearAgo = new Date(today);
     yearAgo.setFullYear(today.getFullYear() - 1);
+    yearAgo.setDate(yearAgo.getDate() + 1);
 
     const days: DayActivity[] = [];
     const currentDate = new Date(yearAgo);
@@ -122,7 +125,6 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    // Group sessions by date and game
     const sessionsByDate = new Map<string, Map<string, number>>();
     
     sessionData.forEach((session) => {
@@ -139,7 +141,6 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
       dayGames.set(gameName, currentMinutes + minutes);
     });
 
-    // Populate days with session data
     sessionsByDate.forEach((gamesMap, dateStr) => {
       const dayIndex = days.findIndex(d => d.date === dateStr);
       if (dayIndex !== -1) {
@@ -161,6 +162,8 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
       }
     });
 
+    const daysWithActivity = days.filter(d => d.count > 0).length;
+
     return days;
   }, [sessionData]);
 
@@ -175,17 +178,30 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
   const weeks = useMemo(() => {
     const result: DayActivity[][] = [];
     let currentWeek: DayActivity[] = [];
+    
+    // Start from the first day of the week containing our start date
+    const firstDay = new Date(heatmapData[0]?.date || new Date());
+    const firstDayOfWeek = firstDay.getDay(); // 0 = Sunday
+    
+    // Add empty cells for days before our data starts
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      currentWeek.push({ date: '', count: 0, hours: 0, games: [] });
+    }
 
     heatmapData.forEach((day) => {
       currentWeek.push(day);
-      const dayOfWeek = new Date(day.date).getDay();
-      if (dayOfWeek === 6 || currentWeek.length === 7) {
+      
+      if (currentWeek.length === 7) {
         result.push([...currentWeek]);
         currentWeek = [];
       }
     });
 
-    if (currentWeek.length > 0) {
+    // Fill remaining days of last week
+    while (currentWeek.length > 0 && currentWeek.length < 7) {
+      currentWeek.push({ date: '', count: 0, hours: 0, games: [] });
+    }
+    if (currentWeek.length === 7) {
       result.push(currentWeek);
     }
 
@@ -197,9 +213,11 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
     let currentMonth = '';
 
     weeks.forEach((week, weekIndex) => {
-      if (week.length > 0) {
-        const firstDay = new Date(week[0].date);
+      const firstValidDay = week.find(d => d.date !== '');
+      if (firstValidDay) {
+        const firstDay = new Date(firstValidDay.date);
         const monthName = firstDay.toLocaleDateString('en-US', { month: 'short' });
+        
         if (monthName !== currentMonth) {
           monthLabels.push({ label: monthName, weekIndex });
           currentMonth = monthName;
@@ -298,7 +316,7 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
           ))}
         </div>
 
-        <div className="flex gap-[3px]">
+        <div className="flex gap-[3px] overflow-x-auto">
           <div className="flex flex-col gap-[3px] text-xs text-gray-400 justify-around py-1">
             <div>Mon</div>
             <div>Wed</div>
@@ -314,8 +332,8 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
                     onClick={() => day.count > 0 && setSelectedDay(day)}
                     className={`w-[12px] h-[12px] rounded-sm ${getColor(day.count)} transition-all hover:ring-2 hover:ring-white/50 ${
                       day.count > 0 ? 'cursor-pointer' : 'cursor-default'
-                    }`}
-                    title={`${day.date}: ${day.hours}h played`}
+                    } ${day.date === '' ? 'opacity-0' : ''}`}
+                    title={day.date ? `${day.date}: ${day.hours}h played` : ''}
                   />
                 ))}
               </div>
@@ -336,7 +354,7 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
       </div>
 
       {/* Day Details Modal */}
-      {selectedDay && (
+      {selectedDay && selectedDay.date && (
         <div 
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={() => setSelectedDay(null)}

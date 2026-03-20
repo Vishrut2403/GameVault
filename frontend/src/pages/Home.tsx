@@ -4,7 +4,6 @@ import SteamWishlist from '../components/SteamWishlist';
 import RecommendationSystem from '../components/RecommendationSystem';
 import { AddGameMenu } from '../components/AddGameMenu';
 import { PlatformBadge } from '../components/PlatformBadge';
-import { SortButton } from '../components/SortButton';
 import SyncRALibraryModal from '../components/SyncRALibraryModal';
 import AddRAGameModal from '../components/AddRAGameModal';
 import AutoLinkISOsModal from '../components/AutoLinkISOsModal';

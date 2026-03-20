@@ -8,7 +8,6 @@ const prisma = new PrismaClient();
 
 router.use(authMiddleware);
 
-// Get user profile
 router.get('/profile', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
@@ -55,7 +54,6 @@ router.get('/profile', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Update user profile
 router.put('/profile', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
@@ -101,7 +99,6 @@ router.put('/profile', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Get user's library
 router.get('/library', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
@@ -121,10 +118,10 @@ router.get('/library', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Get user sessions
 router.get('/sessions', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
+    
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
@@ -138,15 +135,14 @@ router.get('/sessions', async (req: AuthRequest, res: Response) => {
     if (platform) options.platform = platform as string;
 
     const sessions = await sessionTrackingService.getUserSessions(userId, options);
-
+    
     res.json({ sessions });
   } catch (error) {
-    console.error('Error fetching sessions:', error);
+    console.error('❌ Error fetching sessions:', error);
     res.status(500).json({ error: 'Failed to fetch sessions' });
   }
 });
 
-// Get daily activity
 router.get('/activity', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
@@ -164,7 +160,6 @@ router.get('/activity', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Connect RetroAchievements
 router.post('/connect-ra', async (req: AuthRequest, res: Response) => {
   try {
     const { raUsername, raApiKey } = req.body;
@@ -204,7 +199,6 @@ router.post('/connect-ra', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Disconnect RetroAchievements
 router.post('/disconnect-ra', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
@@ -229,7 +223,6 @@ router.post('/disconnect-ra', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Disconnect Steam
 router.post('/disconnect-steam', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
@@ -255,7 +248,6 @@ router.post('/disconnect-steam', async (req: AuthRequest, res: Response) => {
   }
 });
 
-// Toggle emulator
 router.post('/toggle-emulator', async (req: AuthRequest, res: Response) => {
   try {
     const { emulator, enabled } = req.body;
