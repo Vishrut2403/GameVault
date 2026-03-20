@@ -219,8 +219,6 @@ router.patch('/library/:steamId/game/:appId/status', async (req: Request, res: R
     const appId = req.params.appId as string;
     const { status } = req.body;
 
-    console.log('🎮 Status update request:', { steamId, appId, status });
-
     if (!steamId || !appId) {
       res.status(400).json({ error: 'Steam ID and App ID are required' });
       return;
@@ -228,26 +226,19 @@ router.patch('/library/:steamId/game/:appId/status', async (req: Request, res: R
 
     const validStatuses = ['playing', 'completed', 'backlog', 'unplayed'];
     if (!validStatuses.includes(status)) {
-      console.error('❌ Invalid status:', status);
+      console.error('Invalid status:', status);
       res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
       return;
     }
 
     const user = await prisma.user.findUnique({ where: { steamId } });
     if (!user) {
-      console.error('❌ User not found for steamId:', steamId);
+      console.error('User not found for steamId:', steamId);
       res.status(404).json({ error: 'User not found' });
       return;
     }
 
-    console.log('✅ User found:', user.id);
-
     const updateData: any = { status };
-    
-    // Only set completedAt if status is completed (removed from schema if not exists)
-    // if (status === 'completed') {
-    //   updateData.completedAt = new Date();
-    // }
 
     const updated = await prisma.libraryGame.update({
       where: { 
@@ -260,11 +251,9 @@ router.patch('/library/:steamId/game/:appId/status', async (req: Request, res: R
       data: updateData,
     });
 
-    console.log('✅ Status updated successfully:', updated.id, updated.status);
-
     res.json({ success: true, game: updated });
   } catch (error: any) {
-    console.error('❌ Error updating status:', error);
+    console.error('Error updating status:', error);
     if (error.code === 'P2025') {
       res.status(404).json({ error: 'Game not found in library' });
       return;
