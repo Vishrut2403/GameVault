@@ -297,7 +297,7 @@ function Home({ user, onLogout }: HomeProps) {
             { key: 'wishlist', label: 'Wishlist' },
             { key: 'recommendations', label: 'Recommendations' },
             { key: 'analytics', label: 'Analytics' },
-            { key: 'tierlist', label: '🏆 Tier List' },
+            { key: 'tierlist', label: 'Tier List' },
           ].map(({ key, label }) => (
             <button
               key={key}

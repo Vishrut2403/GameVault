@@ -5,11 +5,13 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 interface WishlistItem {
   id: string;
+  appId: string;
   name: string;
   tags: string[];
   listPrice: number;
   currentPrice: number;
-  discountPercent: number;
+  discountPercent: number | null;
+  imageUrl: string | null;
   createdAt: string;
 }
 
@@ -29,19 +31,40 @@ function SteamWishlist({ userId }: SteamWishlistProps) {
     tags: '',
     listPrice: '',
     currentPrice: '',
+    imageUrl: '',
   });
+
+  // Get auth token
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    };
+  };
+
+  // Generate unique appId from name
+  const generateAppId = (name: string) => {
+    // Create a unique ID from name + timestamp
+    const timestamp = Date.now();
+    const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return `manual_${cleanName}_${timestamp}`;
+  };
 
   useEffect(() => {
     loadWishlist();
-  }, [userId]);
+  }, []);
 
   const loadWishlist = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const response = await axios.get(`${API_URL}/api/wishlist/${userId}`);
-      setItems(response.data.items || []);
-    } catch (_) {
-      console.error('Failed to load wishlist:', error);
+      const response = await axios.get(`${API_URL}/api/wishlist`, getAuthHeaders());
+      setItems(response.data.data || response.data.wishlist || []);
+    } catch (err: any) {
+      console.error('Failed to load wishlist:', err);
+      setError(err.response?.data?.error || 'Failed to load wishlist');
     } finally {
       setLoading(false);
     }
@@ -49,40 +72,56 @@ function SteamWishlist({ userId }: SteamWishlistProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     const tags = formData.tags.split(',').map(t => t.trim()).filter(t => t);
     const listPrice = parseFloat(formData.listPrice);
     const currentPrice = parseFloat(formData.currentPrice);
 
     if (!formData.name || isNaN(listPrice) || isNaN(currentPrice)) {
-      setError('Please fill all fields correctly');
+      setError('Please fill all required fields correctly');
       return;
     }
 
     try {
       if (editingId) {
-        await axios.patch(`${API_URL}/api/wishlist/${userId}/${editingId}`, {
-          name: formData.name,
-          tags,
-          listPrice,
-          currentPrice,
-        });
+        // Update existing item
+        await axios.patch(
+          `${API_URL}/api/wishlist/item/${editingId}`, 
+          {
+            name: formData.name,
+            tags,
+            listPrice,
+            currentPrice,
+            imageUrl: formData.imageUrl || null,
+          },
+          getAuthHeaders()
+        );
       } else {
-        await axios.post(`${API_URL}/api/wishlist/${userId}`, {
-          name: formData.name,
-          tags,
-          listPrice,
-          currentPrice,
-        });
+        // Create new item with auto-generated appId
+        const appId = generateAppId(formData.name);
+        
+        await axios.post(
+          `${API_URL}/api/wishlist/item`,
+          {
+            appId,
+            name: formData.name,
+            tags,
+            listPrice,
+            currentPrice,
+            imageUrl: formData.imageUrl || null,
+          },
+          getAuthHeaders()
+        );
       }
 
-      setFormData({ name: '', tags: '', listPrice: '', currentPrice: '' });
+      setFormData({ name: '', tags: '', listPrice: '', currentPrice: '', imageUrl: '' });
       setShowAddForm(false);
       setEditingId(null);
-      loadWishlist();
-    } catch (error) {
-      console.error('Failed to save wishlist item:', error);
-      setError('Failed to save item');
+      await loadWishlist();
+    } catch (err: any) {
+      console.error('Failed to save wishlist item:', err);
+      setError(err.response?.data?.error || 'Failed to save item');
     }
   };
 
@@ -92,27 +131,31 @@ function SteamWishlist({ userId }: SteamWishlistProps) {
       tags: item.tags.join(', '),
       listPrice: item.listPrice.toString(),
       currentPrice: item.currentPrice.toString(),
+      imageUrl: item.imageUrl || '',
     });
     setEditingId(item.id);
     setShowAddForm(true);
+    setError(null);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this item?')) return;
 
+    setError(null);
     try {
-      await axios.delete(`${API_URL}/api/wishlist/${userId}/${id}`);
-      loadWishlist();
-    } catch (error) {
-      console.error('Failed to delete item:', error);
-      setError('Failed to delete item');
+      await axios.delete(`${API_URL}/api/wishlist/item/${id}`, getAuthHeaders());
+      await loadWishlist();
+    } catch (err: any) {
+      console.error('Failed to delete item:', err);
+      setError(err.response?.data?.error || 'Failed to delete item');
     }
   };
 
   const handleCancel = () => {
-    setFormData({ name: '', tags: '', listPrice: '', currentPrice: '' });
+    setFormData({ name: '', tags: '', listPrice: '', currentPrice: '', imageUrl: '' });
     setShowAddForm(false);
     setEditingId(null);
+    setError(null);
   };
 
   if (loading) {
@@ -131,8 +174,8 @@ function SteamWishlist({ userId }: SteamWishlistProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h2 className="text-3xl font-bold text-white mb-2">Steam Wishlist</h2>
-          <p className="text-gray-400 text-sm">Manage your wishlist games and track prices</p>
+          <h2 className="text-3xl font-bold text-white mb-2">Wishlist</h2>
+          <p className="text-gray-400 text-sm">Track games you want to buy and monitor their prices</p>
         </div>
         {!showAddForm && (
           <button
@@ -144,6 +187,13 @@ function SteamWishlist({ userId }: SteamWishlistProps) {
         )}
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-900/20 backdrop-blur-2xl border border-red-500/30 rounded-2xl p-4">
+          <p className="text-red-300 text-sm">{error}</p>
+        </div>
+      )}
+
       {/* Add/Edit Form */}
       {showAddForm && (
         <div className="bg-slate-900/50 backdrop-blur-2xl border border-slate-800/50 rounded-2xl p-6 shadow-2xl">
@@ -152,13 +202,15 @@ function SteamWishlist({ userId }: SteamWishlistProps) {
           </h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Name</label>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Game Name <span className="text-red-400">*</span>
+              </label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-4 py-3 bg-slate-800/50 backdrop-blur-sm text-white rounded-xl border border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all duration-300"
-                placeholder="Game name"
+                placeholder="e.g., Elden Ring"
                 required
               />
             </div>
@@ -170,35 +222,57 @@ function SteamWishlist({ userId }: SteamWishlistProps) {
                 value={formData.tags}
                 onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                 className="w-full px-4 py-3 bg-slate-800/50 backdrop-blur-sm text-white rounded-xl border border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all duration-300"
-                placeholder="Action, RPG, Multiplayer"
+                placeholder="Action, RPG, Souls-like"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Cover Image URL (optional)</label>
+              <input
+                type="text"
+                value={formData.imageUrl}
+                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                className="w-full px-4 py-3 bg-slate-800/50 backdrop-blur-sm text-white rounded-xl border border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all duration-300"
+                placeholder="https://example.com/game-cover.jpg"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Paste a direct link to the game's cover image
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">List Price (₹)</label>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  List Price (₹) <span className="text-red-400">*</span>
+                </label>
                 <input
                   type="number"
                   step="0.01"
+                  min="0"
                   value={formData.listPrice}
                   onChange={(e) => setFormData({ ...formData, listPrice: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-800/50 backdrop-blur-sm text-white rounded-xl border border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all duration-300"
-                  placeholder="999"
+                  placeholder="2999"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">Original price</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Current Price (₹)</label>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  Current Price (₹) <span className="text-red-400">*</span>
+                </label>
                 <input
                   type="number"
                   step="0.01"
+                  min="0"
                   value={formData.currentPrice}
                   onChange={(e) => setFormData({ ...formData, currentPrice: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-800/50 backdrop-blur-sm text-white rounded-xl border border-slate-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all duration-300"
-                  placeholder="699"
+                  placeholder="1499"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">Sale or current price</p>
               </div>
             </div>
 
@@ -207,7 +281,7 @@ function SteamWishlist({ userId }: SteamWishlistProps) {
                 type="submit"
                 className="flex-1 px-6 py-3 bg-green-600/20 backdrop-blur-sm border border-green-500/30 text-green-300 font-semibold rounded-xl hover:bg-green-600/30 hover:scale-[1.02] transition-all duration-300"
               >
-                {editingId ? 'Update' : 'Add'}
+                {editingId ? 'Update' : 'Add to Wishlist'}
               </button>
               <button
                 type="button"
@@ -226,7 +300,7 @@ function SteamWishlist({ userId }: SteamWishlistProps) {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center mx-auto px-6">
             <p className="text-gray-400 text-lg font-medium mb-2">Your wishlist is empty</p>
-            <p className="text-sm text-gray-500">Click "Add Game" to get started</p>
+            <p className="text-sm text-gray-500">Add games you're interested in to track their prices</p>
           </div>
         </div>
       ) : (
@@ -235,7 +309,7 @@ function SteamWishlist({ userId }: SteamWishlistProps) {
             <table className="w-full">
               <thead className="bg-slate-800/50 backdrop-blur-2xl border-b border-slate-700/50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Name</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Game</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Tags</th>
                   <th className="px-6 py-4 text-right text-sm font-semibold text-gray-300">List Price</th>
                   <th className="px-6 py-4 text-right text-sm font-semibold text-gray-300">Current Price</th>
@@ -244,59 +318,86 @@ function SteamWishlist({ userId }: SteamWishlistProps) {
                 </tr>
               </thead>
               <tbody>
-                {items.map((item, index) => (
-                  <tr 
-                    key={item.id} 
-                    className={`border-b border-slate-800/50 transition-all duration-300 ${
-                      index % 2 === 0 ? 'bg-slate-900/30 hover:bg-slate-800/50' : 'bg-slate-900/20 hover:bg-slate-800/50'
-                    }`}
-                  >
-                    <td className="px-6 py-4 text-white font-medium">{item.name}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2 flex-wrap">
-                        {item.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-3 py-1 bg-slate-800/50 backdrop-blur-sm rounded-full border border-slate-700/50 text-xs font-medium text-gray-300"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right text-gray-400 font-medium">
-                      ₹{item.listPrice.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 text-right text-green-400 font-semibold text-lg">
-                      ₹{item.currentPrice.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      {item.discountPercent > 0 ? (
-                        <span className="px-3 py-1.5 bg-green-600/20 backdrop-blur-sm border border-green-500/30 text-green-300 text-sm font-bold rounded-lg">
-                          -{item.discountPercent}%
+                {items.map((item, index) => {
+                  const discount = item.discountPercent || 
+                    (item.listPrice > 0 ? Math.round(((item.listPrice - item.currentPrice) / item.listPrice) * 100) : 0);
+                  
+                  return (
+                    <tr 
+                      key={item.id} 
+                      className={`border-b border-slate-800/50 transition-all duration-300 ${
+                        index % 2 === 0 ? 'bg-slate-900/30 hover:bg-slate-800/50' : 'bg-slate-900/20 hover:bg-slate-800/50'
+                      }`}
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          {item.imageUrl && (
+                            <img 
+                              src={item.imageUrl} 
+                              alt={item.name}
+                              className="w-12 h-12 rounded-lg object-cover border border-slate-700/50"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <span className="text-white font-medium">{item.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2 flex-wrap">
+                          {item.tags && item.tags.length > 0 ? (
+                            item.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="px-3 py-1 bg-slate-800/50 backdrop-blur-sm rounded-full border border-slate-700/50 text-xs font-medium text-gray-300"
+                              >
+                                {tag}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-gray-600 text-sm">-</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="text-gray-400 font-medium line-through">
+                          ₹{item.listPrice.toFixed(2)}
                         </span>
-                      ) : (
-                        <span className="text-gray-600">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => handleEdit(item)}
-                          className="px-4 py-2 bg-blue-600/20 backdrop-blur-sm border border-blue-500/30 text-blue-300 text-xs font-semibold rounded-lg hover:bg-blue-600/30 transition-all duration-300"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className="px-4 py-2 bg-red-600/20 backdrop-blur-sm border border-red-500/30 text-red-300 text-xs font-semibold rounded-lg hover:bg-red-600/30 transition-all duration-300"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="text-green-400 font-semibold text-lg">
+                          ₹{item.currentPrice.toFixed(2)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {discount > 0 ? (
+                          <span className="px-3 py-1.5 bg-green-600/20 backdrop-blur-sm border border-green-500/30 text-green-300 text-sm font-bold rounded-lg">
+                            -{discount}%
+                          </span>
+                        ) : (
+                          <span className="text-gray-600">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleEdit(item)}
+                            className="px-4 py-2 bg-blue-600/20 backdrop-blur-sm border border-blue-500/30 text-blue-300 text-xs font-semibold rounded-lg hover:bg-blue-600/30 transition-all duration-300"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            className="px-4 py-2 bg-red-600/20 backdrop-blur-sm border border-red-500/30 text-red-300 text-xs font-semibold rounded-lg hover:bg-red-600/30 transition-all duration-300"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
