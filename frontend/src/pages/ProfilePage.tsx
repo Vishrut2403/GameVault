@@ -9,110 +9,91 @@ interface ProfilePageProps {
 
 export default function ProfilePage({ user, onUpdate }: ProfilePageProps) {
   const [raUsername, setRaUsername] = useState(user.raUsername || '');
-  const [raApiKey, setRaApiKey] = useState(user.raApiKey || '');
-  const [saving, setSaving] = useState(false);
+  const [raApiKey,   setRaApiKey]   = useState(user.raApiKey   || '');
+  const [saving,     setSaving]     = useState(false);
+
+  const [enablePCSX2,      setEnablePCSX2]      = useState(user.enablePCSX2      || false);
+  const [enableRPCS3,      setEnableRPCS3]      = useState(user.enableRPCS3      || false);
+  const [enablePPSSPP,     setEnablePPSSPP]     = useState(user.enablePPSSPP     || false);
+  const [enableRetroArch,  setEnableRetroArch]  = useState(user.enableRetroArch  || false);
+
+  const setterMap: Record<string, (v: boolean) => void> = {
+    PCSX2:      setEnablePCSX2,
+    RPCS3:      setEnableRPCS3,
+    PPSSPP:     setEnablePPSSPP,
+    RetroArch:  setEnableRetroArch,
+  };
+
+  const valueMap: Record<string, boolean> = {
+    PCSX2:      enablePCSX2,
+    RPCS3:      enableRPCS3,
+    PPSSPP:     enablePPSSPP,
+    RetroArch:  enableRetroArch,
+  };
 
   const handleConnectSteam = () => {
-    // Redirect to Steam OAuth with userId parameter
     window.location.href = `${API_URL}/api/auth/steam?userId=${user.id}`;
   };
 
   const handleDisconnectSteam = async () => {
     if (!confirm('Disconnect Steam account? This will not delete your games.')) return;
-
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/api/user/disconnect-steam`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
-
-      if (response.ok) {
-        alert('Steam disconnected!');
-        onUpdate();
-      }
-    } catch (error) {
-      alert('Failed to disconnect Steam');
-    }
+      if (response.ok) { alert('Steam disconnected!'); onUpdate(); }
+    } catch { alert('Failed to disconnect Steam'); }
   };
 
   const handleSaveRA = async () => {
-    if (!raUsername.trim() || !raApiKey.trim()) {
-      alert('Please enter both username and API key');
-      return;
-    }
-
+    if (!raUsername.trim() || !raApiKey.trim()) { alert('Please enter both username and API key'); return; }
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/api/user/connect-ra`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ raUsername, raApiKey })
       });
-
-      if (response.ok) {
-        alert('RetroAchievements connected!');
-        onUpdate();
-      } else {
-        alert('Failed to connect RetroAchievements');
-      }
-    } catch (error) {
-      alert('Failed to connect RetroAchievements');
-    } finally {
-      setSaving(false);
-    }
+      if (response.ok) { alert('RetroAchievements connected!'); onUpdate(); }
+      else alert('Failed to connect RetroAchievements');
+    } catch { alert('Failed to connect RetroAchievements'); }
+    finally { setSaving(false); }
   };
 
   const handleDisconnectRA = async () => {
     if (!confirm('Disconnect RetroAchievements?')) return;
-
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/api/user/disconnect-ra`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
-
-      if (response.ok) {
-        setRaUsername('');
-        setRaApiKey('');
-        alert('RetroAchievements disconnected!');
-        onUpdate();
-      }
-    } catch (error) {
-      alert('Failed to disconnect');
-    }
+      if (response.ok) { setRaUsername(''); setRaApiKey(''); alert('RetroAchievements disconnected!'); onUpdate(); }
+    } catch { alert('Failed to disconnect'); }
   };
 
-  const toggleEmulator = async (emulator: 'PCSX2' | 'RPCS3' | 'PPSSPP') => {
+  const toggleEmulator = async (emulator: 'PCSX2' | 'RPCS3' | 'PPSSPP' | 'RetroArch') => {
+    const currentValue = valueMap[emulator];
+    const newValue     = !currentValue;
+
+    setterMap[emulator](newValue);
+
     try {
       const token = localStorage.getItem('token');
-      const field = `enable${emulator}`;
-      const currentValue = (user as any)[field];
-
       const response = await fetch(`${API_URL}/api/user/toggle-emulator`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ emulator, enabled: !currentValue })
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emulator, enabled: newValue })
       });
-
-      if (response.ok) {
-        onUpdate();
+      if (!response.ok) {
+        setterMap[emulator](currentValue);
+        alert('Failed to toggle emulator');
       }
-    } catch (error) {
+    } catch {
+      setterMap[emulator](currentValue);
       alert('Failed to toggle emulator');
     }
   };
@@ -122,24 +103,19 @@ export default function ProfilePage({ user, onUpdate }: ProfilePageProps) {
       {/* User Info Card */}
       <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-2xl p-8 mb-8">
         <div className="flex items-center gap-6">
-          {/* Avatar */}
           <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-4xl font-bold text-white">
             {user.username.charAt(0).toUpperCase()}
           </div>
-          
-          {/* Info */}
           <div className="flex-1">
             <h2 className="text-3xl font-bold text-white mb-1">{user.displayName || user.username}</h2>
             <p className="text-gray-400 mb-2">@{user.username}</p>
-            
-            {/* Level & XP Bar */}
             <div className="mt-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-300">Level {user.level}</span>
                 <span className="text-sm text-gray-500">{user.xp} XP</span>
               </div>
               <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-500"
                   style={{ width: `${(user.xp % 1000) / 10}%` }}
                 />
@@ -185,10 +161,8 @@ export default function ProfilePage({ user, onUpdate }: ProfilePageProps) {
                 <p className="text-xs text-gray-500 mb-4">
                   Last updated: {user.steamLinkedAt ? new Date(user.steamLinkedAt).toLocaleDateString() : 'Never'}
                 </p>
-                <button
-                  onClick={handleDisconnectSteam}
-                  className="w-full px-4 py-2 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/20 transition-all text-sm font-medium"
-                >
+                <button type="button" onClick={handleDisconnectSteam}
+                  className="w-full px-4 py-2 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/20 transition-all text-sm font-medium">
                   Disconnect
                 </button>
               </>
@@ -200,13 +174,9 @@ export default function ProfilePage({ user, onUpdate }: ProfilePageProps) {
                   </svg>
                   <span className="text-sm text-gray-500 font-medium">Not linked</span>
                 </div>
-                <p className="text-xs text-gray-500 mb-4">
-                  Connect to sync your Steam library automatically
-                </p>
-                <button
-                  onClick={handleConnectSteam}
-                  className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all text-sm font-medium"
-                >
+                <p className="text-xs text-gray-500 mb-4">Connect to sync your Steam library automatically</p>
+                <button type="button" onClick={handleConnectSteam}
+                  className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all text-sm font-medium">
                   Connect Steam
                 </button>
               </>
@@ -235,10 +205,8 @@ export default function ProfilePage({ user, onUpdate }: ProfilePageProps) {
                   </svg>
                   <span className="text-sm text-green-400 font-medium">Linked</span>
                 </div>
-                <button
-                  onClick={handleDisconnectRA}
-                  className="w-full px-4 py-2 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/20 transition-all text-sm font-medium"
-                >
+                <button type="button" onClick={handleDisconnectRA}
+                  className="w-full px-4 py-2 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/20 transition-all text-sm font-medium">
                   Disconnect
                 </button>
               </>
@@ -251,26 +219,13 @@ export default function ProfilePage({ user, onUpdate }: ProfilePageProps) {
                   <span className="text-sm text-gray-500 font-medium">Not linked</span>
                 </div>
                 <div className="space-y-3 mb-4">
-                  <input
-                    type="text"
-                    placeholder="Username"
-                    value={raUsername}
-                    onChange={(e) => setRaUsername(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"
-                  />
-                  <input
-                    type="password"
-                    placeholder="API Key"
-                    value={raApiKey}
-                    onChange={(e) => setRaApiKey(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"
-                  />
+                  <input type="text" placeholder="Username" value={raUsername} onChange={(e) => setRaUsername(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500" />
+                  <input type="password" placeholder="API Key" value={raApiKey} onChange={(e) => setRaApiKey(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500" />
                 </div>
-                <button
-                  onClick={handleSaveRA}
-                  disabled={saving || !raUsername || !raApiKey}
-                  className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:text-gray-500 text-white rounded-lg transition-all text-sm font-medium"
-                >
+                <button type="button" onClick={handleSaveRA} disabled={saving || !raUsername || !raApiKey}
+                  className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:text-gray-500 text-white rounded-lg transition-all text-sm font-medium">
                   {saving ? 'Connecting...' : 'Connect'}
                 </button>
               </>
@@ -281,29 +236,15 @@ export default function ProfilePage({ user, onUpdate }: ProfilePageProps) {
           <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center">
-                  <span className="text-xl">🎮</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-white">PCSX2 (PS2)</h4>
-                  <p className="text-sm text-gray-400">Local tracking</p>
-                </div>
+                <div className="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center"><span className="text-xl">🎮</span></div>
+                <div><h4 className="font-semibold text-white">PCSX2 (PS2)</h4><p className="text-sm text-gray-400">Local tracking</p></div>
               </div>
             </div>
-
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-400">Enable tracking</span>
-              <button
-                onClick={() => toggleEmulator('PCSX2')}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  user.enablePCSX2 ? 'bg-blue-600' : 'bg-slate-700'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    user.enablePCSX2 ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
+              <button type="button" onClick={() => toggleEmulator('PCSX2')}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${enablePCSX2 ? 'bg-blue-600' : 'bg-slate-700'}`}>
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${enablePCSX2 ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
             </div>
           </div>
@@ -312,29 +253,15 @@ export default function ProfilePage({ user, onUpdate }: ProfilePageProps) {
           <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center">
-                  <span className="text-xl">🎮</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-white">RPCS3 (PS3)</h4>
-                  <p className="text-sm text-gray-400">Local tracking</p>
-                </div>
+                <div className="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center"><span className="text-xl">🎮</span></div>
+                <div><h4 className="font-semibold text-white">RPCS3 (PS3)</h4><p className="text-sm text-gray-400">Local tracking</p></div>
               </div>
             </div>
-
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-400">Enable tracking</span>
-              <button
-                onClick={() => toggleEmulator('RPCS3')}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  user.enableRPCS3 ? 'bg-blue-600' : 'bg-slate-700'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    user.enableRPCS3 ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
+              <button type="button" onClick={() => toggleEmulator('RPCS3')}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${enableRPCS3 ? 'bg-blue-600' : 'bg-slate-700'}`}>
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${enableRPCS3 ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
             </div>
           </div>
@@ -343,32 +270,39 @@ export default function ProfilePage({ user, onUpdate }: ProfilePageProps) {
           <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center">
-                  <span className="text-xl">🎮</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-white">PPSSPP (PSP)</h4>
-                  <p className="text-sm text-gray-400">Local tracking</p>
-                </div>
+                <div className="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center"><span className="text-xl">🎮</span></div>
+                <div><h4 className="font-semibold text-white">PPSSPP (PSP)</h4><p className="text-sm text-gray-400">Local tracking</p></div>
               </div>
             </div>
-
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-400">Enable tracking</span>
-              <button
-                onClick={() => toggleEmulator('PPSSPP')}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  user.enablePPSSPP ? 'bg-blue-600' : 'bg-slate-700'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    user.enablePPSSPP ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
+              <button type="button" onClick={() => toggleEmulator('PPSSPP')}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${enablePPSSPP ? 'bg-blue-600' : 'bg-slate-700'}`}>
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${enablePPSSPP ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
             </div>
           </div>
+
+          {/* RetroArch */}
+          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-slate-700 rounded-lg flex items-center justify-center"><span className="text-xl">🕹️</span></div>
+                <div><h4 className="font-semibold text-white">RetroArch</h4><p className="text-sm text-gray-400">Multi-system emulator</p></div>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">
+              Reads from <code className="text-gray-400">~/.config/retroarch/playlists/</code>. Supports GBA, SNES, NES, N64, PS1, Sega and more.
+            </p>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-400">Enable tracking</span>
+              <button type="button" onClick={() => toggleEmulator('RetroArch')}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${enableRetroArch ? 'bg-blue-600' : 'bg-slate-700'}`}>
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${enableRetroArch ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

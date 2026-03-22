@@ -41,8 +41,8 @@ router.post('/register', async (req: Request, res: Response) => {
     if (existingUser) {
       res.status(400).json({
         success: false,
-        error: existingUser.email === email.toLowerCase() 
-          ? 'Email already registered' 
+        error: existingUser.email === email.toLowerCase()
+          ? 'Email already registered'
           : 'Username already taken'
       });
       return;
@@ -163,9 +163,10 @@ router.post('/login', async (req: Request, res: Response) => {
         steamUsername: user.steamUsername,
         steamId: user.steamId,
         raUsername: user.raUsername,
-        enablePCSX2: user.enablePCSX2,
-        enableRPCS3: user.enableRPCS3,
-        enablePPSSPP: user.enablePPSSPP
+        enablePCSX2:     user.enablePCSX2,
+        enableRPCS3:     user.enableRPCS3,
+        enablePPSSPP:    user.enablePPSSPP,
+        enableRetroArch: user.enableRetroArch,
       }
     });
   } catch (error: any) {
@@ -219,9 +220,10 @@ router.get('/me', async (req: Request, res: Response) => {
         steamUsername: user.steamUsername,
         steamId: user.steamId,
         raUsername: user.raUsername,
-        enablePCSX2: user.enablePCSX2,
-        enableRPCS3: user.enableRPCS3,
-        enablePPSSPP: user.enablePPSSPP,
+        enablePCSX2:     user.enablePCSX2,
+        enableRPCS3:     user.enableRPCS3,
+        enablePPSSPP:    user.enablePPSSPP,
+        enableRetroArch: user.enableRetroArch,
         createdAt: user.createdAt
       }
     });
@@ -245,7 +247,7 @@ router.post('/logout', async (req: Request, res: Response) => {
 // Steam OAuth - Store userId in session/cookie
 router.get('/steam', (req: Request, res: Response) => {
   const userId = req.query.userId as string;
-  
+
   if (!userId) {
     res.status(400).send('Missing userId parameter');
     return;
@@ -260,7 +262,7 @@ router.get('/steam', (req: Request, res: Response) => {
     'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
     'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select'
   })}`;
-  
+
   res.redirect(steamLoginUrl);
 });
 
@@ -270,7 +272,7 @@ router.get('/steam/callback', async (req: Request, res: Response) => {
     const claimedId = req.query['openid.claimed_id'] as string;
     const userId = req.query.userId as string;
     const steamId = claimedId?.split('/').pop();
-    
+
     if (!steamId || !userId) {
       res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}?error=steam_auth_failed`);
       return;
@@ -278,16 +280,16 @@ router.get('/steam/callback', async (req: Request, res: Response) => {
 
     // Fetch Steam username from Steam API
     let steamUsername = null;
-      const steamApiKey = process.env.STEAM_API_KEY;
-      if (steamApiKey) {
-        const response = await fetch(
-          `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${steamApiKey}&steamids=${steamId}`
-        );
-        const data: any = await response.json();
-        if (data.response?.players?.[0]) {
-          steamUsername = data.response.players[0].personaname;
-        }
+    const steamApiKey = process.env.STEAM_API_KEY;
+    if (steamApiKey) {
+      const response = await fetch(
+        `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${steamApiKey}&steamids=${steamId}`
+      );
+      const data: any = await response.json();
+      if (data.response?.players?.[0]) {
+        steamUsername = data.response.players[0].personaname;
       }
+    }
 
     // Update user with Steam ID
     await prisma.user.update({

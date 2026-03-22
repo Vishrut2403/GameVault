@@ -18,6 +18,7 @@ import sessionsRoutes from './routes/sessions.routes';
 import journalRoutes from './routes/journal.routes';
 import userRoutes from './routes/user.routes';
 import hltbRoutes from './routes/hltb.routes';
+import retroArchRoutes from './routes/retroarch.routes';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
@@ -53,6 +54,7 @@ app.use('/api/sessions', sessionsRoutes);
 app.use('/api/journal', journalRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/hltb', hltbRoutes);
+app.use('/api/retroarch', retroArchRoutes);
 
 if (isProd) {
   const frontendPath = path.join(__dirname, '../../frontend');
@@ -65,10 +67,7 @@ if (isProd) {
 
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   console.error('Unhandled error:', err);
-  res.status(500).json({
-    success: false,
-    error: 'Internal server error'
-  });
+  res.status(500).json({ success: false, error: 'Internal server error' });
 });
 
 app.listen(PORT, () => {
@@ -81,6 +80,7 @@ app.listen(PORT, () => {
   console.log(`RPCS3: http://localhost:${PORT}/api/rpcs3`);
   console.log(`Journal: http://localhost:${PORT}/api/journal`);
   console.log(`HLTB: http://localhost:${PORT}/api/hltb`);
+  console.log(`RetroArch: http://localhost:${PORT}/api/retroarch`);
 
   if (isProd) {
     console.log('Frontend served from Express (production mode)');

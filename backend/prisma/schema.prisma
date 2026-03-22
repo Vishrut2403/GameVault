@@ -27,9 +27,10 @@ model User {
   raApiKey      String?
   raLinkedAt    DateTime?
   
-  enablePCSX2   Boolean  @default(false)
-  enableRPCS3   Boolean  @default(false)
-  enablePPSSPP  Boolean  @default(false)
+  enablePCSX2       Boolean  @default(false)
+  enableRPCS3       Boolean  @default(false)
+  enablePPSSPP      Boolean  @default(false)
+  enableRetroArch   Boolean  @default(false)
   
   autoSyncSteam     Boolean @default(false)
   autoSyncRA        Boolean @default(false)

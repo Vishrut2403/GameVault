@@ -35,6 +35,7 @@ router.get('/profile', async (req: AuthRequest, res: Response) => {
         enablePCSX2: true,
         enableRPCS3: true,
         enablePPSSPP: true,
+        enableRetroArch: true,
         autoSyncSteam: true,
         autoSyncRA: true,
         autoSyncEmulators: true,
@@ -258,9 +259,10 @@ router.post('/toggle-emulator', async (req: AuthRequest, res: Response) => {
     }
 
     const fieldMap: Record<string, string> = {
-      'PCSX2': 'enablePCSX2',
-      'RPCS3': 'enableRPCS3',
-      'PPSSPP': 'enablePPSSPP'
+      'PCSX2':      'enablePCSX2',
+      'RPCS3':      'enableRPCS3',
+      'PPSSPP':     'enablePPSSPP',
+      'RetroArch':  'enableRetroArch',
     };
 
     const field = fieldMap[emulator];

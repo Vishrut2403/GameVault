@@ -142,61 +142,59 @@ function Home({ user, onLogout }: HomeProps) {
   };
 
   const handleSyncAllEmulators = async () => {
-    try {
-      setLoading(true);
-      console.log('🎮 Syncing all emulators...');
-      
-      const syncResults = {
-        pcsx2: { success: false, message: '' },
-        ppsspp: { success: false, message: '' },
-        rpcs3: { success: false, message: '' }
-      };
+      try {
+        setLoading(true);
 
-      const results = await Promise.allSettled([
-        fetch(`${API_URL}/api/pcsx2/sync`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id })
-        }).then(r => r.json()),
-        
-        fetch(`${API_URL}/api/ppsspp/sync`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id })
-        }).then(r => r.json()),
-        
-        fetch(`${API_URL}/api/rpcs3/sync`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id })
-        }).then(r => r.json())
-      ]);
+        const token = localStorage.getItem('token');
+        const authHeaders = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        };
 
-      results.forEach((result, index) => {
-        const platform = ['pcsx2', 'ppsspp', 'rpcs3'][index];
-        if (result.status === 'fulfilled') {
-          syncResults[platform as keyof typeof syncResults] = {
-            success: result.value.success || false,
-            message: result.value.message || result.value.error || 'Unknown'
-          };
-        } else {
-          syncResults[platform as keyof typeof syncResults] = {
-            success: false,
-            message: result.reason?.message || 'Failed to sync'
-          };
-        }
-      });
+        const results = await Promise.allSettled([
+          fetch(`${API_URL}/api/pcsx2/sync`, {
+            method: 'POST',
+            headers: authHeaders,
+            body: JSON.stringify({ userId: user.id }),
+          }).then(r => r.json()),
 
-      console.log('📊 Sync Results:', syncResults);
-      await refreshFromDB();
-      
-    } catch (error) {
-      console.error('❌ Error syncing emulators:', error);
-      alert('❌ Failed to sync emulators');
-    } finally {
-      setLoading(false);
-    }
-  };
+          fetch(`${API_URL}/api/ppsspp/sync`, {
+            method: 'POST',
+            headers: authHeaders,
+            body: JSON.stringify({ userId: user.id }),
+          }).then(r => r.json()),
+
+          fetch(`${API_URL}/api/rpcs3/sync`, {
+            method: 'POST',
+            headers: authHeaders,
+            body: JSON.stringify({ userId: user.id }),
+          }).then(r => r.json()),
+
+          // RetroArch — only syncs if enabled in profile
+          user.enableRetroArch
+            ? fetch(`${API_URL}/api/retroarch/sync`, {
+                method: 'POST',
+                headers: authHeaders,
+              }).then(r => r.json())
+            : Promise.resolve({ success: true, message: 'RetroArch not enabled' }),
+        ]);
+
+        results.forEach((result, index) => {
+          const platform = ['pcsx2', 'ppsspp', 'rpcs3', 'retroarch'][index];
+          if (result.status === 'fulfilled') {
+          } else {
+            console.warn(`[${platform}] Failed:`, result.reason?.message);
+          }
+        });
+
+        await refreshFromDB();
+      } catch (error) {
+        console.error('❌ Error syncing emulators:', error);
+        alert('❌ Failed to sync emulators');
+      } finally {
+        setLoading(false);
+      }
+    };
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
