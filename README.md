@@ -2,13 +2,14 @@
 
 **Track. Analyze. Optimize your gaming library across multiple platforms.**
 
-A comprehensive full-stack web application that unifies your gaming experience across Steam, RetroAchievements, Minecraft, and console emulators with advanced analytics, session tracking, and smart recommendations.
+A comprehensive full-stack web application that unifies your gaming experience across Steam, RetroAchievements, Minecraft, and console emulators with advanced analytics, session tracking, smart recommendations, and HowLongToBeat integration.
 
 ![Analytics Dashboard](https://img.shields.io/badge/Analytics-Dashboard-blue)
 ![Session Tracking](https://img.shields.io/badge/Session-Tracking-green)
 ![Multi Platform](https://img.shields.io/badge/Multi-Platform-orange)
+![HLTB Integration](https://img.shields.io/badge/HowLongToBeat-Integrated-purple)
 
-> ⚠️ This project is not affiliated with Valve Corporation, Steam, or any other gaming platform mentioned.
+> ⚠️ This project is not affiliated with Valve Corporation, Steam, HowLongToBeat, or any other gaming platform mentioned.
 
 ---
 
@@ -25,7 +26,6 @@ A comprehensive full-stack web application that unifies your gaming experience a
 
 ### Wishlist
 ![Wishlist](./screenshots/Wishlist.png)
- 
 
 ---
 
@@ -37,17 +37,18 @@ Modern gamers use multiple platforms—Steam, retro emulators, Minecraft, and mo
 - **Optimize purchases** based on actual play value
 - **Manage a unified library** when games are scattered everywhere
 
-**This project solves that** by aggregating all platforms into a single analytics-driven dashboard, giving you complete visibility into your gaming life with features like GitHub-style activity heatmaps, session tracking, and intelligent recommendations.
+**This project solves that** by aggregating all platforms into a single analytics-driven dashboard, giving you complete visibility into your gaming life with features like GitHub-style activity heatmaps, session tracking, HowLongToBeat estimates, and intelligent recommendations.
 
 ---
 
 ## Core Highlights
 
 - **Multi-platform game aggregation** – Steam, RetroAchievements, Minecraft, PCSX2, RPCS3, PPSSPP all in one place
+- **HowLongToBeat integration** – Main story, main + extras, and completionist time estimates on every game
 - **Time-series session tracking system** – Daily playtime tracking with historical data and trend analysis
 - **Advanced analytics suite** – GitHub-style activity heatmap, radar charts, platform distribution, achievement rates
 - **Value metrics engine** – Calculate price-per-hour, identify best-value games, track spending patterns
-- **Knapsack-based recommendation engine** – Smart wishlist recommendations using dynamic programming optimization
+- **Knapsack-based recommendation engine** – Smart wishlist recommendations scored by discount, HLTB completionist value (hrs/₹), and your taste profile
 - **Unified journal system** – Keep notes and track progress across all platforms in one place
 
 ---
@@ -61,6 +62,13 @@ Modern gamers use multiple platforms—Steam, retro emulators, Minecraft, and mo
 - **PCSX2** – PlayStation 2 emulator support
 - **RPCS3** – PlayStation 3 emulator support  
 - **PPSSPP** – PSP emulator support
+
+### HowLongToBeat Integration
+- **Game Modal** – Every game in your library shows three time estimates: Main Story, Main + Extras, and Completionist
+- **Smart Recommendations** – Wishlist games are scored using real HLTB completionist hours divided by price (hrs/₹)
+- **Automatic resolution** – Steam games use exact appId lookup; non-Steam games resolve via Steam store search
+- **Persistent caching** – HLTB data is stored in the database after first fetch so subsequent runs are instant
+- **Graceful fallback** – If no HLTB data is found, recommendations fall back to tag-based scoring silently
 
 ### Advanced Analytics Dashboard
 - **Gaming Activity Heatmap** – GitHub-style contribution graph showing daily playtime
@@ -86,9 +94,10 @@ Modern gamers use multiple platforms—Steam, retro emulators, Minecraft, and mo
 - **Timeline View** – Chronological journal entries
 
 ### Wishlist & Recommendations
-- **Steam Wishlist Integration** – Track discounts and prices
+- **Manual Wishlist** – Track games you want with custom prices and tags
 - **Smart Recommendations** – Budget optimizer using 0/1 knapsack algorithm
-- **Genre Matching** – Personalized suggestions based on your library
+- **HLTB Value Scoring** – Recommendations weighted by real completionist hours per rupee spent
+- **Genre Matching** – Personalized suggestions based on your library taste profile
 
 ### Minecraft Integration
 - **Prism Launcher Support** – Automatic instance detection
@@ -113,8 +122,9 @@ Modern gamers use multiple platforms—Steam, retro emulators, Minecraft, and mo
 - **PostgreSQL 14+** – Relational database
 - **Prisma ORM** – Type-safe database access
 - **Passport.js** – Steam OAuth authentication
-- **Steam Web API** – Library synchronization
+- **Steam Web API** – Library synchronization and game resolution
 - **RetroAchievements API** – Achievement tracking
+- **HowLongToBeat API** – Game time estimates (via unofficial API)
 - **Session Tracking Service** – Daily playtime analytics
 
 ---
@@ -217,6 +227,7 @@ This will install all required packages including:
 - Express, Prisma, TypeScript
 - Passport.js for authentication
 - bcrypt for password hashing
+- Axios for HTTP calls (including HLTB and Steam store lookups)
 - And more...
 
 #### Create Environment File
@@ -290,7 +301,7 @@ npx prisma migrate dev
 ```
 
 This will:
-- Create all database tables
+- Create all database tables including HLTB columns on the wishlist
 - Set up relationships
 - Apply any pending migrations
 
@@ -446,14 +457,15 @@ Open your browser and go to:
 - Edit game details inline
 
 **Wishlist**
-- Track games you want
-- Monitor discounts and prices
-- Add notes and priorities
+- Track games you want with custom prices and tags
+- Monitor discounts manually
+- No Steam account connection required for wishlist
 
 **Recommendations**
-- Get smart game suggestions
+- Get smart game suggestions within your budget
+- Scored by discount %, HLTB completionist value (hrs/₹), and tag match
+- First run fetches HLTB data automatically; subsequent runs use cached DB values
 - Budget optimizer using 0/1 knapsack algorithm
-- Based on your preferences and playtime patterns
 
 **Analytics** (5 sub-tabs)
 - **Dashboard** – Activity heatmap, overview stats
@@ -468,6 +480,28 @@ Open your browser and go to:
 **Tier List**
 - Organize games by tier (S/A/B/C/D)
 - Visual tier list display
+
+---
+
+## HowLongToBeat Integration
+
+### Game Modal
+Open any game in your library to see HLTB time estimates:
+- **Main Story** – Time to finish the main campaign
+- **Main + Extras** – Main story plus side content
+- **Completionist** – Full 100% completion time
+
+Steam games resolve via exact Steam appId lookup. Non-Steam games use a name-based search. If no data is found, the section is hidden silently.
+
+### Recommendations
+HLTB data powers the value scoring in recommendations:
+- The system fetches completionist hours for each wishlist game automatically
+- Value score = completionist hours ÷ current price (hrs/₹)
+- A game with 100h at ₹1000 scores the same as one with 50h at ₹500
+- Data is stored in the database after the first fetch — no repeated API calls
+- Games with no HLTB data fall back to tag-based playtime estimation
+
+> **Note:** HLTB coverage depends on an unofficial API. Popular titles have full data; some niche or unreleased games may show no estimates.
 
 ---
 
@@ -550,6 +584,16 @@ The heatmap shows your gaming activity over the past year:
 - Get new key from https://steamcommunity.com/dev/apikey
 - Update `STEAM_API_KEY` in `.env`
 - Restart backend
+
+### HLTB shows no data for some games
+
+This is expected behaviour — the unofficial HLTB API has coverage for most popular titles but may be missing some games. No action needed; the app falls back gracefully.
+
+If HLTB data is wrong or stale for a wishlist game, clear it from the database:
+```bash
+npx prisma studio
+```
+Open `steam_wishlist`, find the game, and set `hltbMain`, `hltbExtra`, `hltbCompletionist`, `hltbName` to null. The next recommendation run will re-fetch fresh data.
 
 ### Minecraft not detected
 
@@ -649,6 +693,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - `POST /api/steam/sync` - Sync Steam library
 - `GET /api/steam/library/:steamId` - Get Steam games
 
+**HLTB:**
+- `GET /api/hltb/steam/:appId` - Get HLTB data by Steam appId (used by GameModal)
+- `GET /api/hltb/name/:gameName` - Get HLTB data by game name (fallback)
+
 **Minecraft:**
 - `GET /api/minecraft/instances` - List Prism instances
 - `POST /api/minecraft/add` - Add world to library
@@ -662,10 +710,14 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - `GET /api/wishlist` - Get wishlist
 - `POST /api/wishlist` - Add game
 
+**Recommendations:**
+- `POST /api/recommendations/:userId/optimize` - Run knapsack optimization with HLTB scoring
+
 All authenticated endpoints require:
 ```
 Authorization: Bearer <JWT_TOKEN>
 ```
+
 ---
 
 ## Author
@@ -679,7 +731,7 @@ Authorization: Bearer <JWT_TOKEN>
 
 ## Disclaimer
 
-This project is not affiliated with, endorsed by, or associated with Valve Corporation, Steam, RetroAchievements, or any other gaming platform or company mentioned. All trademarks and registered trademarks are the property of their respective owners.
+This project is not affiliated with, endorsed by, or associated with Valve Corporation, Steam, HowLongToBeat, RetroAchievements, or any other gaming platform or company mentioned. All trademarks and registered trademarks are the property of their respective owners. HLTB data is fetched via an unofficial third-party API and may not always be complete or accurate.
 
 ---
 

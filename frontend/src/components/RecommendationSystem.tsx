@@ -3,23 +3,30 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
+interface HltbInfo {
+  main:          number | null;
+  extra:         number | null;
+  completionist: number | null;
+  matchedName:   string | null;
+}
+
 interface RecommendedGame {
-  id: string;
-  name: string;
-  tags: string[];
-  listPrice: number;
-  currentPrice: number;
+  id:              string;
+  name:            string;
+  tags:            string[];
+  listPrice:       number;
+  currentPrice:    number;
   discountPercent: number;
-  finalScore: number;
+  finalScore:      number;
   breakdown: {
     discountScore: number;
-    playtimeScore: number;
+    valueScore:    number;
     tagMatchScore: number;
-    ratingScore: number;
-    tierScore: number;
+    ratingScore:   number;
   };
+  hltb:             HltbInfo;
   estimatedPlaytime: number;
-  reasoning: string[];
+  reasoning:        string[];
 }
 
 interface RecommendationSystemProps {
@@ -27,46 +34,54 @@ interface RecommendationSystemProps {
 }
 
 function RecommendationSystem({ userId }: RecommendationSystemProps) {
-  const [budget, setBudget] = useState<string>('1000');
-  const [loading, setLoading] = useState(false);
+  const [budget,        setBudget]        = useState<string>('1000');
+  const [loading,       setLoading]       = useState(false);
   const [selectedGames, setSelectedGames] = useState<RecommendedGame[]>([]);
-  const [totalCost, setTotalCost] = useState(0);
-  const [totalScore, setTotalScore] = useState(0);
-  const [remaining, setRemaining] = useState(0);
-  const [error, setError] = useState('');
+  const [totalCost,     setTotalCost]     = useState(0);
+  const [totalScore,    setTotalScore]    = useState(0);
+  const [remaining,     setRemaining]     = useState(0);
+  const [error,         setError]         = useState('');
 
   const handleOptimize = async () => {
     const budgetNum = parseFloat(budget);
-
-    if (isNaN(budgetNum) || budgetNum <= 0) {
-      setError('Please enter a valid budget');
-      return;
-    }
+    if (isNaN(budgetNum) || budgetNum <= 0) { setError('Please enter a valid budget'); return; }
 
     setLoading(true);
     setError('');
 
     try {
+      const token = localStorage.getItem('token');
       const response = await axios.post(
         `${API_URL}/api/recommendations/${userId}/optimize`,
-        { budget: budgetNum }
+        { budget: budgetNum },
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
         setSelectedGames(response.data.selectedGames || []);
-        setTotalCost(response.data.totalCost || 0);
-        setTotalScore(response.data.totalScore || 0);
-        setRemaining(response.data.remaining || 0);
-
+        setTotalCost(response.data.totalCost     || 0);
+        setTotalScore(response.data.totalScore   || 0);
+        setRemaining(response.data.remaining     || 0);
         if (response.data.selectedGames?.length === 0) {
           setError('No games found within budget or wishlist is empty');
         }
       }
-    } catch (err) {
+    } catch {
       setError('Failed to optimize. Check your wishlist and try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const getValueLabel = (game: RecommendedGame) => {
+    const hrs = game.hltb?.completionist;
+    if (hrs && hrs > 0 && game.currentPrice > 0) {
+      const hrsPerRupee = hrs / game.currentPrice;
+      if (hrsPerRupee >= 0.1)  return { text: 'Excellent value', color: 'text-green-400' };
+      if (hrsPerRupee >= 0.05) return { text: 'Good value',      color: 'text-blue-400' };
+      return { text: 'Average value', color: 'text-gray-400' };
+    }
+    return null;
   };
 
   return (
@@ -74,18 +89,16 @@ function RecommendationSystem({ userId }: RecommendationSystemProps) {
       {/* Header */}
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-white mb-3">Recommendation System</h2>
-          <p className="text-gray-400">
-          Get optimal game recommendations within your budget using 0/1 Knapsack algorithm
+        <p className="text-gray-400">
+          Optimal game picks within your budget — scored by discount, HLTB value, and your taste
         </p>
       </div>
 
-      {/* Budget Input Card */}
+      {/* Budget input */}
       <div className="bg-slate-900/50 backdrop-blur-2xl border border-slate-800/50 rounded-2xl p-6 shadow-2xl">
         <div className="flex items-end gap-4">
           <div className="flex-1">
-            <label className="block text-sm font-semibold text-gray-300 mb-3">
-              Budget (₹)
-            </label>
+            <label className="block text-sm font-semibold text-gray-300 mb-3">Budget (₹)</label>
             <input
               type="number"
               value={budget}
@@ -106,14 +119,14 @@ function RecommendationSystem({ userId }: RecommendationSystemProps) {
         </div>
       </div>
 
-      {/* Error Message */}
+      {/* Error */}
       {error && (
         <div className="bg-red-500/10 backdrop-blur-2xl border border-red-500/20 rounded-2xl p-4 text-red-300 shadow-xl">
           {error}
         </div>
       )}
 
-      {/* Results Summary */}
+      {/* Summary cards */}
       {selectedGames.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-gradient-to-br from-blue-600/20 to-blue-700/20 backdrop-blur-2xl border border-blue-500/30 rounded-2xl p-6 shadow-2xl">
@@ -131,7 +144,7 @@ function RecommendationSystem({ userId }: RecommendationSystemProps) {
         </div>
       )}
 
-      {/* Remaining Budget */}
+      {/* Remaining budget */}
       {selectedGames.length > 0 && (
         <div className="bg-slate-900/50 backdrop-blur-2xl border border-slate-800/50 rounded-2xl p-5 shadow-xl">
           <div className="flex items-center justify-between">
@@ -141,110 +154,146 @@ function RecommendationSystem({ userId }: RecommendationSystemProps) {
         </div>
       )}
 
-      {/* Selected Games */}
+      {/* Game cards */}
       {selectedGames.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-xl font-bold text-white">Recommended Games</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {selectedGames.map((game) => (
-              <div
-                key={game.id}
-                className="bg-slate-900/50 backdrop-blur-2xl border border-slate-800/50 rounded-2xl overflow-hidden hover:border-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300"
-              >
-                <div className="p-6 space-y-4">
-                  {/* Game Name */}
-                  <h4 className="text-white font-bold text-lg line-clamp-2 min-h-[3.5rem]">
-                    {game.name}
-                  </h4>
+            {selectedGames.map((game) => {
+              const valueLabel = getValueLabel(game);
+              const hasHltb    = game.hltb?.completionist != null && game.hltb.completionist > 0;
 
-                  {/* Price Section */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-500 text-xs mb-1 uppercase tracking-wider">Current Price</p>
-                      <p className="text-green-400 text-2xl font-bold">
-                        ₹{game.currentPrice.toFixed(2)}
-                      </p>
+              return (
+                <div
+                  key={game.id}
+                  className="bg-slate-900/50 backdrop-blur-2xl border border-slate-800/50 rounded-2xl overflow-hidden hover:border-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300"
+                >
+                  <div className="p-6 space-y-4">
+                    {/* Name */}
+                    <h4 className="text-white font-bold text-lg line-clamp-2 min-h-[3.5rem]">{game.name}</h4>
+
+                    {/* Price */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-gray-500 text-xs mb-1 uppercase tracking-wider">Current Price</p>
+                        <p className="text-green-400 text-2xl font-bold">₹{game.currentPrice.toFixed(2)}</p>
+                      </div>
+                      {game.discountPercent > 0 && (
+                        <div className="px-3 py-2 bg-green-600/20 border border-green-500/30 text-green-300 text-sm font-bold rounded-lg">
+                          -{game.discountPercent}%
+                        </div>
+                      )}
                     </div>
-                    {game.discountPercent > 0 && (
-                      <div className="px-3 py-2 bg-green-600/20 backdrop-blur-sm border border-green-500/30 text-green-300 text-sm font-bold rounded-lg">
-                        -{game.discountPercent}%
+
+                    {/* HLTB hours */}
+                    {hasHltb && (
+                      <div className="p-3 bg-slate-800/40 rounded-xl border border-slate-700/30 space-y-1.5">
+                        <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">
+                          How Long to Beat
+                          {game.hltb.matchedName && game.hltb.matchedName !== game.name && (
+                            <span className="ml-1 text-gray-600 normal-case">· {game.hltb.matchedName}</span>
+                          )}
+                        </p>
+                        {game.hltb.main != null && game.hltb.main > 0 && (
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-500">Main story</span>
+                            <span className="text-white font-medium">{game.hltb.main}h</span>
+                          </div>
+                        )}
+                        {game.hltb.extra != null && game.hltb.extra > 0 && (
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-500">Main + extras</span>
+                            <span className="text-white font-medium">{game.hltb.extra}h</span>
+                          </div>
+                        )}
+                        {game.hltb.completionist != null && game.hltb.completionist > 0 && (
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-500">Completionist</span>
+                            <span className="text-amber-400 font-semibold">{game.hltb.completionist}h</span>
+                          </div>
+                        )}
+                        {valueLabel && (
+                          <div className={`text-xs font-semibold mt-1 ${valueLabel.color}`}>
+                            {valueLabel.text} · ₹{(game.currentPrice / (game.hltb.completionist || 1)).toFixed(1)}/hr
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Score bar */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-gray-400 text-sm font-medium">Recommendation Score</span>
+                        <span className="text-white text-lg font-bold">{game.finalScore}/100</span>
+                      </div>
+                      <div className="w-full h-2.5 bg-slate-800/50 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-500"
+                          style={{ width: `${game.finalScore}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Score breakdown */}
+                    <div className="space-y-1.5 p-4 bg-slate-800/30 backdrop-blur-sm rounded-xl border border-slate-700/30">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-400">Discount:</span>
+                        <span className="text-white font-semibold">{game.breakdown.discountScore}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-400">Value (HLTB):</span>
+                        <span className="text-white font-semibold">{game.breakdown.valueScore}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-400">Tag match:</span>
+                        <span className="text-white font-semibold">{game.breakdown.tagMatchScore}</span>
+                      </div>
+                    </div>
+
+                    {/* Reasoning */}
+                    <div>
+                      <p className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">Why Recommended</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {game.reasoning.map((reason, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2.5 py-1 bg-blue-600/20 backdrop-blur-sm border border-blue-500/30 text-blue-300 text-xs rounded-lg font-medium"
+                          >
+                            {reason}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Tags */}
+                    {game.tags.length > 0 && (
+                      <div className="border-t border-slate-800/50 pt-4">
+                        <div className="flex flex-wrap gap-1.5">
+                          {game.tags.slice(0, 3).map((tag) => (
+                            <span
+                              key={tag}
+                              className="px-2.5 py-1 bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 text-gray-300 text-xs rounded-lg"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                          {game.tags.length > 3 && (
+                            <span className="px-2.5 py-1 bg-slate-800/50 border border-slate-700/50 text-gray-500 text-xs rounded-lg">
+                              +{game.tags.length - 3} more
+                            </span>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
-
-                  {/* Score Badge */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-gray-400 text-sm font-medium">Recommendation Score</span>
-                      <span className="text-white text-lg font-bold">{game.finalScore}/100</span>
-                    </div>
-                    <div className="w-full h-2.5 bg-slate-800/50 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-500"
-                        style={{ width: `${game.finalScore}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Score Breakdown */}
-                  <div className="space-y-1.5 p-4 bg-slate-800/30 backdrop-blur-sm rounded-xl border border-slate-700/30">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-400">Discount Score:</span>
-                      <span className="text-white font-semibold">{game.breakdown.discountScore}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-400">Playtime Score:</span>
-                      <span className="text-white font-semibold">{game.breakdown.playtimeScore}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-400">Tag Match:</span>
-                      <span className="text-white font-semibold">{game.breakdown.tagMatchScore}</span>
-                    </div>
-                  </div>
-
-                  {/* Reasoning */}
-                  <div>
-                    <p className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">Why Recommended</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {game.reasoning.map((reason, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2.5 py-1 bg-blue-600/20 backdrop-blur-sm border border-blue-500/30 text-blue-300 text-xs rounded-lg font-medium"
-                        >
-                          {reason}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Tags */}
-                  {game.tags.length > 0 && (
-                    <div className="border-t border-slate-800/50 pt-4">
-                      <div className="flex flex-wrap gap-1.5">
-                        {game.tags.slice(0, 3).map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-2.5 py-1 bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 text-gray-300 text-xs rounded-lg"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {game.tags.length > 3 && (
-                          <span className="px-2.5 py-1 bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 text-gray-500 text-xs rounded-lg">
-                            +{game.tags.length - 3} more
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Loading State */}
+      {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-40">
           <div className="relative">
@@ -254,7 +303,7 @@ function RecommendationSystem({ userId }: RecommendationSystemProps) {
         </div>
       )}
 
-      {/* Empty State */}
+      {/* Empty state */}
       {!loading && selectedGames.length === 0 && !error && (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center max-w-md mx-auto px-6">
