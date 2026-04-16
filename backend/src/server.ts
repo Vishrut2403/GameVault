@@ -21,6 +21,7 @@ import journalRoutes from './routes/journal.routes';
 import userRoutes from './routes/user.routes';
 import hltbRoutes from './routes/hltb.routes';
 import retroArchRoutes from './routes/retroarch.routes';
+import autoSyncRoutes from './routes/auto-sync.routes';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
@@ -63,6 +64,7 @@ app.use('/api/journal', journalRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/hltb', hltbRoutes);
 app.use('/api/retroarch', retroArchRoutes);
+app.use('/api/auto-sync', autoSyncRoutes);
 
 if (isProd) {
   const frontendPath = path.join(__dirname, '../../frontend');

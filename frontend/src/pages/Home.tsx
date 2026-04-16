@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import steamService from '../services/steam.service';
+import { useAutoSync } from '../hooks/useAutoSync';
 import SteamWishlist from '../components/SteamWishlist';
 import RecommendationSystem from '../components/RecommendationSystem';
 import SmartRecommendationsList from '../components/SmartRecommendationsList';
@@ -33,6 +34,8 @@ function Home({ user, onLogout }: HomeProps) {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPlatform, setFilterPlatform] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<TabType>('journal');
+  
+  const { syncing: autoSyncing, triggerSync } = useAutoSync();
   
   const [showSyncRAModal, setShowSyncRAModal] = useState(false);
   const [showAddRAGameModal, setShowAddRAGameModal] = useState(false);
@@ -123,6 +126,18 @@ function Home({ user, onLogout }: HomeProps) {
       setLibrary({ ...data, userId: user.id });
     } catch (err) {
       console.error('Failed to refresh');
+    }
+  };
+
+  const handleAutoSync = async () => {
+    try {
+      await triggerSync();
+      // Wait for backend to complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Refresh library view
+      await refreshFromDB();
+    } catch (err) {
+      console.error('Auto-sync failed:', err);
     }
   };
 
@@ -483,6 +498,25 @@ function Home({ user, onLogout }: HomeProps) {
                   className="px-6 py-2.5 bg-[#1a1a1a] rounded-xl border border-[#333333] font-semibold hover:bg-[#2a2a2a] transition-all duration-300 shadow-md disabled:opacity-50 text-[#e5e5e5]"
                 >
                   {loading ? '⟳ Syncing...' : '🕹️ Sync All Emulators'}
+                </button>
+
+                <button
+                  onClick={handleAutoSync}
+                  disabled={autoSyncing}
+                  className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl font-semibold transition-all duration-300 shadow-md disabled:opacity-50"
+                  title="Auto-sync Steam + all enabled emulators"
+                >
+                  {autoSyncing ? (
+                    <>
+                      <span className="animate-spin inline-block mr-2">⏳</span>
+                      Auto-Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <span className="mr-1">✨</span>
+                      Sync All Platforms
+                    </>
+                  )}
                 </button>
               </div>
             </div>

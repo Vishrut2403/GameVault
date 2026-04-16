@@ -1,5 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import AuthPage from './pages/AuthPage';
 import Home from './pages/Home';
 
@@ -8,23 +8,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<any>(null);
+  const hasCheckedAuthRef = useRef(false);
 
-  useEffect(() => {
-    checkAuth();
-    
-    // Handle Steam OAuth callback
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('steamConnected') === 'true') {
-      // Clear URL params
-      window.history.replaceState({}, '', window.location.pathname);
-      // Reload user data
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
-    }
-  }, []);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     const token = localStorage.getItem('token');
     
     if (!token) {
@@ -55,7 +41,26 @@ function App() {
       localStorage.removeItem('user');
       setIsAuthenticated(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Only check auth once on initial mount
+    if (!hasCheckedAuthRef.current) {
+      hasCheckedAuthRef.current = true;
+      checkAuth();
+    }
+    
+    // Handle Steam OAuth callback
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('steamConnected') === 'true') {
+      // Clear URL params
+      window.history.replaceState({}, '', window.location.pathname);
+      // Reload user data
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    }
+  }, [checkAuth]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -76,20 +81,36 @@ function App() {
 
   return (
     <Router>
-      <Routes>
-        {isAuthenticated ? (
-          <>
-            <Route path="/" element={<Home user={user} onLogout={handleLogout} />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </>
-        ) : (
-          <>
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="*" element={<Navigate to="/auth" replace />} />
-          </>
-        )}
-      </Routes>
+      <AppRoutes isAuthenticated={isAuthenticated} user={user} onLogout={handleLogout} onLoginSuccess={() => checkAuth()} />
     </Router>
+  );
+}
+
+function AppRoutes({ isAuthenticated, user, onLogout, onLoginSuccess }: { isAuthenticated: boolean; user: any; onLogout: () => void; onLoginSuccess: () => void }) {
+  const location = useLocation();
+
+  // If user just logged in (token exists but isAuthenticated is still false), trigger auth check immediately
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token && !isAuthenticated) {
+      onLoginSuccess();
+    }
+  }, [location.pathname, isAuthenticated, onLoginSuccess]);
+
+  return (
+    <Routes>
+      {isAuthenticated ? (
+        <>
+          <Route path="/" element={<Home user={user} onLogout={onLogout} />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </>
+      ) : (
+        <>
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="*" element={<Navigate to="/auth" replace />} />
+        </>
+      )}
+    </Routes>
   );
 }
 

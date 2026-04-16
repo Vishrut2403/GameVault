@@ -1,10 +1,16 @@
 import rateLimit from 'express-rate-limit';
 
+// Disable rate limiting in development
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
+// No-op limiter for development
+const noOpLimiter = (req: any, res: any, next: any) => next();
+
 //General API rate limiter
-//100 requests per 15 minutes per IP
-export const apiLimiter = rateLimit({
+//1000 requests per 15 minutes per IP (development friendly)
+export const apiLimiter = isDevelopment ? noOpLimiter : rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -14,10 +20,10 @@ export const apiLimiter = rateLimit({
 });
 
 //Stricter limiter for authentication endpoints
-//5 attempts per 15 minutes to prevent brute force
-export const authLimiter = rateLimit({
+//100 attempts per 15 minutes in development (prevent brute force in production)
+export const authLimiter = isDevelopment ? noOpLimiter : rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 100,
   message: 'Too many login attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -26,10 +32,10 @@ export const authLimiter = rateLimit({
 
 
 //Moderate limiter for expensive operations
-//30 requests per 15 minutes (sync, recommendations, etc)
-export const expensiveOpLimiter = rateLimit({
+//500 requests per 15 minutes in development (sync, recommendations, etc)
+export const expensiveOpLimiter = isDevelopment ? noOpLimiter : rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: 500,
   message: 'Too many requests, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -37,10 +43,10 @@ export const expensiveOpLimiter = rateLimit({
 
 
 // Lenient limiter for general endpoints
-// 200 requests per 15 minutes
-export const lenientLimiter = rateLimit({
+// 1000 requests per 15 minutes in development
+export const lenientLimiter = isDevelopment ? noOpLimiter : rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: 1000,
   message: 'Too many requests, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,

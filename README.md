@@ -27,6 +27,7 @@ Modern gamers play across Steam, retro emulators, Minecraft, and more — making
 - **Smart recommendations** — 0/1 knapsack algorithm scored by discount, HLTB hrs/₹ value, and your taste profile
 - **Advanced analytics** — GitHub-style heatmap, session tracking, radar chart, platform distribution, price-per-hour
 - **Unified journal** — Notes and progress logs for every game across all platforms
+- **Auto-Sync** — Automatically sync all platforms after gaming sessions with a single click
 
 ---
 
