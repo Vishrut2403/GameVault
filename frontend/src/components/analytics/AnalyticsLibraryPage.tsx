@@ -119,7 +119,7 @@ export const AnalyticsLibraryPage: React.FC<AnalyticsLibraryPageProps> = ({ game
     <div className="space-y-8">
       {/* Platform Distribution Cards */}
       <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
-        <h3 className="text-xl font-bold text-[#e5e5e5] mb-4">Platform Distribution</h3>
+        <h3 className="text-xl font-bold text-[#e5e5e5] mb-6">Platform Distribution</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {platformStats.map((platform, idx) => {
             const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#6366f1'];
@@ -283,7 +283,7 @@ export const AnalyticsLibraryPage: React.FC<AnalyticsLibraryPageProps> = ({ game
       
       {/* Backlog Evolution */}
       <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
-        <h3 className="text-xl font-bold text-[#e5e5e5] mb-4">Backlog Evolution</h3>
+        <h3 className="text-xl font-bold text-[#e5e5e5] mb-6">Backlog Evolution</h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={backlogEvolution}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -302,7 +302,7 @@ export const AnalyticsLibraryPage: React.FC<AnalyticsLibraryPageProps> = ({ game
       {/* Completion Funnel */}
       <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
         <h3 className="text-xl font-bold text-[#e5e5e5] mb-6">Completion Funnel</h3>
-        <div className="space-y-4">
+        <div className="space-y-6">
           {completionFunnel.map((stage, idx) => {
             const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
             const color = colors[idx];

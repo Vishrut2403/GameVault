@@ -178,9 +178,9 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
                   <td className="px-6 py-4 text-right">
                     {game.pricePerHour && (game.playtimeForever || 0) > 0 ? (
                       <span className={`font-semibold ${
-                        game.pricePerHour < 10 ? 'text-[#7a9fc3]' :
-                        game.pricePerHour < 50 ? 'text-[#a0a0a0]' : 
-                        game.pricePerHour < 100 ? 'text-[#a0a0a0]' : 'text-[#a0a0a0]'
+                        game.pricePerHour < 10 ? 'text-[#4ddc4d]' :
+                        game.pricePerHour < 50 ? 'text-[#ffdd44]' : 
+                        'text-[#ff6666]'
                       }`}>
                         ₹{game.pricePerHour.toFixed(2)}
                       </span>

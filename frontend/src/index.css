@@ -11,6 +11,27 @@
   --accent-blue: #5a7fa3;
   --accent-blue-light: #7a9fc3;
   --border-color: #333333;
+  
+  /* Consistent spacing scale */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+  --spacing-3xl: 48px;
+  
+  /* Padding standards */
+  --padding-compact: 8px;
+  --padding-normal: 12px;
+  --padding-comfortable: 16px;
+  --padding-spacious: 24px;
+  
+  /* Gap standards */
+  --gap-tight: 8px;
+  --gap-normal: 12px;
+  --gap-comfortable: 16px;
+  --gap-spacious: 24px;
 }
 
 @theme inline {

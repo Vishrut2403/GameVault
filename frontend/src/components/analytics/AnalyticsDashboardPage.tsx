@@ -345,7 +345,7 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
             </div>
 
             {/* Legend */}
-            <div className="flex items-center gap-2 mt-4 text-xs text-[#a0a0a0]">
+            <div className="flex items-center gap-3 mt-6 text-xs text-[#a0a0a0]">
               <span>Less</span>
               <div className="w-3 h-3 rounded-sm bg-[#2a2a2a]"></div>
               <div className="w-3 h-3 rounded-sm bg-[#5a8a6a]/40"></div>
@@ -361,7 +361,7 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
       {selectedDay && (
         <div className="fixed inset-0 bg-black/60  flex items-center justify-center z-50 p-4" onClick={() => setSelectedDay(null)}>
           <div className="bg-[#000000]  rounded-lg p-6 border border-[#333333] shadow-lg max-w-md w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-xl font-bold text-[#e5e5e5]">{new Date(selectedDay.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>
                 <p className="text-sm text-[#a0a0a0] mt-1">
@@ -371,7 +371,7 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
               <button onClick={() => setSelectedDay(null)} className="text-[#a0a0a0] hover:text-[#e5e5e5] text-2xl">×</button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {selectedDay.games.map((game, idx) => (
                 <div key={idx} className="bg-[#1a1a1a]  rounded-lg p-4 border border-[#333333]">
                   <div className="flex items-center justify-between">

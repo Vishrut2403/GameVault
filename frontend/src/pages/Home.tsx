@@ -285,9 +285,9 @@ function Home({ user, onLogout }: HomeProps) {
         </div>
       </div>
 
-      <div className="max-w-[1800px] mx-auto px-8 py-10">
+      <div className="max-w-[1800px] mx-auto px-8 py-16">
         {/* Tabs */}
-        <div className="flex gap-1 p-1.5 bg-[#1a1a1a] rounded-lg border border-[#333333] mb-8 w-fit">
+        <div className="flex gap-3 mb-12 flex-wrap">
           {[
             { key: 'profile', label: '👤 Profile' },
             { key: 'journal', label: 'Journal' },
@@ -300,23 +300,20 @@ function Home({ user, onLogout }: HomeProps) {
             <button
               key={key}
               onClick={() => setActiveTab(key as TabType)}
-              className={`group relative px-7 py-3 rounded font-semibold text-base transition-all duration-200 ${
+              className={`px-6 py-3 rounded-lg font-semibold text-base transition-all duration-200 border ${
                 activeTab === key
-                  ? 'bg-[#5a7fa3] text-[#e5e5e5] border border-[#7a9fc3]'
-                  : 'text-[#a0a0a0] hover:text-[#e5e5e5] hover:bg-[#333333]'
+                  ? 'bg-[#5a7fa3] text-[#e5e5e5] border-[#7a9fc3]'
+                  : 'bg-[#1a1a1a] text-[#a0a0a0] border-[#333333] hover:text-[#e5e5e5] hover:bg-[#2a2a2a] hover:border-[#5a7fa3]'
               }`}
             >
               {label}
-              {activeTab === key && (
-                <div className="absolute inset-0 rounded bg-[#5a7fa3]/10 pointer-events-none" />
-              )}
             </button>
           ))}
         </div>
 
         {/* Compressed Toolbar */}
         {activeTab !== 'profile' && activeTab !== 'wishlist' && activeTab !== 'recommendations' && activeTab !== 'analytics' && activeTab !== 'tierlist' && (
-          <div className="mb-8">
+          <div className="mb-12">
             <div className="flex items-center justify-between gap-4">
               {/* Left Side - Filters */}
               <div className="flex items-center gap-3">

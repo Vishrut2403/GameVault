@@ -115,7 +115,7 @@ export const AnalyticsAchievementsPage: React.FC<AnalyticsAchievementsPageProps>
       {/* Perfect Games */}
       {perfectGames.length > 0 && (
         <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
-          <h3 className="text-xl font-bold text-[#e5e5e5] mb-4">
+          <h3 className="text-xl font-bold text-[#e5e5e5] mb-6">
             Perfect Games 🏆 ({perfectGames.length})
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
@@ -156,7 +156,7 @@ export const AnalyticsAchievementsPage: React.FC<AnalyticsAchievementsPageProps>
       
       {/* Achievement Distribution */}
       <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
-        <h3 className="text-xl font-bold text-[#e5e5e5] mb-4">Achievement Distribution</h3>
+        <h3 className="text-xl font-bold text-[#e5e5e5] mb-6">Achievement Distribution</h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={achievementDistribution}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />

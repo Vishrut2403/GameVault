@@ -50,20 +50,20 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
         <div className="absolute inset-0 bg-black/50 opacity-60 group-hover:opacity-40 transition-opacity duration-300" />
 
         {/* Platform Badge */}
-        <div className="absolute top-3 left-3">
+        <div className="absolute top-4 left-4">
           <PlatformBadge platform={game.platform} />
         </div>
 
         {/* 100% Achievement Badge */}
         {is100Percent() && (
-          <div className="absolute top-3 right-3 bg-[#5a7fa3] rounded px-2 py-1 flex items-center gap-1">
+          <div className="absolute top-4 right-4 bg-[#5a7fa3] rounded px-2 py-1 flex items-center gap-1">
             <span className="text-[#e5e5e5] text-sm">🏆</span>
             <span className="text-[#e5e5e5] text-xs font-semibold">100%</span>
           </div>
         )}
 
-        <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-          <h3 className="text-sm font-semibold text-[#e5e5e5] line-clamp-2 mb-2">
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+          <h3 className="text-sm font-semibold text-[#e5e5e5] line-clamp-2 mb-3">
             {game.name}
           </h3>
           

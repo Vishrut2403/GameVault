@@ -115,7 +115,7 @@ export const AnalyticsValuePage: React.FC<AnalyticsValuePageProps> = ({ games })
       {/* Price vs Playtime Scatter Plot */}
       <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
         <h3 className="text-xl font-bold text-[#e5e5e5] mb-2">Price vs Playtime</h3>
-        <p className="text-sm text-[#a0a0a0] mb-4">
+        <p className="text-sm text-[#a0a0a0] mb-6">
           Bottom-right = best value (high hours, low price) • Top-left = worst value
         </p>
         <ResponsiveContainer width="100%" height={400}>
@@ -163,8 +163,8 @@ export const AnalyticsValuePage: React.FC<AnalyticsValuePageProps> = ({ games })
       
       {/* Best Value Games */}
       <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
-        <h3 className="text-xl font-bold text-[#e5e5e5] mb-4">Best Value Games (Lowest $/Hour)</h3>
-        <div className="space-y-3">
+        <h3 className="text-xl font-bold text-[#e5e5e5] mb-6">Best Value Games (Lowest $/Hour)</h3>
+        <div className="space-y-4">
           {bestValue.map((game, idx) => (
             <div 
               key={idx} 
@@ -195,7 +195,7 @@ export const AnalyticsValuePage: React.FC<AnalyticsValuePageProps> = ({ games })
       {/* Most Expensive + Price Per Hour */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
-          <h3 className="text-xl font-bold text-[#e5e5e5] mb-4">Most Expensive Games</h3>
+          <h3 className="text-xl font-bold text-[#e5e5e5] mb-6">Most Expensive Games</h3>
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={mostExpensive} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -212,7 +212,7 @@ export const AnalyticsValuePage: React.FC<AnalyticsValuePageProps> = ({ games })
         </div>
         
         <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
-          <h3 className="text-xl font-bold text-[#e5e5e5] mb-4">Price per Hour Ranking</h3>
+          <h3 className="text-xl font-bold text-[#e5e5e5] mb-6">Price per Hour Ranking</h3>
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={pricePerHour} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />

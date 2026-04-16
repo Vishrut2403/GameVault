@@ -74,7 +74,7 @@ export const AnalyticsPlaytimePage: React.FC<AnalyticsPlaytimePageProps> = ({ ga
     <div className="space-y-6">
       {/* CLEAN: Most Played Games - Colorful Vertical Bars */}
       <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
-        <h3 className="text-xl font-bold text-[#e5e5e5] mb-4">Most Played Games</h3>
+        <h3 className="text-xl font-bold text-[#e5e5e5] mb-6">Most Played Games</h3>
         <ResponsiveContainer width="100%" height={400}>
           <BarChart data={topGamesVertical} margin={{ bottom: 80 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -119,7 +119,7 @@ export const AnalyticsPlaytimePage: React.FC<AnalyticsPlaytimePageProps> = ({ ga
 
       {/* Playtime Distribution */}
       <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
-        <h3 className="text-xl font-bold text-[#e5e5e5] mb-4">Playtime Distribution</h3>
+        <h3 className="text-xl font-bold text-[#e5e5e5] mb-6">Playtime Distribution</h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={playtimeDistribution}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -136,7 +136,7 @@ export const AnalyticsPlaytimePage: React.FC<AnalyticsPlaytimePageProps> = ({ ga
       
       {/* Platform Playtime */}
       <div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
-        <h3 className="text-xl font-bold text-[#e5e5e5] mb-4">Playtime by Platform</h3>
+        <h3 className="text-xl font-bold text-[#e5e5e5] mb-6">Playtime by Platform</h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={platformPlaytime}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />

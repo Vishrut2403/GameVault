@@ -85,9 +85,9 @@ function RecommendationSystem({ userId }: RecommendationSystemProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="text-center mb-8">
+      <div className="text-center mb-12">
         <h2 className="text-3xl font-bold text-[#e5e5e5] mb-3">Recommendation System</h2>
         <p className="text-[#a0a0a0]">
           Optimal game picks within your budget — scored by discount, HLTB value, and your taste
