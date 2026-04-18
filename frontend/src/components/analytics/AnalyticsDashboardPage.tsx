@@ -171,8 +171,6 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
       }
     });
 
-    const daysWithActivity = days.filter(d => d.count > 0).length;
-
     return days;
   }, [sessionData, refreshKey]);
 
@@ -419,7 +417,7 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
                 fill="#8884d8"
                 dataKey="value"
               >
-                {platformData.map((entry, index) => (
+                {platformData.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>

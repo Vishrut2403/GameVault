@@ -129,7 +129,7 @@ export const TierList: React.FC<TierListProps> = ({ games }) => {
       </div>
 
       {/* Tier Rows */}
-      {tierData.map(({ tier, games, color, bgColor, label }) => (
+      {tierData.map(({ tier, games, color, bgColor }) => (
         <div
           key={tier}
           className="bg-[#1a1a1a] border border-[#333333] rounded-lg overflow-hidden hover:border-[#5a7fa3] transition-all"

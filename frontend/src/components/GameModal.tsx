@@ -322,30 +322,6 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
                 </div>
               )}
 
-              {/* Cover image editor */}
-              <div className="p-6 bg-[#1a1a1a] rounded-lg border border-[#333333]">
-                <label className="block text-sm font-semibold text-[#a0a0a0] mb-3">Cover Image URL</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={editingImage}
-                    onChange={(e) => setEditingImage(e.target.value)}
-                    className="flex-1 px-4 py-3 bg-[#2a2a2a] rounded border border-[#333333] text-[#e5e5e5] placeholder-[#696969] focus:border-[#5a7fa3] outline-none transition-all duration-200"
-                    placeholder="https://example.com/image.jpg"
-                  />
-                  <button
-                    onClick={handleSaveImage}
-                    disabled={savingImage}
-                    className="px-6 py-3 bg-[#5a7fa3] rounded font-semibold hover:bg-[#7a9fc3] transition-all duration-200 disabled:opacity-50 text-[#e5e5e5] whitespace-nowrap"
-                  >
-                    {savingImage ? 'Saving...' : 'Update Image'}
-                  </button>
-                </div>
-                <p className="text-xs text-[#696969] mt-2">
-                  Enter a direct URL to an image (must start with http:// or https://)
-                </p>
-              </div>
-
               {/* Review */}
               <div className="p-6 bg-[#1a1a1a] rounded-lg border border-[#333333]">
                 <label className="block text-sm font-semibold text-[#a0a0a0] mb-3">Personal Review</label>
@@ -406,6 +382,30 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Cover image editor */}
+              <div className="p-6 bg-[#1a1a1a] rounded-lg border border-[#333333]">
+                <label className="block text-sm font-semibold text-[#a0a0a0] mb-3">Cover Image URL</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={editingImage}
+                    onChange={(e) => setEditingImage(e.target.value)}
+                    className="flex-1 px-4 py-3 bg-[#2a2a2a] rounded border border-[#333333] text-[#e5e5e5] placeholder-[#696969] focus:border-[#5a7fa3] outline-none transition-all duration-200"
+                    placeholder="https://example.com/image.jpg"
+                  />
+                  <button
+                    onClick={handleSaveImage}
+                    disabled={savingImage}
+                    className="px-6 py-3 bg-[#5a7fa3] rounded font-semibold hover:bg-[#7a9fc3] transition-all duration-200 disabled:opacity-50 text-[#e5e5e5] whitespace-nowrap"
+                  >
+                    {savingImage ? 'Saving...' : 'Update Image'}
+                  </button>
+                </div>
+                <p className="text-xs text-[#696969] mt-2">
+                  Enter a direct URL to an image (must start with http:// or https://)
+                </p>
               </div>
 
               {/* Delete (non-Steam only) */}

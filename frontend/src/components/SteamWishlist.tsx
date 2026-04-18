@@ -3,23 +3,6 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-// Minimalist color palette
-const COLORS = {
-  bg_primary: '#000000',
-  bg_secondary: '#1a1a1a',
-  bg_tertiary: '#2a2a2a',
-  border: '#333333',
-  text_primary: '#e5e5e5',
-  text_secondary: '#a0a0a0',
-  text_tertiary: '#696969',
-  accent_blue: '#5a7fa3',
-  accent_blue_light: '#7a9fc3',
-  accent_red: '#8b3a3a',
-  accent_red_light: '#a84a4a',
-  accent_green: '#5a8a6a',
-  accent_green_light: '#7aaa8a'
-};
-
 interface WishlistItem {
   id: string;
   appId: string;
@@ -36,7 +19,7 @@ interface SteamWishlistProps {
   userId: string;
 }
 
-function SteamWishlist({ userId }: SteamWishlistProps) {
+function SteamWishlist({}: SteamWishlistProps) {
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
