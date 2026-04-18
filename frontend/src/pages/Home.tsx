@@ -43,6 +43,7 @@ function Home({ user, onLogout }: HomeProps) {
 	
 	const [sortField, setSortField] = useState<SortField>('playtime');
 	const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+	const [showSortDropdown, setShowSortDropdown] = useState(false);
 
 	// Multi-filter state
 	const [filters, setFilters] = useState<GameFilterState>({
@@ -259,11 +260,19 @@ function Home({ user, onLogout }: HomeProps) {
 				return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
 			});
 		} else if (sortField === 'pricePerHour') {
-			games = [...games].sort((a: LibraryGame, b: LibraryGame) => {
+			// Separate games with cost data from those without
+			const gamesWithData = games.filter((g: LibraryGame) => (g.pricePerHour ?? 0) > 0);
+			const gamesWithoutData = games.filter((g: LibraryGame) => (g.pricePerHour ?? 0) === 0);
+			
+			// Sort games with data
+			gamesWithData.sort((a: LibraryGame, b: LibraryGame) => {
 				const aVal = a.pricePerHour || 0;
 				const bVal = b.pricePerHour || 0;
 				return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
 			});
+			
+			// Combine: sorted data first, then games without data at the bottom
+			games = [...gamesWithData, ...gamesWithoutData];
 		} else if (sortField === 'rating') {
 			games = [...games].sort((a: LibraryGame, b: LibraryGame) => {
 				const aVal = a.rating || 0;
@@ -347,36 +356,81 @@ function Home({ user, onLogout }: HomeProps) {
 
 				{/* Filters & Toolbar */}
 				{activeTab !== 'profile' && activeTab !== 'wishlist' && activeTab !== 'recommendations' && activeTab !== 'smart-recommendations' && activeTab !== 'analytics' && activeTab !== 'tierlist' && (
-					<div className="mb-12 space-y-6">
-						{/* Game Filters */}
-						<GameFilters
-							filters={filters}
-							onFiltersChange={setFilters}
-							availableTags={availableTags}
+					<div className="mb-12 space-y-4">
+						{/* Full-width Search Bar */}
+						<input
+							type="text"
+							placeholder="Search games by name..."
+							value={filters.searchQuery}
+							onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
+							className="w-full px-4 py-2 bg-[#2a2a2a] rounded border border-[#333333] text-[#e5e5e5] placeholder-[#696969] focus:border-[#5a7fa3] outline-none transition-all duration-200"
 						/>
 
-						{/* Sort & Action Buttons */}
-						<div className="flex items-center justify-between gap-4">
-							<div className="flex items-center gap-3">
+						{/* Game Filters, Sort & Action Buttons - Same Row */}
+						<div className="flex items-end justify-between gap-4">
+							<div className="flex items-end gap-3 flex-1">
+								<GameFilters
+									filters={filters}
+									onFiltersChange={setFilters}
+									availableTags={availableTags}
+								/>
+								
+								{/* Sort Button - Next to filters */}
 								<div className="relative">
 									<button
-										onClick={() => {
-											if (sortField === 'playtime') {
-												setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-											} else {
-												setSortField('playtime');
-												setSortDirection('desc');
-											}
-										}}
-										className="px-4 py-2 bg-[#1a1a1a] border border-[#333333] rounded text-sm font-medium text-[#a0a0a0] hover:bg-[#333333] transition-all flex items-center gap-2"
+										onClick={() => setShowSortDropdown(!showSortDropdown)}
+										className={`flex items-center gap-2 px-4 py-2 rounded border transition-all duration-200 whitespace-nowrap ${
+											sortField !== 'playtime'
+												? 'bg-[#5a7fa3] border-[#7a9fc3] text-[#e5e5e5]'
+												: 'bg-[#2a2a2a] border-[#333333] text-[#a0a0a0] hover:bg-[#333333]'
+										}`}
 									>
-										<span className="text-xs uppercase tracking-wider text-[#696969]">SORT BY</span>
-										<span className="text-[#e5e5e5]">{getSortLabel()}</span>
+										Sort: {getSortLabel()} {sortDirection === 'asc' ? '↑' : '↓'}
+										<svg className={`w-4 h-4 transition-transform ${showSortDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+										</svg>
 									</button>
+									
+									{showSortDropdown && (
+										<div className="absolute top-full left-0 mt-2 w-48 bg-[#1a1a1a] border border-[#333333] rounded shadow-lg z-50 overflow-hidden">
+											{[
+												{ field: 'playtime' as SortField, label: 'Playtime' },
+												{ field: 'pricePaid' as SortField, label: 'Price' },
+												{ field: 'pricePerHour' as SortField, label: 'Cost/Hour' },
+												{ field: 'rating' as SortField, label: 'Rating' },
+											].map(({ field, label }) => (
+												<button
+													key={field}
+													onClick={() => {
+														if (sortField === field) {
+															// Toggle direction if clicking the same sort option
+															setSortDirection(sortDirection === 'desc' ? 'asc' : 'desc');
+														} else {
+															// Set new sort field with descending direction
+															setSortField(field);
+															setSortDirection('desc');
+														}
+														setShowSortDropdown(false);
+													}}
+													className={`w-full px-4 py-2.5 text-left hover:bg-[#333333] transition-colors flex items-center justify-between ${
+														sortField === field ? 'bg-[#5a7fa3] text-[#e5e5e5]' : 'text-[#a0a0a0]'
+													}`}
+												>
+													<span>{label}</span>
+													{sortField === field && (
+														<span className="text-xs">
+															{sortDirection === 'desc' ? '↓' : '↑'}
+														</span>
+													)}
+												</button>
+											))}
+										</div>
+									)}
 								</div>
 							</div>
 
-							<div className="flex items-center gap-2">
+							{/* Action Buttons - Right aligned, same row */}
+							<div className="flex items-center gap-2 flex-shrink-0">
 								<AddGameMenu 
 									userId={user.id} 
 									onGameAdded={refreshFromDB}
@@ -390,7 +444,7 @@ function Home({ user, onLogout }: HomeProps) {
 								<button
 									onClick={syncFromSteam}
 									disabled={syncing || !user.steamId}
-									className="px-6 py-2.5 bg-[#1a1a1a] rounded-xl border border-[#333333] font-semibold hover:bg-[#2a2a2a] transition-all duration-300 shadow-md disabled:opacity-50 text-[#e5e5e5]"
+									className="px-6 py-2.5 bg-[#1a1a1a] rounded-xl border border-[#333333] font-semibold hover:bg-[#2a2a2a] transition-all duration-300 shadow-md disabled:opacity-50 text-[#e5e5e5] whitespace-nowrap"
 								>
 									{syncing ? '⟳ Syncing...' : '⟳ Sync Steam'}
 								</button>
@@ -398,7 +452,7 @@ function Home({ user, onLogout }: HomeProps) {
 								<button
 									onClick={handleSyncAllEmulators}
 									disabled={loading}
-									className="px-6 py-2.5 bg-[#1a1a1a] rounded-xl border border-[#333333] font-semibold hover:bg-[#2a2a2a] transition-all duration-300 shadow-md disabled:opacity-50 text-[#e5e5e5]"
+									className="px-6 py-2.5 bg-[#1a1a1a] rounded-xl border border-[#333333] font-semibold hover:bg-[#2a2a2a] transition-all duration-300 shadow-md disabled:opacity-50 text-[#e5e5e5] whitespace-nowrap"
 								>
 									{loading ? '⟳ Syncing...' : '🕹️ Sync All Emulators'}
 								</button>
@@ -406,7 +460,7 @@ function Home({ user, onLogout }: HomeProps) {
 								<button
 									onClick={handleAutoSync}
 									disabled={autoSyncing}
-									className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl font-semibold transition-all duration-300 shadow-md disabled:opacity-50"
+									className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl font-semibold transition-all duration-300 shadow-md disabled:opacity-50 whitespace-nowrap"
 									title="Auto-sync Steam + all enabled emulators"
 								>
 									{autoSyncing ? (

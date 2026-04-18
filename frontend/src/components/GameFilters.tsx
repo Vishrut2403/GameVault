@@ -110,17 +110,6 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 
   return (
 	<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-4 space-y-4">
-	  {/* Search Bar */}
-	  <div>
-		<input
-		  type="text"
-		  placeholder="Search games by name..."
-		  value={filters.searchQuery}
-		  onChange={(e) => onFiltersChange({ ...filters, searchQuery: e.target.value })}
-		  className="w-full px-4 py-2 bg-[#2a2a2a] rounded border border-[#333333] text-[#e5e5e5] placeholder-[#696969] focus:border-[#5a7fa3] outline-none transition-all duration-200"
-		/>
-	  </div>
-
 	  {/* Filter Row */}
 	  <div className="flex flex-wrap gap-3">
 		{/* Platform Filter */}
