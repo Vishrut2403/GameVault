@@ -96,12 +96,12 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 		return Array.from(activityMap.values());
 	};
 	
-	const getColorIntensity = (hours: number): string => {
-		if (hours === 0) return 'bg-[#2a2a2a]';
-		if (hours < 1) return 'bg-[#1d6b1d]';
-		if (hours < 2) return 'bg-[#2d8d2d]';
-		if (hours < 4) return 'bg-[#3daa3d]';
-		return 'bg-[#5ddd5d]';
+	const getColorIntensity = (hours: number): { backgroundColor: string } => {
+		if (hours === 0) return { backgroundColor: '#0d1117' };
+		if (hours < 0.5) return { backgroundColor: '#0f662a' };
+		if (hours < 1) return { backgroundColor: '#1a7f37' };
+		if (hours < 2) return { backgroundColor: '#26d07c' };
+		return { backgroundColor: '#3fb950' };
 	};
 	
 	const weeks = useMemo(() => {
@@ -237,7 +237,8 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 									return (
 										<div
 											key={day.date}
-											className={`w-3 h-3 rounded-sm cursor-pointer transition-all ${getColorIntensity(day.hours)} hover:ring-2 hover:ring-[#5a7fa3]`}
+											className="w-3 h-3 rounded-sm cursor-pointer transition-all hover:ring-2 hover:ring-[#5a7fa3]"
+											style={getColorIntensity(day.hours)}
 											onMouseEnter={() => setHoveredDay(day)}
 											onMouseLeave={() => setHoveredDay(null)}
 											onClick={() => setSelectedDay(day)}
@@ -253,11 +254,11 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 				{/* Legend */}
 				<div className="flex items-center gap-2 mt-4 text-xs text-[#696969]">
 					<span>Less</span>
-					<div className="w-3 h-3 rounded-sm bg-[#2a2a2a]" />
-					<div className="w-3 h-3 rounded-sm bg-[#1d6b1d]" />
-					<div className="w-3 h-3 rounded-sm bg-[#2d8d2d]" />
-					<div className="w-3 h-3 rounded-sm bg-[#3daa3d]" />
-					<div className="w-3 h-3 rounded-sm bg-[#5ddd5d]" />
+				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#0d1117' }} />
+				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#0f662a' }} />
+				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#1a7f37' }} />
+				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#26d07c' }} />
+				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#3fb950' }} />
 					<span>More</span>
 				</div>
 			</div>
