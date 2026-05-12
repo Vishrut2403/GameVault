@@ -1,24 +1,33 @@
-// PS2 Game Serial Database
+import path from 'path';
+import fs from 'fs';
 
-export const PS2_SERIALS: Record<string, string> = {
-	'2782': 'SCUS-97399',  // God of War (USA)
-	'2783': 'SCUS-97481',  // God of War II (USA)
-	'21122': 'SLUS-21600', // Spider-Man: Friend or Foe 
-};
+let serialData: { byGameId: Record<string, string>; byName: Record<string, string> } | null = null;
+
+function loadSerialData() {
+	if (serialData) return serialData;
+	
+	try {
+		const jsonPath = path.join(__dirname, '../data/ps2-serials.json');
+		const raw = fs.readFileSync(jsonPath, 'utf-8');
+		serialData = JSON.parse(raw);
+	} catch (error) {
+		console.warn('Failed to load ps2-serials.json, using fallback data:', error);
+		serialData = {
+			byGameId: {},
+			byName: {}
+		};
+	}
+	
+	return serialData;
+}
 
 export function getSerialByGameId(gameId: string | number): string | null {
-	return PS2_SERIALS[String(gameId)] || null;
+	const data = loadSerialData();
+	return data?.byGameId[String(gameId)] || null;
 }
 
 export function getSerialByName(gameName: string): string | null {
+	const data = loadSerialData();
 	const normalized = gameName.toLowerCase().trim();
-	
-	const nameMap: Record<string, string> = {
-		'god of war': 'SCUS-97399',
-		'god of war ii': 'SCUS-97481',
-		'kingdom hearts ii': 'SLUS-20770',
-		'final fantasy x': 'SLUS-20064',
-	};
-	
-	return nameMap[normalized] || null;
+	return data?.byName[normalized] || null;
 }

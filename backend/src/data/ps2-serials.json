@@ -1,0 +1,18 @@
+{
+  "byGameId": {
+    "2782": "SCUS-97399",
+    "2783": "SCUS-97481",
+    "21122": "SLUS-21600",
+    "5547": "SLUS-21427",
+    "25380": "SLUS-21427"
+  },
+  "byName": {
+    "god of war": "SCUS-97399",
+    "god of war ii": "SCUS-97481",
+    "kingdom hearts ii": "SLUS-20770",
+    "final fantasy x": "SLUS-20064",
+    "smack down vs raw": "SLUS-21427",
+    "wwe smackdown! vs. raw": "SLUS-21427",
+    "wwe smackdown! vs. raw 2007": "SLUS-21427"
+  }
+}
