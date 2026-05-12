@@ -140,6 +140,15 @@ function Home({ user, onLogout }: HomeProps) {
 		try {
 			const data = await steamService.getEnrichedLibrary(user.steamId);
 			setLibrary({ ...data, userId: user.id });
+			
+			// Update selectedGame if modal is open
+			if (selectedGame) {
+				const updatedGame = data.games.find((g: LibraryGame) => g.id === selectedGame.id);
+				if (updatedGame) {
+					setSelectedGame(updatedGame);
+				}
+			}
+			
 			setFilters({
 				platforms: [],
 				statuses: [],
