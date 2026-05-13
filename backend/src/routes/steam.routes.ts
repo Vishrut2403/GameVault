@@ -92,7 +92,28 @@ router.get('/library/:steamId/enriched', async (req: Request, res: Response) => 
 					orderBy: [
 						{ status: 'asc' },
 						{ playtimeForever: 'desc' }
-					]
+					],
+					select: {
+						id: true,
+						userId: true,
+						platform: true,
+						platformGameId: true,
+						name: true,
+						imageUrl: true,
+						playtimeForever: true,
+						lastPlayedAt: true,
+						status: true,
+						rating: true,
+						review: true,
+						userTags: true,
+						pricePaid: true,
+						pricePerHour: true,
+						achievementsTotal: true,
+						achievementsEarned: true,
+						platformData: true,
+						createdAt: true,
+						updatedAt: true,
+					}
 				},
 			},
 		});
