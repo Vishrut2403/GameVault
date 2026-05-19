@@ -30,10 +30,10 @@ const SyncRALibraryModal: React.FC<SyncRALibraryModalProps> = ({
 		setSyncResult(null);
 
 		try {
-			console.log('🔄 Starting RA sync for username:', username);
+			console.log('Starting RA sync for username:', username);
 			const result = await retroAchievementsService.syncLibrary(userId, username.trim());
 			
-			console.log('✅ Sync complete:', result);
+			console.log('Sync complete:', result);
 			setSyncResult(result.summary);
 			
 			if (result.summary.added > 0 || result.summary.updated > 0) {
@@ -48,7 +48,7 @@ const SyncRALibraryModal: React.FC<SyncRALibraryModalProps> = ({
 			}
 			
 		} catch (err: any) {
-			console.error('❌ Sync failed:', err);
+			console.error('Sync failed:', err);
 			setError(err.response?.data?.error || 'Failed to sync library. Check your username and API key.');
 		} finally {
 			setIsLoading(false);
@@ -149,7 +149,7 @@ const SyncRALibraryModal: React.FC<SyncRALibraryModalProps> = ({
 					<>
 						<div className="mb-4 p-4 bg-[#3a4a3a] border border-[#5a7fa3] rounded">
 							<h3 className="text-[#7a9fc3] font-semibold mb-2">
-								✅ Sync Successful!
+								Sync Successful!
 							</h3>
 							<div className="text-sm text-[#a0a0a0] space-y-1">
 								<p>Total Games Found: {syncResult.totalGames || 0}</p>

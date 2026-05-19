@@ -8,13 +8,6 @@ router.use(authMiddleware);
 
 const predictionService = new CompletionPredictionService(prisma);
 
-/**
- * POST /api/predictions/:gameId
- * Predict completion time for a game
- * 
- * Query params:
- * - hltbCompletionistMinutes: (optional) completionist hours from HLTB to use for calculation
- */
 router.post('/:gameId', async (req: AuthRequest, res: Response) => {
 	try {
 		const userId = req.user?.userId;
@@ -24,7 +17,7 @@ router.post('/:gameId', async (req: AuthRequest, res: Response) => {
 
 		const gameId = Array.isArray(req.params.gameId) ? req.params.gameId[0] : req.params.gameId;
 		const hltbCompletionistMinutes = req.query.hltbCompletionistMinutes
-			? parseInt(req.query.hltbCompletionistMinutes as string) * 60 // Convert hours to minutes
+			? parseInt(req.query.hltbCompletionistMinutes as string) * 60
 			: undefined;
 
 		const prediction = await predictionService.predictCompletion(
@@ -46,10 +39,6 @@ router.post('/:gameId', async (req: AuthRequest, res: Response) => {
 	}
 });
 
-/**
- * GET /api/predictions/playstyle
- * Get user's detected playstyle
- */
 router.get('/playstyle/current', async (req: AuthRequest, res: Response) => {
 	try {
 		const userId = req.user?.userId;
@@ -72,10 +61,6 @@ router.get('/playstyle/current', async (req: AuthRequest, res: Response) => {
 	}
 });
 
-/**
- * GET /api/predictions/accuracy
- * Get prediction accuracy metrics
- */
 router.get('/accuracy/metrics', async (req: AuthRequest, res: Response) => {
 	try {
 		const userId = req.user?.userId;

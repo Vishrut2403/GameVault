@@ -18,7 +18,7 @@ export const SyncPCSX2Button: React.FC<SyncPCSX2ButtonProps> = ({ userId, onSync
 			const response = await axios.post('http://localhost:3001/api/pcsx2/sync', { userId });
 			
 			const { summary } = response.data;
-			setResult(`✅ Synced ${summary.updated} games! (${summary.notFound} not matched)`);
+			setResult(`Synced ${summary.updated} games! (${summary.notFound} not matched)`);
 			
 			setTimeout(() => {
 				onSync();
@@ -38,7 +38,7 @@ export const SyncPCSX2Button: React.FC<SyncPCSX2ButtonProps> = ({ userId, onSync
 				disabled={syncing}
 				className="w-full px-4 py-3 bg-[#5a7fa3] hover:bg-[#7a9fc3] border border-[#5a7fa3] text-[#e5e5e5] rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 disabled:bg-[#2a2a2a]"
 			>
-				{syncing ? '⏳ Syncing PCSX2...' : '🎮 Sync PCSX2 Playtime'}
+				{syncing ? 'Syncing PCSX2...' : 'Sync PCSX2 Playtime'}
 			</button>
 			
 			{result && (
