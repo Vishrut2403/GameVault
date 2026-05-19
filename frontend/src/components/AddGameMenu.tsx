@@ -67,7 +67,7 @@ export const AddGameMenu: React.FC<AddGameMenuProps> = ({
 							}}
 							className="w-full px-4 py-3 text-left hover:bg-[#333333] transition-colors flex items-center gap-3 text-[#e5e5e5]"
 						>
-							<span className="text-lg">🎮</span>
+
 							<span className="font-medium">Sync RA Library</span>
 						</button>
 						<button
@@ -94,7 +94,7 @@ export const AddGameMenu: React.FC<AddGameMenuProps> = ({
 							}}
 							className="w-full px-4 py-3 text-left hover:bg-[#333333] transition-colors flex items-center gap-3 text-[#e5e5e5]"
 						>
-							<span className="text-lg">🔗</span>
+
 							<span className="font-medium">Auto-Link ISOs</span>
 						</button>
 					</div>
@@ -111,7 +111,7 @@ export const AddGameMenu: React.FC<AddGameMenuProps> = ({
 							}}
 							className="w-full px-4 py-3 text-left hover:bg-[#333333] transition-colors flex items-center gap-3 text-[#e5e5e5]"
 						>
-							<span className="text-lg">🍎</span>
+
 							<span className="font-medium">Add Apple Arcade</span>
 						</button>
 						<button

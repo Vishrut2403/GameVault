@@ -46,7 +46,7 @@ mainWindow.loadURL(getFrontendPath());
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
-    console.log('✅ Window ready');
+    console.log('Window ready');
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -69,7 +69,7 @@ function startBackend() {
   }
 
   return new Promise((resolve, reject) => {
-    console.log('🔧 Starting production backend...');
+    console.log('Starting production backend...');
 
     const backendPath = getBackendPath();
 
@@ -86,7 +86,7 @@ function startBackend() {
     backendProcess.on('error', reject);
 
     setTimeout(() => {
-      console.log('✅ Backend started');
+      console.log('Backend started');
       resolve();
     }, 2500);
   });
@@ -105,7 +105,7 @@ app.whenReady().then(async () => {
     await startBackend();
     createWindow();
   } catch (err) {
-    console.error('❌ App failed to start:', err);
+    console.error('App failed to start:', err);
     app.quit();
   }
 
