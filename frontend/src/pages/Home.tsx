@@ -474,7 +474,7 @@ function Home({ user, onLogout }: HomeProps) {
 								>
 									{autoSyncing ? (
 										<>
-					
+											<span className="animate-spin inline-block mr-2">⏳</span>
 											Auto-Syncing...
 										</>
 									) : (
@@ -559,7 +559,7 @@ function Home({ user, onLogout }: HomeProps) {
 					<div className="flex items-center justify-center min-h-[400px]">
 						<div className="text-center mx-auto px-6">
 							<div className="w-20 h-20 mx-auto mb-4 rounded-lg bg-[#1a1a1a] border border-[#333333] flex items-center justify-center shadow-md">
-				
+								<span className="text-4xl">🎮</span>
 							</div>
 							<p className="text-gray-400 text-lg font-medium">No games found</p>
 							{!user.steamId && (

@@ -64,7 +64,7 @@ mainWindow.loadURL(getFrontendPath());
 
 function startBackend() {
   if (isDev) {
-    console.log('🟢 Dev mode: backend started externally');
+    console.log('Dev mode: backend started externally');
     return Promise.resolve();
   }
 
@@ -94,7 +94,7 @@ function startBackend() {
 
 function stopBackend() {
   if (backendProcess) {
-    console.log('🛑 Stopping backend...');
+    console.log('Stopping backend...');
     backendProcess.kill();
     backendProcess = null;
   }

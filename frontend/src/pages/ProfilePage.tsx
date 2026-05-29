@@ -270,7 +270,7 @@ export default function ProfilePage({ user, onUpdate }: ProfilePageProps) {
 					<div className="bg-[#2a2a2a] border border-[#333333] rounded-lg p-6">
 						<div className="flex items-center justify-between mb-4">
 							<div className="flex items-center gap-3">
-							<div className="w-12 h-12 bg-[#3a5a7f] rounded-lg flex items-center justify-center"></div>
+								<div className="w-12 h-12 bg-[#5a7fa3] rounded-lg flex items-center justify-center"><span className="text-xl">🎮</span></div>
 								<div><h4 className="font-semibold text-[#e5e5e5]">PPSSPP (PSP)</h4><p className="text-sm text-[#a0a0a0]">Local tracking</p></div>
 							</div>
 						</div>
