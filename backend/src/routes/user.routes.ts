@@ -2,6 +2,8 @@ import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 import { sessionTrackingService } from '../services/session-tracking.service';
+import { retroAchievementsService } from '../services/retroachievements.service';
+import { encrypt } from '../utils/encryption';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -165,29 +167,25 @@ router.post('/connect-ra', async (req: AuthRequest, res: Response) => {
 		const { raUsername, raApiKey } = req.body;
 		const userId = req.user?.userId;
 
-		if (!userId) {
-			return res.status(401).json({ success: false, error: 'Unauthorized' });
-		}
+		if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+		if (!raUsername || !raApiKey) return res.status(400).json({ success: false, error: 'Username and API key required' });
 
-		if (!raUsername || !raApiKey) {
-			return res.status(400).json({ success: false, error: 'Username and API key required' });
-		}
+		// Encrypt the API key before storing
+		const encryptedKey = encrypt(raApiKey);
 
 		await prisma.user.update({
 			where: { id: userId },
 			data: {
 				raUsername,
-				raApiKey,
+				raApiKey: encryptedKey,
 				raLinkedAt: new Date()
 			}
 		});
 
+		// Attempt immediate sync using provided plaintext credentials
 		try {
-			await fetch(`http://localhost:3001/api/retroachievements/sync-library`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ userId, raUsername, raApiKey })
-			});
+			retroAchievementsService.setCredentials(raUsername, raApiKey);
+			await retroAchievementsService.syncUserLibrary(raUsername);
 		} catch (syncError) {
 			console.error('RA sync failed (connection still saved):', syncError);
 		}
@@ -202,10 +200,7 @@ router.post('/connect-ra', async (req: AuthRequest, res: Response) => {
 router.post('/disconnect-ra', async (req: AuthRequest, res: Response) => {
 	try {
 		const userId = req.user?.userId;
-
-		if (!userId) {
-			return res.status(401).json({ success: false, error: 'Unauthorized' });
-		}
+		if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
 		await prisma.user.update({
 			where: { id: userId },
@@ -215,6 +210,13 @@ router.post('/disconnect-ra', async (req: AuthRequest, res: Response) => {
 				raLinkedAt: null
 			}
 		});
+
+		// Clear credentials in the in-memory service as well
+		try {
+			retroAchievementsService.setCredentials('', '');
+		} catch (e) {
+			// ignore
+		}
 
 		res.json({ success: true });
 	} catch (error: any) {
