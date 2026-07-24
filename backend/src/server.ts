@@ -28,10 +28,19 @@ const app: Express = express();
 const PORT = process.env.PORT || 3001;
 const isProd = process.env.NODE_ENV === 'production';
 
+const getCorsOrigin = () => {
+	if (isProd) {
+		const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(',') || [];
+		if (allowedOrigins.length === 0) {
+			throw new Error('CRITICAL: CORS_ALLOWED_ORIGINS environment variable is not set for production. Please set comma-separated allowed origins.');
+		}
+		return allowedOrigins;
+	}
+	return process.env.CORS_ORIGIN || 'http://localhost:5173';
+};
+
 app.use(cors({
-	origin: isProd
-		? true
-		: process.env.CORS_ORIGIN || 'http://localhost:5173',
+	origin: getCorsOrigin(),
 	credentials: true
 }));
 

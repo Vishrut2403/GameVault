@@ -2,10 +2,11 @@ import { Router, Request, Response } from 'express';
 import steamService from '../services/steam.service';
 import prisma from '../prisma';
 import { sessionTrackingService } from '../services/session-tracking.service';
+import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.get('/library/:steamId', async (req: Request, res: Response) => {
+router.get('/library/:steamId', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
 
@@ -74,7 +75,7 @@ router.get('/library/:steamId', async (req: Request, res: Response) => {
 	}
 });
 
-router.get('/library/:steamId/enriched', async (req: Request, res: Response) => {
+router.get('/library/:steamId/enriched', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
 		const platform = req.query.platform as string | undefined;
@@ -137,7 +138,7 @@ router.get('/library/:steamId/enriched', async (req: Request, res: Response) => 
 	}
 });
 
-router.get('/library/:steamId/platforms', async (req: Request, res: Response) => {
+router.get('/library/:steamId/platforms', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
 
@@ -173,7 +174,7 @@ router.get('/library/:steamId/platforms', async (req: Request, res: Response) =>
 	}
 });
 
-router.get('/library/:steamId/filter', async (req: Request, res: Response) => {
+router.get('/library/:steamId/filter', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
 
@@ -606,7 +607,7 @@ router.patch('/library/:steamId/game/:appId/image', async (req: Request, res: Re
 	}
 });
 
-router.get('/player/:steamId', async (req: Request, res: Response) => {
+router.get('/player/:steamId', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
 

@@ -5,7 +5,11 @@ import prisma from '../prisma';
 
 const router = Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+	throw new Error('CRITICAL: JWT_SECRET environment variable is not set. Please set it before starting the server.');
+}
 const JWT_EXPIRES_IN = '7d';
 
 // Register new user
