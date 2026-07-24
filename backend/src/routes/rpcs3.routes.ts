@@ -3,12 +3,15 @@ import prisma from '../prisma';
 import { RPCS3Service } from '../services/rpcs3.service';
 import { RPCS3TrophyService } from '../services/rpcs3-trophy.service';
 import { sessionTrackingService } from '../services/session-tracking.service';
+import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 const rpcs3Service = new RPCS3Service();
 const trophyService = new RPCS3TrophyService();
 
-router.get('/playtimes', async (req: Request, res: Response) => {
+router.use(authMiddleware);
+
+router.get('/playtimes', async (req: AuthRequest, res: Response) => {
 	try {
 		if (!rpcs3Service.fileExists()) {
 			res.status(404).json({
@@ -33,7 +36,7 @@ router.get('/playtimes', async (req: Request, res: Response) => {
 	}
 });
 
-router.get('/trophies', async (req: Request, res: Response) => {
+router.get('/trophies', async (req: AuthRequest, res: Response) => {
 	try {
 		if (!trophyService.trophyDirExists()) {
 			res.status(404).json({
@@ -58,14 +61,15 @@ router.get('/trophies', async (req: Request, res: Response) => {
 	}
 });
 
-router.post('/sync', async (req: Request, res: Response) => {
+router.post('/sync', async (req: AuthRequest, res: Response) => {
 	try {
-		const { userId, configPath } = req.body;
+		const userId = req.user?.userId;
+		const { configPath } = req.body;
 
 		if (!userId) {
 			res.status(400).json({
 				success: false,
-				error: 'userId is required'
+				error: 'Unauthorized'
 			});
 			return;
 		}
@@ -184,14 +188,14 @@ router.post('/sync', async (req: Request, res: Response) => {
 	}
 });
 
-router.post('/sync-trophies', async (req: Request, res: Response) => {
+router.post('/sync-trophies', async (req: AuthRequest, res: Response) => {
 	try {
-		const { userId } = req.body;
+		const userId = req.user?.userId;
 
 		if (!userId) {
 			res.status(400).json({
 				success: false,
-				error: 'userId is required'
+				error: 'Unauthorized'
 			});
 			return;
 		}

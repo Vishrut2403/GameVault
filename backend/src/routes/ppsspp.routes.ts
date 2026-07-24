@@ -2,11 +2,14 @@ import { Router, Request, Response } from 'express';
 import prisma from '../prisma';
 import { PPSSPPService } from '../services/ppsspp.service';
 import { sessionTrackingService } from '../services/session-tracking.service';
+import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 const ppssppService = new PPSSPPService();
 
-router.get('/games', async (req: Request, res: Response) => {
+router.use(authMiddleware);
+
+router.get('/games', async (req: AuthRequest, res: Response) => {
 	try {
 		const games = ppssppService.getAllGames();
 
@@ -23,14 +26,14 @@ router.get('/games', async (req: Request, res: Response) => {
 	}
 });
 
-router.post('/sync', async (req: Request, res: Response) => {
+router.post('/sync', async (req: AuthRequest, res: Response) => {
 	try {
-		const { userId } = req.body;
+		const userId = req.user?.userId;
 
 		if (!userId) {
 			res.status(400).json({
 				success: false,
-				error: 'userId is required'
+				error: 'Unauthorized'
 			});
 			return;
 		}
@@ -124,14 +127,14 @@ router.post('/sync', async (req: Request, res: Response) => {
 	}
 });
 
-router.post('/link-serials', async (req: Request, res: Response) => {
+router.post('/link-serials', async (req: AuthRequest, res: Response) => {
 	try {
-		const { userId } = req.body;
+		const userId = req.user?.userId;
 
 		if (!userId) {
 			res.status(400).json({
 				success: false,
-				error: 'userId is required'
+				error: 'Unauthorized'
 			});
 			return;
 		}

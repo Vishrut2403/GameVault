@@ -1,17 +1,20 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../prisma';
+import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.get('/:gameId', async (req: Request, res: Response) => {
+router.use(authMiddleware);
+
+router.get('/:gameId', async (req: AuthRequest, res: Response) => {
 	try {
 		const gameId = req.params.gameId as string;
-		const userId = req.query.userId as string;
+		const userId = req.user?.userId;
 
 		if (!userId) {
 			res.status(400).json({
 				success: false,
-				error: 'userId is required'
+				error: 'Unauthorized'
 			});
 			return;
 		}
@@ -39,14 +42,15 @@ router.get('/:gameId', async (req: Request, res: Response) => {
 	}
 });
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', async (req: AuthRequest, res: Response) => {
 	try {
-		const { userId, gameId, heading, content } = req.body;
+		const userId = req.user?.userId;
+		const { gameId, heading, content } = req.body;
 
 		if (!userId || !gameId || !heading || !content) {
 			res.status(400).json({
 				success: false,
-				error: 'userId, gameId, heading, and content are required'
+				error: 'gameId, heading, and content are required'
 			});
 			return;
 		}
@@ -88,15 +92,16 @@ router.post('/', async (req: Request, res: Response) => {
 	}
 });
 
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', async (req: AuthRequest, res: Response) => {
 	try {
 		const entryId = req.params.id as string;
-		const { userId, heading, content } = req.body;
+		const userId = req.user?.userId;
+		const { heading, content } = req.body;
 
 		if (!userId || !heading || !content) {
 			res.status(400).json({
 				success: false,
-				error: 'userId, heading, and content are required'
+				error: 'heading and content are required'
 			});
 			return;
 		}
@@ -134,15 +139,15 @@ router.put('/:id', async (req: Request, res: Response) => {
 	}
 });
 
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', async (req: AuthRequest, res: Response) => {
 	try {
 		const entryId = req.params.id as string;
-		const userId = req.query.userId as string;
+		const userId = req.user?.userId;
 
 		if (!userId) {
 			res.status(400).json({
 				success: false,
-				error: 'userId is required'
+				error: 'Unauthorized'
 			});
 			return;
 		}

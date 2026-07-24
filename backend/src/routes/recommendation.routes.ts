@@ -2,15 +2,24 @@ import { Router, Request, Response } from 'express';
 import recommendationService from '../services/recommendation.service';
 import knapsackService from '../services/knapsack.service';
 import { SmartRecommendationService } from '../services/smartRecommendation.service';
+import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.get('/:userId', async (req: Request, res: Response) => {
+router.use(authMiddleware);
+
+router.get('/:userId', async (req: AuthRequest, res: Response) => {
 	try {
-		const userId = req.params.userId as string;
+		const userId = req.user?.userId;
+		const requestedUserId = req.params.userId as string;
 
 		if (!userId) {
 			res.status(400).json({ error: 'User ID required' });
+			return;
+		}
+
+		if (requestedUserId && requestedUserId !== userId) {
+			res.status(403).json({ error: 'You can only access your own recommendations' });
 			return;
 		}
 
@@ -29,13 +38,19 @@ router.get('/:userId', async (req: Request, res: Response) => {
 	}
 });
 
-router.post('/:userId/optimize', async (req: Request, res: Response) => {
+router.post('/:userId/optimize', async (req: AuthRequest, res: Response) => {
 	try {
-		const userId = req.params.userId as string;
+		const userId = req.user?.userId;
+		const requestedUserId = req.params.userId as string;
 		const { budget } = req.body;
 
 		if (!userId) {
 			res.status(400).json({ error: 'User ID required' });
+			return;
+		}
+
+		if (requestedUserId && requestedUserId !== userId) {
+			res.status(403).json({ error: 'You can only access your own recommendations' });
 			return;
 		}
 
@@ -93,13 +108,19 @@ router.post('/:userId/optimize', async (req: Request, res: Response) => {
 	}
 });
 
-router.get('/:userId/smart', async (req: Request, res: Response) => {
+router.get('/:userId/smart', async (req: AuthRequest, res: Response) => {
 	try {
-		const userId = req.params.userId as string;
+		const userId = req.user?.userId;
+		const requestedUserId = req.params.userId as string;
 		const limit = Math.min(parseInt(req.query.limit as string) || 5, 20); 
 
 		if (!userId) {
 			res.status(400).json({ error: 'User ID required' });
+			return;
+		}
+
+		if (requestedUserId && requestedUserId !== userId) {
+			res.status(403).json({ error: 'You can only access your own recommendations' });
 			return;
 		}
 

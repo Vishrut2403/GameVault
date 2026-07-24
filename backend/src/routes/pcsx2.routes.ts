@@ -3,12 +3,15 @@ import prisma from '../prisma';
 import { PCSX2Service } from '../services/pcsx2.service';
 import { ISOSerialDetector } from '../services/iso-serial-detector.service';
 import { sessionTrackingService } from '../services/session-tracking.service';
+import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 const pcsx2Service = new PCSX2Service();
 const isoDetector = new ISOSerialDetector();
 
-router.get('/playtimes', async (req: Request, res: Response) => {
+router.use(authMiddleware);
+
+router.get('/playtimes', async (req: AuthRequest, res: Response) => {
 	try {
 		if (!pcsx2Service.fileExists()) {
 			res.status(404).json({
@@ -33,9 +36,10 @@ router.get('/playtimes', async (req: Request, res: Response) => {
 	}
 });
 
-router.post('/sync', async (req: Request, res: Response) => {
+router.post('/sync', async (req: AuthRequest, res: Response) => {
 	try {
-		const { userId, playtimeFilePath } = req.body;
+		const { playtimeFilePath } = req.body;
+		const userId = req.user?.userId;
 
 		if (!userId) {
 			res.status(400).json({
@@ -151,14 +155,15 @@ router.post('/sync', async (req: Request, res: Response) => {
 	}
 });
 
-router.post('/link-game', async (req: Request, res: Response) => {
+router.post('/link-game', async (req: AuthRequest, res: Response) => {
 	try {
-		const { userId, gameId, serial } = req.body;
+		const { gameId, serial } = req.body;
+		const userId = req.user?.userId;
 
 		if (!userId || !gameId || !serial) {
 			res.status(400).json({
 				success: false,
-				error: 'userId, gameId, and serial are required'
+				error: 'gameId and serial are required'
 			});
 			return;
 		}
@@ -198,7 +203,7 @@ router.post('/link-game', async (req: Request, res: Response) => {
 	}
 });
 
-router.get('/scan-isos', async (req: Request, res: Response) => {
+router.get('/scan-isos', async (req: AuthRequest, res: Response) => {
 	try {
 		const { directory } = req.query;
 
@@ -225,14 +230,15 @@ router.get('/scan-isos', async (req: Request, res: Response) => {
 	}
 });
 
-router.post('/auto-link', async (req: Request, res: Response) => {
+router.post('/auto-link', async (req: AuthRequest, res: Response) => {
 	try {
-		const { userId, isoDirectory } = req.body;
+		const { isoDirectory } = req.body;
+		const userId = req.user?.userId;
 
 		if (!userId || !isoDirectory) {
 			res.status(400).json({
 				success: false,
-				error: 'userId and isoDirectory are required'
+				error: 'isoDirectory is required'
 			});
 			return;
 		}
