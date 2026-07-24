@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 interface ISOInfo {
 	filepath: string;
@@ -17,14 +17,14 @@ export class ISOSerialDetector {
 	async extractSerialFromISO(isoPath: string): Promise<string | null> {
 		try {
 			try {
-				const { stdout } = await execAsync(`7z e -so "${isoPath}" SYSTEM.CNF 2>/dev/null`);
+				const { stdout } = await execFileAsync('7z', ['e', '-so', isoPath, 'SYSTEM.CNF']);
 				const serial = this.parseSystemCNF(stdout);
 				if (serial) return serial;
 			} catch (err) {
 			}
 
 			try {
-				const { stdout } = await execAsync(`isoinfo -i "${isoPath}" -x /SYSTEM.CNF 2>/dev/null`);
+				const { stdout } = await execFileAsync('isoinfo', ['-i', isoPath, '-x', '/SYSTEM.CNF']);
 				const serial = this.parseSystemCNF(stdout);
 				if (serial) return serial;
 			} catch (err) {

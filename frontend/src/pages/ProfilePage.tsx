@@ -32,7 +32,12 @@ export default function ProfilePage({ user, onUpdate }: ProfilePageProps) {
 	};
 
 	const handleConnectSteam = () => {
-		window.location.href = `${API_URL}/api/auth/steam?userId=${user.id}`;
+		const token = localStorage.getItem('token');
+		if (!token) {
+			alert('Please log in again.');
+			return;
+		}
+		window.location.href = `${API_URL}/api/auth/steam?token=${encodeURIComponent(token)}`;
 	};
 
 	const handleDisconnectSteam = async () => {
