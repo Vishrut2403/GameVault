@@ -30,7 +30,6 @@ router.get('/profile', async (req: AuthRequest, res: Response) => {
 				steamAvatar: true,
 				steamLinkedAt: true,
 				raUsername: true,
-				raApiKey: true,
 				raLinkedAt: true,
 				enablePCSX2: true,
 				enableRPCS3: true,
