@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import { retroAchievementsService } from '../services/retroachievements.service';
 import prisma from '../prisma';
+import { decrypt } from '../utils/encryption';
 import { getSerialByGameId, getSerialByName } from '../utils/ps2-serials';
 import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 
@@ -86,7 +87,7 @@ router.post('/sync', authMiddleware, async (req: AuthRequest, res: Response): Pr
 
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
-			select: { raUsername: true }
+			select: { raUsername: true, raApiKey: true }
 		});
 
 		if (!user?.raUsername) {
@@ -96,7 +97,21 @@ router.post('/sync', authMiddleware, async (req: AuthRequest, res: Response): Pr
 			});
 			return;
 		}
-		
+		// Decrypt stored API key (must exist)
+		let apiKeyPlain = process.env.RA_API_KEY || '';
+		if (user.raApiKey) {
+			try {
+				apiKeyPlain = decrypt(user.raApiKey);
+			} catch (e) {
+				console.error('Failed to decrypt stored RA API key:', e);
+					res.status(500).json({ success: false, error: 'Failed to decrypt RA credentials' });
+					return;
+			}
+		}
+
+		// Set credentials on the service for this operation
+		retroAchievementsService.setCredentials(user.raUsername, apiKeyPlain);
+
 		const { summary, games } = await retroAchievementsService.syncUserLibrary(user.raUsername);
 
 		let added = 0;
