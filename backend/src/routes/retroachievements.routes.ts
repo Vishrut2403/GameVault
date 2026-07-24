@@ -110,15 +110,16 @@ router.post('/sync', authMiddleware, async (req: AuthRequest, res: Response): Pr
 		}
 
 		// Set credentials on the service for this operation
-		retroAchievementsService.setCredentials(user.raUsername, apiKeyPlain);
+		try {
+			retroAchievementsService.setCredentials(user.raUsername, apiKeyPlain);
 
-		const { summary, games } = await retroAchievementsService.syncUserLibrary(user.raUsername);
+			const { summary, games } = await retroAchievementsService.syncUserLibrary(user.raUsername);
 
-		let added = 0;
-		let updated = 0;
-		let skipped = 0;
-		
-		for (const game of games) {
+			let added = 0;
+			let updated = 0;
+			let skipped = 0;
+
+			for (const game of games) {
 			try {
 
 				const completionPercent = retroAchievementsService.calculateCompletion(
@@ -196,21 +197,24 @@ router.post('/sync', authMiddleware, async (req: AuthRequest, res: Response): Pr
 				console.error(`Failed to process game ${game.title}:`, gameError.message);
 				skipped++;
 			}
-		}
-		
-		res.json({
-			success: true,
-			summary: {
-				totalGames: games.length,
-				added,
-				updated,
-				skipped,
-				totalPoints: summary.totalPoints,
-				totalTruePoints: summary.totalTruePoints,
-				totalAwarded: summary.totalAwarded
 			}
-		});
-		
+
+			res.json({
+				success: true,
+				summary: {
+					totalGames: games.length,
+					added,
+					updated,
+					skipped,
+					totalPoints: summary.totalPoints,
+					totalTruePoints: summary.totalTruePoints,
+					totalAwarded: summary.totalAwarded
+				}
+			});
+		} finally {
+			try { retroAchievementsService.setCredentials('', ''); } catch (e) { /* ignore */ }
+		}
+
 	} catch (error: any) {
 		console.error('Error syncing RA library:', error);
 		res.status(500).json({

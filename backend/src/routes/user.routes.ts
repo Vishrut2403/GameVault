@@ -182,12 +182,14 @@ router.post('/connect-ra', async (req: AuthRequest, res: Response) => {
 			}
 		});
 
-		// Attempt immediate sync using provided plaintext credentials
+		// Attempt immediate sync using provided plaintext credentials, then clear them from memory
 		try {
 			retroAchievementsService.setCredentials(raUsername, raApiKey);
 			await retroAchievementsService.syncUserLibrary(raUsername);
 		} catch (syncError) {
 			console.error('RA sync failed (connection still saved):', syncError);
+		} finally {
+			try { retroAchievementsService.setCredentials('', ''); } catch (e) { /* ignore */ }
 		}
 
 		res.json({ success: true });
