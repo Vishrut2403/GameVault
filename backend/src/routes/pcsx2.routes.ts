@@ -1,14 +1,40 @@
 import { Router, Request, Response } from 'express';
+import path from 'path';
 import prisma from '../prisma';
 import { PCSX2Service } from '../services/pcsx2.service';
 import { ISOSerialDetector } from '../services/iso-serial-detector.service';
 import { sessionTrackingService } from '../services/session-tracking.service';
+import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 const pcsx2Service = new PCSX2Service();
 const isoDetector = new ISOSerialDetector();
 
-router.get('/playtimes', async (req: Request, res: Response) => {
+function validateIsoDirectory(inputPath: string): string {
+	const normalizedPath = path.resolve(inputPath);
+	if (!path.isAbsolute(normalizedPath)) {
+		throw new Error('ISO directory must be an absolute path');
+	}
+
+	const allowedRoots = (process.env.ISO_SCAN_ALLOWED_ROOTS || '')
+		.split(',')
+		.map(root => root.trim())
+		.filter(Boolean)
+		.map(root => path.resolve(root));
+
+	if (allowedRoots.length > 0) {
+		const isAllowed = allowedRoots.some(root => normalizedPath === root || normalizedPath.startsWith(`${root}${path.sep}`));
+		if (!isAllowed) {
+			throw new Error('ISO directory is outside the allowed scan roots');
+		}
+	}
+
+	return normalizedPath;
+}
+
+router.use(authMiddleware);
+
+router.get('/playtimes', async (req: AuthRequest, res: Response) => {
 	try {
 		if (!pcsx2Service.fileExists()) {
 			res.status(404).json({
@@ -33,9 +59,10 @@ router.get('/playtimes', async (req: Request, res: Response) => {
 	}
 });
 
-router.post('/sync', async (req: Request, res: Response) => {
+router.post('/sync', async (req: AuthRequest, res: Response) => {
 	try {
-		const { userId, playtimeFilePath } = req.body;
+		const { playtimeFilePath } = req.body;
+		const userId = req.user?.userId;
 
 		if (!userId) {
 			res.status(400).json({
@@ -151,17 +178,30 @@ router.post('/sync', async (req: Request, res: Response) => {
 	}
 });
 
-router.post('/link-game', async (req: Request, res: Response) => {
+router.post('/link-game', async (req: AuthRequest, res: Response) => {
 	try {
-		const { userId, gameId, serial } = req.body;
+		const { gameId, serial } = req.body;
+		const userId = req.user?.userId;
 
 		if (!userId || !gameId || !serial) {
 			res.status(400).json({
 				success: false,
-				error: 'userId, gameId, and serial are required'
+				error: 'gameId and serial are required'
 			});
 			return;
 		}
+		const existingGame = await prisma.libraryGame.findFirst({
+			where: { id: gameId, userId }
+		});
+
+		if (!existingGame) {
+			res.status(404).json({
+				success: false,
+				error: 'Game not found'
+			});
+			return;
+		}
+
 		const playtimeSeconds = pcsx2Service.getPlaytimeForSerial(serial);
 
 		if (playtimeSeconds === null) {
@@ -175,11 +215,11 @@ router.post('/link-game', async (req: Request, res: Response) => {
 		const playtimeMinutes = Math.round(playtimeSeconds / 60);
 
 		const game = await prisma.libraryGame.update({
-			where: { id: gameId },
+			where: { id: existingGame.id },
 			data: {
 				playtimeForever: playtimeMinutes,
 				platformData: {
-					...(await prisma.libraryGame.findUnique({ where: { id: gameId } }))?.platformData as any,
+					...(existingGame.platformData as any),
 					serial
 				}
 			}
@@ -198,7 +238,7 @@ router.post('/link-game', async (req: Request, res: Response) => {
 	}
 });
 
-router.get('/scan-isos', async (req: Request, res: Response) => {
+router.get('/scan-isos', async (req: AuthRequest, res: Response) => {
 	try {
 		const { directory } = req.query;
 
@@ -210,7 +250,8 @@ router.get('/scan-isos', async (req: Request, res: Response) => {
 			return;
 		}
 
-		const isoInfos = await isoDetector.scanDirectory(directory);
+		const safeDirectory = validateIsoDirectory(directory);
+		const isoInfos = await isoDetector.scanDirectory(safeDirectory);
 
 		res.json({
 			success: true,
@@ -225,19 +266,21 @@ router.get('/scan-isos', async (req: Request, res: Response) => {
 	}
 });
 
-router.post('/auto-link', async (req: Request, res: Response) => {
+router.post('/auto-link', async (req: AuthRequest, res: Response) => {
 	try {
-		const { userId, isoDirectory } = req.body;
+		const { isoDirectory } = req.body;
+		const userId = req.user?.userId;
 
 		if (!userId || !isoDirectory) {
 			res.status(400).json({
 				success: false,
-				error: 'userId and isoDirectory are required'
+				error: 'isoDirectory is required'
 			});
 			return;
 		}
 
-		const isoInfos = await isoDetector.scanDirectory(isoDirectory);
+		const safeDirectory = validateIsoDirectory(isoDirectory);
+		const isoInfos = await isoDetector.scanDirectory(safeDirectory);
 
 		const raGames = await prisma.libraryGame.findMany({
 			where: {

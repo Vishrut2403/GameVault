@@ -5,10 +5,10 @@ interface AutoLinkISOsModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onLink: () => void;
-	userId: string;
 }
 
-const AutoLinkISOsModal: React.FC<AutoLinkISOsModalProps> = ({ isOpen, onClose, onLink, userId }) => {
+const AutoLinkISOsModal: React.FC<AutoLinkISOsModalProps> = ({ isOpen, onClose, onLink }) => {
+	const token = localStorage.getItem('token');
 	const [isoDirectory, setIsoDirectory] = useState('/myspace/Emulator ISOs/PS2');
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState('');
@@ -33,8 +33,9 @@ const AutoLinkISOsModal: React.FC<AutoLinkISOsModalProps> = ({ isOpen, onClose, 
 
 		try {
 			const response = await axios.post('http://localhost:3001/api/pcsx2/auto-link', {
-				userId,
 				isoDirectory: isoDirectory.trim()
+			}, {
+				headers: token ? { Authorization: `Bearer ${token}` } : undefined
 			});
 			setLinkResult(response.data.summary);
 			

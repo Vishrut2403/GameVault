@@ -2,6 +2,8 @@ import axios from 'axios';
 import NodeCache from 'node-cache';
 import dotenv from 'dotenv';
 import prisma from '../prisma';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const CACHE_TTL = 3600;
 const API_TIMEOUT = 3000;
@@ -114,7 +116,7 @@ class SteamService {
 			},
 			create: {
 				email: `steam_${steamId}@temp.com`,
-				password: 'NO_PASSWORD_STEAM_OAUTH',
+				password: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10),
 				username: `steam_${steamId}`,
 				steamId,
 				steamUsername: username || null,

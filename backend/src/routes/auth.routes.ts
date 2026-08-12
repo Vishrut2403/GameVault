@@ -5,7 +5,11 @@ import prisma from '../prisma';
 
 const router = Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+	throw new Error('CRITICAL: JWT_SECRET environment variable is not set. Please set it before starting the server.');
+}
 const JWT_EXPIRES_IN = '7d';
 
 // Register new user
@@ -244,17 +248,16 @@ router.post('/logout', async (req: Request, res: Response) => {
 	});
 });
 
-// Steam OAuth - Store userId in session/cookie
-router.get('/steam', (req: Request, res: Response) => {
-	const userId = req.query.userId as string;
+function buildSteamLoginUrl(userId: string): string {
+	const secret = JWT_SECRET as string;
+	const state = jwt.sign(
+		{ userId, purpose: 'steam_oauth' },
+		secret,
+		{ expiresIn: '10m' }
+	);
 
-	if (!userId) {
-		res.status(400).send('Missing userId parameter');
-		return;
-	}
-
-	const returnUrl = `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/auth/steam/callback?userId=${userId}`;
-	const steamLoginUrl = `https://steamcommunity.com/openid/login?${new URLSearchParams({
+	const returnUrl = `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/auth/steam/callback?state=${encodeURIComponent(state)}`;
+	return `https://steamcommunity.com/openid/login?${new URLSearchParams({
 		'openid.ns': 'http://specs.openid.net/auth/2.0',
 		'openid.mode': 'checkid_setup',
 		'openid.return_to': returnUrl,
@@ -262,19 +265,104 @@ router.get('/steam', (req: Request, res: Response) => {
 		'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
 		'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select'
 	})}`;
+}
 
-	res.redirect(steamLoginUrl);
+// Steam OAuth bootstrap for authenticated clients
+router.get('/steam/start', async (req: Request, res: Response) => {
+	try {
+		const authHeaderToken = req.headers.authorization?.replace('Bearer ', '');
+		const token = authHeaderToken;
+
+		if (!token) {
+			res.status(401).send('Missing auth token');
+			return;
+		}
+
+		const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+		if (!decoded?.userId) {
+			res.status(401).send('Invalid auth token');
+			return;
+		}
+
+		res.json({ success: true, url: buildSteamLoginUrl(decoded.userId) });
+	} catch {
+		res.status(401).send('Invalid auth token');
+	}
+});
+
+// Backward-compatible direct redirect route (still requires auth header)
+router.get('/steam', (req: Request, res: Response) => {
+	try {
+		const authHeaderToken = req.headers.authorization?.replace('Bearer ', '');
+		if (!authHeaderToken) {
+			res.status(401).send('Missing auth token');
+			return;
+		}
+
+		const decoded = jwt.verify(authHeaderToken, JWT_SECRET) as { userId: string };
+		if (!decoded?.userId) {
+			res.status(401).send('Invalid auth token');
+			return;
+		}
+
+		res.redirect(buildSteamLoginUrl(decoded.userId));
+	} catch {
+		res.status(401).send('Invalid auth token');
+	}
 });
 
 // Steam OAuth callback - Save Steam ID to user
 router.get('/steam/callback', async (req: Request, res: Response) => {
 	try {
+		const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+		const state = req.query.state as string;
+
+		if (!state) {
+			res.redirect(`${frontendUrl}?error=steam_auth_failed`);
+			return;
+		}
+
+		let decodedState: { userId: string; purpose: string };
+		try {
+			decodedState = jwt.verify(state, JWT_SECRET) as { userId: string; purpose: string };
+		} catch {
+			res.redirect(`${frontendUrl}?error=steam_auth_failed`);
+			return;
+		}
+
+		if (!decodedState?.userId || decodedState.purpose !== 'steam_oauth') {
+			res.redirect(`${frontendUrl}?error=steam_auth_failed`);
+			return;
+		}
+
+		const verificationParams = new URLSearchParams();
+		for (const [key, value] of Object.entries(req.query)) {
+			if (!key.startsWith('openid.')) continue;
+			if (Array.isArray(value)) {
+				if (value.length > 0) verificationParams.set(key, String(value[0]));
+			} else if (value !== undefined && value !== null) {
+				verificationParams.set(key, String(value));
+			}
+		}
+		verificationParams.set('openid.mode', 'check_authentication');
+
+		const verifyResp = await fetch('https://steamcommunity.com/openid/login', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+			body: verificationParams.toString()
+		});
+		const verifyText = await verifyResp.text();
+		if (!verifyText.includes('is_valid:true')) {
+			res.redirect(`${frontendUrl}?error=steam_auth_failed`);
+			return;
+		}
+
 		const claimedId = req.query['openid.claimed_id'] as string;
-		const userId = req.query.userId as string;
+		const userId = decodedState.userId;
 		const steamId = claimedId?.split('/').pop();
 
-		if (!steamId || !userId) {
-			res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}?error=steam_auth_failed`);
+		if (!steamId || !/^\d{17}$/.test(steamId) || !userId) {
+			res.redirect(`${frontendUrl}?error=steam_auth_failed`);
 			return;
 		}
 
@@ -301,7 +389,7 @@ router.get('/steam/callback', async (req: Request, res: Response) => {
 			}
 		});
 
-		res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}?steamConnected=true`);
+		res.redirect(`${frontendUrl}?steamConnected=true`);
 	} catch (error) {
 		console.error('Steam auth error:', error);
 		res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}?error=steam_auth_failed`);

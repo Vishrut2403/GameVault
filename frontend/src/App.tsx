@@ -1,7 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useState, useEffect, useCallback, useRef } from 'react';
-import AuthPage from './pages/AuthPage';
-import Home from './pages/Home';
+import { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
+
+const AuthPage = lazy(() => import('./pages/AuthPage'));
+const Home = lazy(() => import('./pages/Home'));
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -81,7 +82,15 @@ function App() {
 
 	return (
 		<Router>
-			<AppRoutes isAuthenticated={isAuthenticated} user={user} onLogout={handleLogout} onLoginSuccess={() => checkAuth()} />
+			<Suspense fallback={
+				<div className="min-h-screen bg-[#000000] flex items-center justify-center">
+					<div className="relative">
+						<div className="w-16 h-16 border-3 border-[#333333] border-t-[#5a7fa3] rounded-full animate-spin" />
+					</div>
+				</div>
+			}>
+				<AppRoutes isAuthenticated={isAuthenticated} user={user} onLogout={handleLogout} onLoginSuccess={() => checkAuth()} />
+			</Suspense>
 		</Router>
 	);
 }

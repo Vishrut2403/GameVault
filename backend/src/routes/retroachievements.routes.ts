@@ -1,7 +1,9 @@
 import express, { Request, Response } from 'express';
 import { retroAchievementsService } from '../services/retroachievements.service';
 import prisma from '../prisma';
+import { decrypt } from '../utils/encryption';
 import { getSerialByGameId, getSerialByName } from '../utils/ps2-serials';
+import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 
 const router = express.Router();
 
@@ -72,25 +74,52 @@ router.get('/game/:gameId', async (req: Request, res: Response): Promise<void> =
 	}
 });
 
-router.post('/sync', async (req: Request, res: Response): Promise<void> => {
+router.post('/sync', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
 	try {
-		const { userId, username } = req.body;
-		
+		const userId = req.user?.userId;
 		if (!userId) {
-			res.status(400).json({
+			res.status(401).json({
 				success: false,
-				error: 'userId is required'
+				error: 'Unauthorized'
 			});
 			return;
 		}
-		
-		const { summary, games } = await retroAchievementsService.syncUserLibrary(username);
 
-		let added = 0;
-		let updated = 0;
-		let skipped = 0;
-		
-		for (const game of games) {
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			select: { raUsername: true, raApiKey: true }
+		});
+
+		if (!user?.raUsername) {
+			res.status(400).json({
+				success: false,
+				error: 'RetroAchievements username is not linked to this account'
+			});
+			return;
+		}
+		// Decrypt stored API key (must exist)
+		let apiKeyPlain = process.env.RA_API_KEY || '';
+		if (user.raApiKey) {
+			try {
+				apiKeyPlain = decrypt(user.raApiKey);
+			} catch (e) {
+				console.error('Failed to decrypt stored RA API key:', e);
+					res.status(500).json({ success: false, error: 'Failed to decrypt RA credentials' });
+					return;
+			}
+		}
+
+		// Set credentials on the service for this operation
+		try {
+			retroAchievementsService.setCredentials(user.raUsername, apiKeyPlain);
+
+			const { summary, games } = await retroAchievementsService.syncUserLibrary(user.raUsername);
+
+			let added = 0;
+			let updated = 0;
+			let skipped = 0;
+
+			for (const game of games) {
 			try {
 
 				const completionPercent = retroAchievementsService.calculateCompletion(
@@ -168,21 +197,24 @@ router.post('/sync', async (req: Request, res: Response): Promise<void> => {
 				console.error(`Failed to process game ${game.title}:`, gameError.message);
 				skipped++;
 			}
-		}
-		
-		res.json({
-			success: true,
-			summary: {
-				totalGames: games.length,
-				added,
-				updated,
-				skipped,
-				totalPoints: summary.totalPoints,
-				totalTruePoints: summary.totalTruePoints,
-				totalAwarded: summary.totalAwarded
 			}
-		});
-		
+
+			res.json({
+				success: true,
+				summary: {
+					totalGames: games.length,
+					added,
+					updated,
+					skipped,
+					totalPoints: summary.totalPoints,
+					totalTruePoints: summary.totalTruePoints,
+					totalAwarded: summary.totalAwarded
+				}
+			});
+		} finally {
+			try { retroAchievementsService.setCredentials('', ''); } catch (e) { /* ignore */ }
+		}
+
 	} catch (error: any) {
 		console.error('Error syncing RA library:', error);
 		res.status(500).json({
@@ -192,14 +224,28 @@ router.post('/sync', async (req: Request, res: Response): Promise<void> => {
 	}
 });
 
-router.post('/game', async (req: Request, res: Response): Promise<void> => {
+router.post('/game', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
 	try {
-		const { userId, gameId, username } = req.body;
+		const userId = req.user?.userId;
+		const { gameId } = req.body;
 		
 		if (!userId || !gameId) {
 			res.status(400).json({
 				success: false,
-				error: 'userId and gameId are required'
+				error: 'gameId is required'
+			});
+			return;
+		}
+
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			select: { raUsername: true }
+		});
+
+		if (!user?.raUsername) {
+			res.status(400).json({
+				success: false,
+				error: 'RetroAchievements username is not linked to this account'
 			});
 			return;
 		}
@@ -238,8 +284,8 @@ router.post('/game', async (req: Request, res: Response): Promise<void> => {
 		}
 
 		let userProgress = null;
-		if (username) {
-				const allProgress = await retroAchievementsService.getUserProgress(username);
+		if (user.raUsername) {
+				const allProgress = await retroAchievementsService.getUserProgress(user.raUsername);
 				userProgress = allProgress.find(g => g.gameId === parseInt(gameId));
 		}
 		
@@ -325,15 +371,15 @@ router.post('/game', async (req: Request, res: Response): Promise<void> => {
 	}
 });
 
-router.delete('/game/:platformGameId', async (req: Request, res: Response): Promise<void> => {
+router.delete('/game/:platformGameId', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
 	try {
 		const platformGameId = Array.isArray(req.params.platformGameId) ? req.params.platformGameId[0] : req.params.platformGameId;
-		const { userId } = req.query;
+		const userId = req.user?.userId;
 		
 		if (!userId) {
 			res.status(400).json({
 				success: false,
-				error: 'userId is required'
+				error: 'Unauthorized'
 			});
 			return;
 		}
@@ -341,7 +387,7 @@ router.delete('/game/:platformGameId', async (req: Request, res: Response): Prom
 		await prisma.libraryGame.delete({
 			where: {
 				userId_platformGameId_platform: {
-					userId: String(userId),
+					userId,
 					platformGameId,
 					platform: 'retroachievements'
 				}

@@ -1,23 +1,27 @@
 import { Router, Request, Response } from 'express';
 import { sessionTrackingService } from '../services/session-tracking.service';
+import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.get('/daily-activity', async (req: Request, res: Response) => {
+router.use(authMiddleware);
+
+router.get('/daily-activity', async (req: AuthRequest, res: Response) => {
 	try {
-		const { userId, days } = req.query;
+		const userId = req.user?.userId;
+		const { days } = req.query;
 
 		if (!userId) {
 			res.status(400).json({
 				success: false,
-				error: 'userId is required'
+				error: 'Unauthorized'
 			});
 			return;
 		}
 
 		const daysNum = days ? parseInt(days as string) : 365;
 		const activity = await sessionTrackingService.getDailyActivity(
-			userId as string,
+			userId,
 			daysNum
 		);
 
@@ -34,14 +38,15 @@ router.get('/daily-activity', async (req: Request, res: Response) => {
 	}
 });
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (req: AuthRequest, res: Response) => {
 	try {
-		const { userId, startDate, endDate, gameId, platform } = req.query;
+		const userId = req.user?.userId;
+		const { startDate, endDate, gameId, platform } = req.query;
 
 		if (!userId) {
 			res.status(400).json({
 				success: false,
-				error: 'userId is required'
+				error: 'Unauthorized'
 			});
 			return;
 		}
@@ -53,7 +58,7 @@ router.get('/', async (req: Request, res: Response) => {
 		if (platform) options.platform = platform as string;
 
 		const sessions = await sessionTrackingService.getUserSessions(
-			userId as string,
+			userId,
 			options
 		);
 
@@ -70,20 +75,21 @@ router.get('/', async (req: Request, res: Response) => {
 	}
 });
 
-router.get('/total-playtime', async (req: Request, res: Response) => {
+router.get('/total-playtime', async (req: AuthRequest, res: Response) => {
 	try {
-		const { userId, startDate, endDate } = req.query;
+		const userId = req.user?.userId;
+		const { startDate, endDate } = req.query;
 
 		if (!userId || !startDate || !endDate) {
 			res.status(400).json({
 				success: false,
-				error: 'userId, startDate, and endDate are required'
+				error: 'startDate and endDate are required'
 			});
 			return;
 		}
 
 		const totalMinutes = await sessionTrackingService.getTotalPlaytime(
-			userId as string,
+			userId,
 			new Date(startDate as string),
 			new Date(endDate as string)
 		);

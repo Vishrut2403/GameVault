@@ -2,15 +2,44 @@ import { Router, Request, Response } from 'express';
 import steamService from '../services/steam.service';
 import prisma from '../prisma';
 import { sessionTrackingService } from '../services/session-tracking.service';
+import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.get('/library/:steamId', async (req: Request, res: Response) => {
+const requireSteamOwnership = async (req: AuthRequest, res: Response, steamId: string) => {
+	if (!req.user?.userId) {
+		res.status(401).json({ error: 'Unauthorized' });
+		return false;
+	}
+
+	const currentUser = await prisma.user.findUnique({
+		where: { id: req.user.userId },
+		select: { steamId: true }
+	});
+
+	if (!currentUser?.steamId) {
+		res.status(403).json({ error: 'Steam account is not linked' });
+		return false;
+	}
+
+	if (currentUser.steamId !== steamId) {
+		res.status(403).json({ error: 'You can only access your own Steam library' });
+		return false;
+	}
+
+	return true;
+};
+
+router.get('/library/:steamId', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
 
 		if (!steamId) {
 			res.status(400).json({ error: 'Steam ID is required' });
+			return;
+		}
+
+		if (!(await requireSteamOwnership(req, res, steamId))) {
 			return;
 		}
 
@@ -74,13 +103,17 @@ router.get('/library/:steamId', async (req: Request, res: Response) => {
 	}
 });
 
-router.get('/library/:steamId/enriched', async (req: Request, res: Response) => {
+router.get('/library/:steamId/enriched', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
 		const platform = req.query.platform as string | undefined;
 
 		if (!steamId) {
 			res.status(400).json({ error: 'Steam ID is required' });
+			return;
+		}
+
+		if (!(await requireSteamOwnership(req, res, steamId))) {
 			return;
 		}
 
@@ -137,12 +170,16 @@ router.get('/library/:steamId/enriched', async (req: Request, res: Response) => 
 	}
 });
 
-router.get('/library/:steamId/platforms', async (req: Request, res: Response) => {
+router.get('/library/:steamId/platforms', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
 
 		if (!steamId) {
 			res.status(400).json({ error: 'Steam ID is required' });
+			return;
+		}
+
+		if (!(await requireSteamOwnership(req, res, steamId))) {
 			return;
 		}
 
@@ -173,12 +210,16 @@ router.get('/library/:steamId/platforms', async (req: Request, res: Response) =>
 	}
 });
 
-router.get('/library/:steamId/filter', async (req: Request, res: Response) => {
+router.get('/library/:steamId/filter', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
 
 		if (!steamId) {
 			res.status(400).json({ error: 'Steam ID is required' });
+			return;
+		}
+
+		if (!(await requireSteamOwnership(req, res, steamId))) {
 			return;
 		}
 
@@ -282,7 +323,7 @@ router.get('/library/:steamId/filter', async (req: Request, res: Response) => {
 	}
 });
 
-router.patch('/library/:steamId/game/:appId/price', async (req: Request, res: Response) => {
+router.patch('/library/:steamId/game/:appId/price', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
 		const appId = req.params.appId as string;
@@ -290,6 +331,10 @@ router.patch('/library/:steamId/game/:appId/price', async (req: Request, res: Re
 
 		if (!steamId || !appId) {
 			res.status(400).json({ error: 'Steam ID and App ID are required' });
+			return;
+		}
+
+		if (!(await requireSteamOwnership(req, res, steamId))) {
 			return;
 		}
 
@@ -343,7 +388,7 @@ router.patch('/library/:steamId/game/:appId/price', async (req: Request, res: Re
 	}
 });
 
-router.patch('/library/:steamId/game/:appId/status', async (req: Request, res: Response) => {
+router.patch('/library/:steamId/game/:appId/status', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
 		const appId = req.params.appId as string;
@@ -351,6 +396,10 @@ router.patch('/library/:steamId/game/:appId/status', async (req: Request, res: R
 
 		if (!steamId || !appId) {
 			res.status(400).json({ error: 'Steam ID and App ID are required' });
+			return;
+		}
+
+		if (!(await requireSteamOwnership(req, res, steamId))) {
 			return;
 		}
 
@@ -395,7 +444,7 @@ router.patch('/library/:steamId/game/:appId/status', async (req: Request, res: R
 	}
 });
 
-router.patch('/library/:steamId/game/:appId/rating', async (req: Request, res: Response) => {
+router.patch('/library/:steamId/game/:appId/rating', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
 		const appId = req.params.appId as string;
@@ -403,6 +452,10 @@ router.patch('/library/:steamId/game/:appId/rating', async (req: Request, res: R
 
 		if (!steamId || !appId) {
 			res.status(400).json({ error: 'Steam ID and App ID are required' });
+			return;
+		}
+
+		if (!(await requireSteamOwnership(req, res, steamId))) {
 			return;
 		}
 
@@ -442,7 +495,7 @@ router.patch('/library/:steamId/game/:appId/rating', async (req: Request, res: R
 	}
 });
 
-router.patch('/library/:steamId/game/:appId/tags', async (req: Request, res: Response) => {
+router.patch('/library/:steamId/game/:appId/tags', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
 		const appId = req.params.appId as string;
@@ -450,6 +503,10 @@ router.patch('/library/:steamId/game/:appId/tags', async (req: Request, res: Res
 
 		if (!steamId || !appId) {
 			res.status(400).json({ error: 'Steam ID and App ID are required' });
+			return;
+		}
+
+		if (!(await requireSteamOwnership(req, res, steamId))) {
 			return;
 		}
 
@@ -502,7 +559,7 @@ router.patch('/library/:steamId/game/:appId/tags', async (req: Request, res: Res
 	}
 });
 
-router.patch('/library/:steamId/game/:appId/review', async (req: Request, res: Response) => {
+router.patch('/library/:steamId/game/:appId/review', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
 		const appId = req.params.appId as string;
@@ -510,6 +567,10 @@ router.patch('/library/:steamId/game/:appId/review', async (req: Request, res: R
 
 		if (!steamId || !appId) {
 			res.status(400).json({ error: 'Steam ID and App ID are required' });
+			return;
+		}
+
+		if (!(await requireSteamOwnership(req, res, steamId))) {
 			return;
 		}
 
@@ -554,7 +615,7 @@ router.patch('/library/:steamId/game/:appId/review', async (req: Request, res: R
 	}
 });
 
-router.patch('/library/:steamId/game/:appId/image', async (req: Request, res: Response) => {
+router.patch('/library/:steamId/game/:appId/image', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
 		const appId = req.params.appId as string;
@@ -562,6 +623,10 @@ router.patch('/library/:steamId/game/:appId/image', async (req: Request, res: Re
 
 		if (!steamId || !appId) {
 			res.status(400).json({ error: 'Steam ID and App ID are required' });
+			return;
+		}
+
+		if (!(await requireSteamOwnership(req, res, steamId))) {
 			return;
 		}
 
@@ -606,12 +671,16 @@ router.patch('/library/:steamId/game/:appId/image', async (req: Request, res: Re
 	}
 });
 
-router.get('/player/:steamId', async (req: Request, res: Response) => {
+router.get('/player/:steamId', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
 
 		if (!steamId) {
 			res.status(400).json({ error: 'Steam ID is required' });
+			return;
+		}
+
+		if (!(await requireSteamOwnership(req, res, steamId))) {
 			return;
 		}
 

@@ -1,23 +1,24 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense, lazy } from 'react';
 import steamService from '../services/steam.service';
 import { useAutoSync } from '../hooks/useAutoSync';
-import SteamWishlist from '../components/SteamWishlist';
-import RecommendationSystem from '../components/RecommendationSystem';
-import SmartRecommendationsList from '../components/SmartRecommendationsList';
 import { AddGameMenu } from '../components/AddGameMenu';
-import SyncRALibraryModal from '../components/SyncRALibraryModal';
-import AddRAGameModal from '../components/AddRAGameModal';
-import AutoLinkISOsModal from '../components/AutoLinkISOsModal';
-import { AddAppleGameModal } from '../components/AddAppleGameModal';
-import { AddMinecraftWorldModal } from '../components/AddMinecraftWorldModal';
 import { GameCard } from '../components/GameCard';
-import { GameModal } from '../components/GameModal';
 import { GameTable } from '../components/GameTable';
 import { GameFilters, type GameFilterState } from '../components/GameFilters';
 import type { LibraryGame, TabType, SortField, SortDirection } from '../types/games.types';
-import { Analytics } from '../components/Analytics';
-import { TierList } from '../components/TierList';
-import ProfilePage from '../pages/ProfilePage';
+
+const ProfilePage = lazy(() => import('../pages/ProfilePage'));
+const SteamWishlist = lazy(() => import('../components/SteamWishlist'));
+const RecommendationSystem = lazy(() => import('../components/RecommendationSystem'));
+const SmartRecommendationsList = lazy(() => import('../components/SmartRecommendationsList'));
+const SyncRALibraryModal = lazy(() => import('../components/SyncRALibraryModal'));
+const AddRAGameModal = lazy(() => import('../components/AddRAGameModal'));
+const AutoLinkISOsModal = lazy(() => import('../components/AutoLinkISOsModal'));
+const AddAppleGameModal = lazy(() => import('../components/AddAppleGameModal').then(m => ({ default: m.AddAppleGameModal })));
+const AddMinecraftWorldModal = lazy(() => import('../components/AddMinecraftWorldModal').then(m => ({ default: m.AddMinecraftWorldModal })));
+const GameModal = lazy(() => import('../components/GameModal').then(m => ({ default: m.GameModal })));
+const Analytics = lazy(() => import('../components/Analytics').then(m => ({ default: m.Analytics })));
+const TierList = lazy(() => import('../components/TierList').then(m => ({ default: m.TierList })));
 
 interface HomeProps {
 	user: any;
@@ -305,6 +306,14 @@ function Home({ user, onLogout }: HomeProps) {
 	};
 
 	return (
+		<Suspense fallback={
+			<div className="flex items-center justify-center py-40">
+				<div className="relative">
+					<div className="w-20 h-20 border-4 border-slate-800/50 border-t-blue-500 rounded-full animate-spin" />
+					<div className="absolute inset-0 w-20 h-20 border-4 border-transparent border-t-cyan-500 rounded-full animate-spin" style={{ animationDelay: '150ms' }} />
+				</div>
+			</div>
+		}>
 		<div className="min-h-screen bg-[#000000] text-[#e5e5e5]">
 			{/* Header */}
 			<div className="sticky top-0 z-50 bg-[#1a1a1a] border-b border-[#333333]">
@@ -599,7 +608,6 @@ function Home({ user, onLogout }: HomeProps) {
 				isOpen={showAutoLinkISOsModal}
 				onClose={() => setShowAutoLinkISOsModal(false)}
 				onLink={refreshFromDB}
-				userId={user.id}
 			/>
 
 			<AddAppleGameModal
@@ -616,6 +624,7 @@ function Home({ user, onLogout }: HomeProps) {
 				userId={user.id}
 			/>
 		</div>
+		</Suspense>
 	);
 }
 

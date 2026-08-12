@@ -1,14 +1,16 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../prisma';
 import { MinecraftService } from '../services/minecraft.service';
+import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 const minecraftService = new MinecraftService();
 
-router.post('/games/manual', async (req: Request, res: Response) => {
+router.use(authMiddleware);
+
+router.post('/games/manual', async (req: AuthRequest, res: Response) => {
 	try {
 		const {
-			userId,
 			platform,
 			platformGameId,
 			name,
@@ -20,6 +22,7 @@ router.post('/games/manual', async (req: Request, res: Response) => {
 			userTags,
 			platformData,
 		} = req.body;
+		const userId = req.user?.userId;
 
 		if (!userId || !platform || !platformGameId || !name) {
 			res.status(400).json({ error: 'Missing required fields' });
@@ -61,27 +64,35 @@ router.post('/games/manual', async (req: Request, res: Response) => {
 	}
 });
 
-router.patch('/games/:platform/:platformGameId', async (req: Request, res: Response) => {
+router.patch('/games/:platform/:platformGameId', async (req: AuthRequest, res: Response) => {
 	try {
 		const platform = Array.isArray(req.params.platform) ? req.params.platform[0] : req.params.platform;
 		const platformGameId = Array.isArray(req.params.platformGameId) ? req.params.platformGameId[0] : req.params.platformGameId;
 		const { userId, ...updateData } = req.body;
+		const authenticatedUserId = req.user?.userId;
 
 		if (!platform || !platformGameId) {
 			res.status(400).json({ error: 'platform and platformGameId are required' });
 			return;
 		}
 
-		if (!userId || typeof userId !== 'string') {
-			res.status(400).json({ error: 'userId is required' });
+		if (!authenticatedUserId) {
+			res.status(401).json({ error: 'Unauthorized' });
 			return;
 		}
+
+		if (userId && userId !== authenticatedUserId) {
+			res.status(403).json({ error: 'You can only update your own games' });
+			return;
+		}
+
+		const effectiveUserId = authenticatedUserId;
 
 		if (updateData.pricePaid !== undefined || updateData.playtimeForever !== undefined) {
 			const game = await prisma.libraryGame.findUnique({
 				where: {
 					userId_platformGameId_platform: {
-						userId: userId,
+						userId: effectiveUserId,
 						platformGameId: platformGameId,
 						platform: platform,
 					},
@@ -99,7 +110,7 @@ router.patch('/games/:platform/:platformGameId', async (req: Request, res: Respo
 		const updated = await prisma.libraryGame.update({
 			where: {
 				userId_platformGameId_platform: {
-					userId: userId,
+					userId: effectiveUserId,
 					platformGameId: platformGameId,
 					platform: platform,
 				},
@@ -116,26 +127,32 @@ router.patch('/games/:platform/:platformGameId', async (req: Request, res: Respo
 	}
 });
 
-router.delete('/games/:platform/:platformGameId', async (req: Request, res: Response) => {
+router.delete('/games/:platform/:platformGameId', async (req: AuthRequest, res: Response) => {
 	try {
 		const platform = Array.isArray(req.params.platform) ? req.params.platform[0] : req.params.platform;
 		const platformGameId = Array.isArray(req.params.platformGameId) ? req.params.platformGameId[0] : req.params.platformGameId;
 		const { userId } = req.body;
+		const authenticatedUserId = req.user?.userId;
 
 		if (!platform || !platformGameId) {
 			res.status(400).json({ error: 'platform and platformGameId are required' });
 			return;
 		}
 
-		if (!userId || typeof userId !== 'string') {
-			res.status(400).json({ error: 'userId is required' });
+		if (!authenticatedUserId) {
+			res.status(401).json({ error: 'Unauthorized' });
+			return;
+		}
+
+		if (userId && userId !== authenticatedUserId) {
+			res.status(403).json({ error: 'You can only delete your own games' });
 			return;
 		}
 
 		await prisma.libraryGame.delete({
 			where: {
 				userId_platformGameId_platform: {
-					userId: userId,
+					userId: authenticatedUserId,
 					platformGameId: platformGameId,
 					platform: platform,
 				},
@@ -151,18 +168,29 @@ router.delete('/games/:platform/:platformGameId', async (req: Request, res: Resp
 	}
 });
 
-router.patch('/games/:platform/:platformGameId/image', async (req: Request, res: Response) => {
+router.patch('/games/:platform/:platformGameId/image', async (req: AuthRequest, res: Response) => {
 	try {
 		const platform = Array.isArray(req.params.platform) ? req.params.platform[0] : req.params.platform;
 		const platformGameId = Array.isArray(req.params.platformGameId) ? req.params.platformGameId[0] : req.params.platformGameId;
 		const { userId, headerImage } = req.body;
+		const authenticatedUserId = req.user?.userId;
 
 		if (!platform || !platformGameId) {
 			res.status(400).json({ error: 'platform and platformGameId are required' });
 			return;
 		}
 
-		if (!userId || typeof userId !== 'string' || !headerImage || typeof headerImage !== 'string') {
+		if (!authenticatedUserId) {
+			res.status(401).json({ error: 'Unauthorized' });
+			return;
+		}
+
+		if (userId && userId !== authenticatedUserId) {
+			res.status(403).json({ error: 'You can only update your own games' });
+			return;
+		}
+
+		if (!headerImage || typeof headerImage !== 'string') {
 			res.status(400).json({ error: 'userId and headerImage are required' });
 			return;
 		}
@@ -175,7 +203,7 @@ router.patch('/games/:platform/:platformGameId/image', async (req: Request, res:
 		const updated = await prisma.libraryGame.update({
 			where: {
 				userId_platformGameId_platform: {
-					userId: userId,
+					userId: authenticatedUserId,
 					platformGameId: platformGameId,
 					platform: platform,
 				},
@@ -204,9 +232,10 @@ router.get('/minecraft/instances', async (req: Request, res: Response) => {
 	}
 });
 
-router.post('/minecraft/sync', async (req: Request, res: Response) => {
+router.post('/minecraft/sync', async (req: AuthRequest, res: Response) => {
 	try {
-		const { userId, worldPath, worldName, instanceName } = req.body;
+		const { worldPath, worldName, instanceName } = req.body;
+		const userId = req.user?.userId;
 
 		if (!userId || !worldPath || !worldName) {
 			res.status(400).json({ error: 'Missing required fields' });
