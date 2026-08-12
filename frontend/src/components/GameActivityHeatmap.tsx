@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import type { LibraryGame } from '../types/games.types';
 import { API_BASE_URL } from '../services/api';
-import { istDateString } from '../utils/dates';
+import { istDateString, dayOfWeek } from '../utils/dates';
 
 interface GameActivityHeatmapProps {
 	games: LibraryGame[];
@@ -13,6 +13,29 @@ interface DayActivity {
 	hours: number;
 	games: string[];
 	count: number;
+}
+
+/**
+ * A year of empty days, ending today and starting on a Sunday.
+ *
+ * Every column then holds a full week, the way GitHub's contribution graph
+ * works. Starting exactly 365 days back instead would leave the first column a
+ * ragged stub beginning on whatever weekday happened to fall a year ago.
+ */
+function buildYearOfDays(): Map<string, DayActivity> {
+	const today = new Date();
+	const start = new Date(today);
+	start.setDate(today.getDate() - 364);
+	while (dayOfWeek(istDateString(start)) !== 0) {
+		start.setDate(start.getDate() - 1);
+	}
+
+	const days = new Map<string, DayActivity>();
+	for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
+		const dateStr = istDateString(d);
+		days.set(dateStr, { date: dateStr, hours: 0, games: [], count: 0 });
+	}
+	return days;
 }
 
 export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games, userId }) => {
@@ -31,22 +54,8 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 				const data = await response.json();
 				
 				if (data.success) {
-					const today = new Date();
-					const oneYearAgo = new Date(today);
-					oneYearAgo.setDate(today.getDate() - 365);
-					
-					const allDaysMap = new Map<string, DayActivity>();
+					const allDaysMap = buildYearOfDays();
 
-					for (let d = new Date(oneYearAgo); d <= today; d.setDate(d.getDate() + 1)) {
-						const dateStr = istDateString(d);
-						allDaysMap.set(dateStr, {
-							date: dateStr,
-							hours: 0,
-							games: [],
-							count: 0
-						});
-					}
-					
 					data.data.forEach((session: DayActivity) => {
 						allDaysMap.set(session.date, session);
 					});
@@ -67,21 +76,7 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 	}, [userId, games]);
 
 	const generateEstimatedData = (): DayActivity[] => {
-		const today = new Date();
-		const oneYearAgo = new Date(today);
-		oneYearAgo.setDate(today.getDate() - 365);
-		
-		const activityMap = new Map<string, DayActivity>();
-		
-		for (let d = new Date(oneYearAgo); d <= today; d.setDate(d.getDate() + 1)) {
-			const dateStr = istDateString(d);
-			activityMap.set(dateStr, {
-				date: dateStr,
-				hours: 0,
-				games: [],
-				count: 0
-			});
-		}
+		const activityMap = buildYearOfDays();
 		
 		games.forEach(game => {
 			const lastPlayed = (game as any).lastPlayedAt;
@@ -100,12 +95,13 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 		return Array.from(activityMap.values());
 	};
 	
+	// GitHub's contribution-graph scale.
 	const getColorIntensity = (hours: number): { backgroundColor: string } => {
-		if (hours === 0) return { backgroundColor: '#0d1117' };
-		if (hours < 0.5) return { backgroundColor: '#0f662a' };
-		if (hours < 1) return { backgroundColor: '#1a7f37' };
-		if (hours < 2) return { backgroundColor: '#26d07c' };
-		return { backgroundColor: '#3fb950' };
+		if (hours === 0) return { backgroundColor: '#161b22' };
+		if (hours < 0.5) return { backgroundColor: '#0e4429' };
+		if (hours < 1) return { backgroundColor: '#006d32' };
+		if (hours < 2) return { backgroundColor: '#26a641' };
+		return { backgroundColor: '#39d353' };
 	};
 	
 	const weeks = useMemo(() => {
@@ -113,10 +109,7 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 		let currentWeek: DayActivity[] = [];
 		
 		activityData.forEach((day, idx) => {
-			const date = new Date(day.date);
-			const dayOfWeek = date.getDay();
-			
-			if (dayOfWeek === 0 && currentWeek.length > 0) {
+			if (dayOfWeek(day.date) === 0 && currentWeek.length > 0) {
 				result.push(currentWeek);
 				currentWeek = [];
 			}
@@ -138,12 +131,12 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 		weeks.forEach((week, idx) => {
 			const firstDay = week[0];
 			if (firstDay) {
-				const date = new Date(firstDay.date);
-				const month = date.getMonth();
-				
+				const date = new Date(`${firstDay.date}T00:00:00Z`);
+				const month = date.getUTCMonth();
+
 				if (month !== lastMonth) {
 					labels.push({
-						month: date.toLocaleString('default', { month: 'short' }),
+						month: date.toLocaleString('default', { month: 'short', timeZone: 'UTC' }),
 						col: idx
 					});
 					lastMonth = month;
@@ -153,7 +146,14 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 		
 		return labels;
 	}, [weeks]);
-	
+
+	// Keyed by week column so the header can be rendered as part of the same
+	// grid, rather than positioned over it with pixel offsets.
+	const monthByCol = useMemo(
+		() => new Map(monthLabels.map(l => [l.col, l.month])),
+		[monthLabels]
+	);
+
 	const formatDate = (dateStr: string) => {
 		const date = new Date(dateStr);
 		return date.toLocaleDateString('default', { 
@@ -201,23 +201,30 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 			</div>
 			
 			{/* Heatmap */}
-			<div className="relative">
-				{/* Month labels */}
-				<div className="flex gap-[3px] mb-2 ml-8">
-					{monthLabels.map((label, idx) => (
-						<div 
-							key={idx}
-							className="text-xs text-[#696969] absolute"
-							style={{ left: `${label.col * 15 + 32}px` }}
-						>
-							{label.month}
-						</div>
-					))}
+			<div>
+				{/* Month labels. These sit in a row built from the same column
+				    widths as the grid below — one cell per week — so a label
+				    always lands on the week its month starts in. Positioning
+				    them absolutely over the grid meant hardcoding the column
+				    pitch, which drifted out of step with the squares. */}
+				<div className="flex mb-1">
+					<div className="w-8 mr-2 shrink-0" />
+					<div className="flex gap-[3px]">
+						{weeks.map((_, weekIdx) => (
+							<div key={weekIdx} className="w-3 h-4 shrink-0 relative">
+								{monthByCol.has(weekIdx) && (
+									<span className="absolute left-0 top-0 text-xs text-[#696969] whitespace-nowrap">
+										{monthByCol.get(weekIdx)}
+									</span>
+								)}
+							</div>
+						))}
+					</div>
 				</div>
-				
+
 				{/* Day labels */}
 				<div className="flex">
-					<div className="flex flex-col gap-[3px] text-xs text-gray-500 mr-2 mt-6">
+					<div className="flex flex-col gap-[3px] text-xs text-gray-500 mr-2 w-8 shrink-0">
 						<div className="h-3">Mon</div>
 						<div className="h-3"></div>
 						<div className="h-3">Wed</div>
@@ -228,14 +235,14 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 					</div>
 					
 					{/* Calendar grid */}
-					<div className="flex gap-[3px] mt-6">
+					<div className="flex gap-[3px]">
 						{weeks.map((week, weekIdx) => (
-							<div key={weekIdx} className="flex flex-col gap-[3px]">
-								{[0, 1, 2, 3, 4, 5, 6].map(dayOfWeek => {
-									const day = week.find(d => new Date(d.date).getDay() === dayOfWeek);
-									
+							<div key={weekIdx} className="flex flex-col gap-[3px] w-3 shrink-0">
+								{[0, 1, 2, 3, 4, 5, 6].map(weekday => {
+									const day = week.find(d => dayOfWeek(d.date) === weekday);
+
 									if (!day) {
-										return <div key={dayOfWeek} className="w-3 h-3" />;
+										return <div key={weekday} className="w-3 h-3" />;
 									}
 									
 									return (
@@ -258,11 +265,11 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 				{/* Legend */}
 				<div className="flex items-center gap-2 mt-4 text-xs text-[#696969]">
 					<span>Less</span>
-				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#0d1117' }} />
-				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#0f662a' }} />
-				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#1a7f37' }} />
-				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#26d07c' }} />
-				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#3fb950' }} />
+				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#161b22' }} />
+				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#0e4429' }} />
+				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#006d32' }} />
+				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#26a641' }} />
+				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#39d353' }} />
 					<span>More</span>
 				</div>
 			</div>
