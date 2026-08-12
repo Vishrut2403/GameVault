@@ -1,13 +1,6 @@
 // Frontend types that match the Prisma schema exactly
 
-export type Platform = 
-	| 'steam' 
-	| 'retroachievements' 
-	| 'pcsx2' 
-	| 'rpcs3' 
-	| 'ppsspp' 
-	| 'apple_gc' 
-	| 'minecraft';
+export type Platform = 'steam';
 
 export type GameStatus = 'playing' | 'completed' | 'backlog' | 'unplayed';
 
@@ -42,19 +35,6 @@ export interface LibraryGame {
 	
 	// Platform-specific metadata (JSON)
 	platformData?: {
-		// RetroAchievements
-		consoleId?: number;
-		consoleName?: string;
-		consoleDisplayName?: string;
-		
-		// PCSX2/RPCS3/PPSSPP
-		gameId?: string;
-		region?: string;
-		
-		// Minecraft
-		version?: string;
-		
-		// Any other platform-specific data
 		[key: string]: any;
 	} | null;
 	
@@ -112,19 +92,7 @@ export interface User {
 	steamUsername: string | null;
 	steamAvatar: string | null;
 	steamLinkedAt: Date | null;
-	
-	raUsername: string | null;
-	raApiKey: string | null;
-	raLinkedAt: Date | null;
-	
-	enablePCSX2: boolean;
-	enableRPCS3: boolean;
-	enablePPSSPP: boolean;
-	
-	autoSyncSteam: boolean;
-	autoSyncRA: boolean;
-	autoSyncEmulators: boolean;
-	
+
 	createdAt: Date;
 	updatedAt: Date;
 	lastLoginAt: Date | null;

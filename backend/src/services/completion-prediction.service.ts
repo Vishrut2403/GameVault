@@ -29,6 +29,7 @@ export class CompletionPredictionService {
 		const completedGames = await this.prisma.libraryGame.findMany({
 			where: {
 				userId,
+				platform: 'steam',
 				status: 'completed',
 				playtimeForever: { gt: 0 },
 			},
@@ -41,6 +42,7 @@ export class CompletionPredictionService {
 		const playedGames = await this.prisma.libraryGame.findMany({
 			where: {
 				userId,
+				platform: 'steam',
 				playtimeForever: { gt: 0 },
 			},
 		});

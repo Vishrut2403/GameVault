@@ -46,38 +46,15 @@ Invalid Steam API key. Get a new one at https://steamcommunity.com/dev/apikey.
 
 ---
 
-## RetroArch
-
-**No games after sync**
-1. Check that `~/.config/retroarch/playlists/` has at least one `.lpl` file
-2. Enable RetroArch toggle in Profile
-3. Click Sync All Emulators
-
-**Playtime shows 0h**
-Play a game in RetroArch first — runtime logs are only created after a session. Then sync again.
-
-**Toggle not persisting after restart**
-Log out and log back in to get a fresh token.
-
----
-
 ## HLTB
 
-HLTB shows no data for some games — this is expected. The unofficial API covers most popular titles but not all. RetroArch games won't show HLTB data due to ROM filename format. The app falls back silently.
+HLTB shows no data for some games — this is expected. The unofficial API covers most popular titles but not all. The app falls back silently.
 
 To reset stale HLTB data for a wishlist game:
 ```bash
 npx prisma studio
 ```
 Open `steam_wishlist`, find the game, set `hltbMain`, `hltbExtra`, `hltbCompletionist`, `hltbName` to null.
-
----
-
-## Minecraft
-
-**No instances showing**
-1. Launch Prism Launcher and create at least one instance
-2. Verify the path in `.env` — default: `~/.local/share/PrismLauncher/instances`
 
 ---
 

@@ -13,69 +13,6 @@ export function PlatformBadge({ platform, className = '', showLabel = true }: Pl
 			textColor: 'text-[#7a9fc3]',
 			borderColor: 'border-[#5a7fa3]'
 		},
-		apple_gc: { 
-			icon: '🍎', 
-			label: 'iOS', 
-			bgColor: 'bg-[#1a1a1a]',
-			textColor: 'text-[#a0a0a0]',
-			borderColor: 'border-[#5a5a5a]'
-		},
-		minecraft: { 
-			icon: '⛏️', 
-			label: 'Minecraft', 
-			bgColor: 'bg-[#1a1a1a]',
-			textColor: 'text-[#7a9fc3]',
-			borderColor: 'border-[#5a7fa3]'
-		},
-		ps2: { 
-			icon: '🎮', 
-			label: 'PS2', 
-			bgColor: 'bg-[#1a1a1a]',
-			textColor: 'text-[#7a9fc3]',
-			borderColor: 'border-[#5a7fa3]'
-		},
-		ps3: { 
-			icon: '🎮', 
-			label: 'PS3', 
-			bgColor: 'bg-[#1a1a1a]',
-			textColor: 'text-[#7a9fc3]',
-			borderColor: 'border-[#5a7fa3]'
-		},
-		retroachievements: {
-			icon: '🏆',
-			label: 'RetroArch',
-			bgColor: 'bg-[#1a1a1a]',
-			textColor: 'text-[#7a9fc3]',
-			borderColor: 'border-[#5a7fa3]'
-		},
-		retroarch: {
-			icon: '🎮',
-			label: 'RetroArch',
-			bgColor: 'bg-[#1a1a1a]',
-			textColor: 'text-[#7a9fc3]',
-			borderColor: 'border-[#5a7fa3]'
-		},
-		ppsspp: {
-			icon: '🎮',
-			label: 'PPSSPP',
-			bgColor: 'bg-[#1a1a1a]',
-			textColor: 'text-[#7a9fc3]',
-			borderColor: 'border-[#5a7fa3]'
-		},
-		pcsx2: {
-			icon: '🎮',
-			label: 'PCSX2',
-			bgColor: 'bg-[#1a1a1a]',
-			textColor: 'text-[#7a9fc3]',
-			borderColor: 'border-[#5a7fa3]'
-		},
-		rpcs3: {
-			icon: '🎮',
-			label: 'RPCS3',
-			bgColor: 'bg-[#1a1a1a]',
-			textColor: 'text-[#7a9fc3]',
-			borderColor: 'border-[#5a7fa3]'
-		},
 	};
 
 	const badge = badges[platform] || { 

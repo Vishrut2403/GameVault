@@ -29,10 +29,7 @@ Authorization: Bearer <JWT_TOKEN>
 | GET | `/api/user/library` | Get all games |
 | GET | `/api/user/sessions` | Get session data |
 | GET | `/api/user/activity` | Get daily activity (heatmap) |
-| POST | `/api/user/connect-ra` | Connect RetroAchievements |
-| POST | `/api/user/disconnect-ra` | Disconnect RetroAchievements |
 | POST | `/api/user/disconnect-steam` | Disconnect Steam |
-| POST | `/api/user/toggle-emulator` | Toggle emulator (PCSX2, RPCS3, PPSSPP, RetroArch) |
 
 ---
 
@@ -45,38 +42,12 @@ Authorization: Bearer <JWT_TOKEN>
 
 ---
 
-## RetroArch
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/retroarch/instances` | Preview detected games without syncing |
-| POST | `/api/retroarch/sync` | Sync all RetroArch games into library |
-
----
-
-## RetroAchievements
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/retroachievements/sync-library` | Sync RA library |
-
----
-
 ## HLTB
 
 | Method | Endpoint | Description |
 |---|---|---|
 | GET | `/api/hltb/steam/:appId` | Get HLTB data by Steam appId |
 | GET | `/api/hltb/name/:gameName` | Get HLTB data by name (fallback) |
-
----
-
-## Minecraft
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/minecraft/instances` | List Prism Launcher instances |
-| POST | `/api/minecraft/add` | Add world to library |
 
 ---
 
@@ -111,10 +82,3 @@ Authorization: Bearer <JWT_TOKEN>
 
 ---
 
-## Emulators
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/pcsx2/sync` | Sync PCSX2 library |
-| POST | `/api/rpcs3/sync` | Sync RPCS3 library |
-| POST | `/api/ppsspp/sync` | Sync PPSSPP library |

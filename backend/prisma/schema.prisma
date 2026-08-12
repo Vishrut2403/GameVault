@@ -22,20 +22,7 @@ model User {
   steamUsername String?
   steamAvatar   String?
   steamLinkedAt DateTime?
-  
-  raUsername    String?
-  raApiKey      String?
-  raLinkedAt    DateTime?
-  
-  enablePCSX2       Boolean  @default(false)
-  enableRPCS3       Boolean  @default(false)
-  enablePPSSPP      Boolean  @default(false)
-  enableRetroArch   Boolean  @default(false)
-  
-  autoSyncSteam     Boolean @default(false)
-  autoSyncRA        Boolean @default(false)
-  autoSyncEmulators Boolean @default(false)
-  
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   lastLoginAt   DateTime?
@@ -51,7 +38,7 @@ model User {
 model LibraryGame {
   id                 String   @id @default(uuid())
   userId             String
-  platform           String   // 'steam', 'retroachievements', 'pcsx2', 'rpcs3', 'ppsspp', 'apple_gc', 'minecraft'
+  platform           String   // 'steam'
   platformGameId     String
   name               String
   imageUrl           String?

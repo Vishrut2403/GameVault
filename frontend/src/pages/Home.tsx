@@ -1,7 +1,5 @@
 import { useState, useEffect, useMemo, Suspense, lazy } from 'react';
 import steamService from '../services/steam.service';
-import { useAutoSync } from '../hooks/useAutoSync';
-import { AddGameMenu } from '../components/AddGameMenu';
 import { GameCard } from '../components/GameCard';
 import { GameTable } from '../components/GameTable';
 import { GameFilters, type GameFilterState } from '../components/GameFilters';
@@ -11,11 +9,6 @@ const ProfilePage = lazy(() => import('../pages/ProfilePage'));
 const SteamWishlist = lazy(() => import('../components/SteamWishlist'));
 const RecommendationSystem = lazy(() => import('../components/RecommendationSystem'));
 const SmartRecommendationsList = lazy(() => import('../components/SmartRecommendationsList'));
-const SyncRALibraryModal = lazy(() => import('../components/SyncRALibraryModal'));
-const AddRAGameModal = lazy(() => import('../components/AddRAGameModal'));
-const AutoLinkISOsModal = lazy(() => import('../components/AutoLinkISOsModal'));
-const AddAppleGameModal = lazy(() => import('../components/AddAppleGameModal').then(m => ({ default: m.AddAppleGameModal })));
-const AddMinecraftWorldModal = lazy(() => import('../components/AddMinecraftWorldModal').then(m => ({ default: m.AddMinecraftWorldModal })));
 const GameModal = lazy(() => import('../components/GameModal').then(m => ({ default: m.GameModal })));
 const Analytics = lazy(() => import('../components/Analytics').then(m => ({ default: m.Analytics })));
 const TierList = lazy(() => import('../components/TierList').then(m => ({ default: m.TierList })));
@@ -33,22 +26,13 @@ function Home({ user, onLogout }: HomeProps) {
 	const [error, setError] = useState('');
 	const [selectedGame, setSelectedGame] = useState<LibraryGame | null>(null);
 	const [activeTab, setActiveTab] = useState<TabType>('journal');
-	
-	const { syncing: autoSyncing, triggerSync } = useAutoSync();
-	
-	const [showSyncRAModal, setShowSyncRAModal] = useState(false);
-	const [showAddRAGameModal, setShowAddRAGameModal] = useState(false);
-	const [showAutoLinkISOsModal, setShowAutoLinkISOsModal] = useState(false);
-	const [showAddAppleGameModal, setShowAddAppleGameModal] = useState(false);
-	const [showAddMinecraftWorldModal, setShowAddMinecraftWorldModal] = useState(false);
-	
+
 	const [sortField, setSortField] = useState<SortField>('playtime');
 	const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 	const [showSortDropdown, setShowSortDropdown] = useState(false);
 
 	// Multi-filter state
 	const [filters, setFilters] = useState<GameFilterState>({
-		platforms: [],
 		statuses: [],
 		minRating: null,
 		maxRating: null,
@@ -69,7 +53,7 @@ function Home({ user, onLogout }: HomeProps) {
 	useEffect(() => {
 		if (!user?.steamId) return;
 		
-		if (filters.platforms.length > 0 || filters.statuses.length > 0 || filters.minRating !== null || filters.maxRating !== null || filters.maxPrice !== null || filters.tags.length > 0 || filters.searchQuery !== '') {
+		if (filters.statuses.length > 0 || filters.minRating !== null || filters.maxRating !== null || filters.maxPrice !== null || filters.tags.length > 0 || filters.searchQuery !== '') {
 			applyFilters();
 		} else {
 			loadFromDB(user.steamId);
@@ -120,7 +104,6 @@ function Home({ user, onLogout }: HomeProps) {
 			const data = await steamService.getEnrichedLibrary(user.steamId);
 			setLibrary({ ...data, userId: user.id });
 			setFilters({
-				platforms: [],
 				statuses: [],
 				minRating: null,
 				maxRating: null,
@@ -151,7 +134,6 @@ function Home({ user, onLogout }: HomeProps) {
 			}
 			
 			setFilters({
-				platforms: [],
 				statuses: [],
 				minRating: null,
 				maxRating: null,
@@ -161,16 +143,6 @@ function Home({ user, onLogout }: HomeProps) {
 			});
 		} catch (err) {
 			console.error('Failed to refresh');
-		}
-	};
-
-	const handleAutoSync = async () => {
-		try {
-			await triggerSync();
-			await new Promise(resolve => setTimeout(resolve, 1000));
-			await refreshFromDB();
-		} catch (err) {
-			console.error('Auto-sync failed:', err);
 		}
 	};
 
@@ -187,59 +159,6 @@ function Home({ user, onLogout }: HomeProps) {
 			}
 		} catch (error) {
 			console.error('Failed to reload user');
-		}
-	};
-
-	const handleSyncAllEmulators = async () => {
-		try {
-			setLoading(true);
-
-			const token = localStorage.getItem('token');
-			const authHeaders = {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${token}`,
-			};
-
-			const results = await Promise.allSettled([
-				fetch(`${API_URL}/api/pcsx2/sync`, {
-					method: 'POST',
-					headers: authHeaders,
-					body: JSON.stringify({ userId: user.id }),
-				}).then(r => r.json()),
-
-				fetch(`${API_URL}/api/ppsspp/sync`, {
-					method: 'POST',
-					headers: authHeaders,
-					body: JSON.stringify({ userId: user.id }),
-				}).then(r => r.json()),
-
-				fetch(`${API_URL}/api/rpcs3/sync`, {
-					method: 'POST',
-					headers: authHeaders,
-					body: JSON.stringify({ userId: user.id }),
-				}).then(r => r.json()),
-
-				user.enableRetroArch
-					? fetch(`${API_URL}/api/retroarch/sync`, {
-							method: 'POST',
-							headers: authHeaders,
-						}).then(r => r.json())
-					: Promise.resolve({ success: true, message: 'RetroArch not enabled' }),
-			]);
-
-			results.forEach((result) => {
-				if (result.status === 'fulfilled') {
-				} else {
-					console.warn('Sync failed:', result.reason?.message);
-				}
-			});
-
-			await refreshFromDB();
-		} catch (error) {
-			console.error('Error syncing emulators:', error);
-			alert('Failed to sync emulators');
-		} finally {
-			setLoading(false);
 		}
 	};
 
@@ -449,48 +368,12 @@ function Home({ user, onLogout }: HomeProps) {
 
 							{/* Action Buttons - Right aligned, same row */}
 							<div className="flex items-center gap-2 flex-shrink-0">
-								<AddGameMenu 
-									userId={user.id} 
-									onGameAdded={refreshFromDB}
-									onSyncRA={() => setShowSyncRAModal(true)}
-									onAddRAGame={() => setShowAddRAGameModal(true)}
-									onAutoLinkISOs={() => setShowAutoLinkISOsModal(true)}
-									onAddAppleGame={() => setShowAddAppleGameModal(true)}
-									onAddMinecraftWorld={() => setShowAddMinecraftWorldModal(true)}
-								/>
-
 								<button
 									onClick={syncFromSteam}
 									disabled={syncing || !user.steamId}
 									className="px-6 py-2.5 bg-[#1a1a1a] rounded-xl border border-[#333333] font-semibold hover:bg-[#2a2a2a] transition-all duration-300 shadow-md disabled:opacity-50 text-[#e5e5e5] whitespace-nowrap"
 								>
 									{syncing ? '⟳ Syncing...' : '⟳ Sync Steam'}
-								</button>
-
-								<button
-									onClick={handleSyncAllEmulators}
-									disabled={loading}
-									className="px-6 py-2.5 bg-[#1a1a1a] rounded-xl border border-[#333333] font-semibold hover:bg-[#2a2a2a] transition-all duration-300 shadow-md disabled:opacity-50 text-[#e5e5e5] whitespace-nowrap"
-								>
-									{loading ? '⟳ Syncing...' : 'Sync All Emulators'}
-								</button>
-
-								<button
-									onClick={handleAutoSync}
-									disabled={autoSyncing}
-									className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl font-semibold transition-all duration-300 shadow-md disabled:opacity-50 whitespace-nowrap"
-									title="Auto-sync Steam + all enabled emulators"
-								>
-									{autoSyncing ? (
-										<>
-											<span className="animate-spin inline-block mr-2">⏳</span>
-											Auto-Syncing...
-										</>
-									) : (
-										<>
-											Sync All Platforms
-										</>
-									)}
 								</button>
 							</div>
 						</div>
@@ -589,40 +472,6 @@ function Home({ user, onLogout }: HomeProps) {
 				/>
 			)}
 
-			{/* Modals */}
-			<SyncRALibraryModal
-				isOpen={showSyncRAModal}
-				onClose={() => setShowSyncRAModal(false)}
-				onSync={refreshFromDB}
-				userId={user.id}
-			/>
-
-			<AddRAGameModal
-				isOpen={showAddRAGameModal}
-				onClose={() => setShowAddRAGameModal(false)}
-				onAdd={refreshFromDB}
-				userId={user.id}
-			/>
-
-			<AutoLinkISOsModal
-				isOpen={showAutoLinkISOsModal}
-				onClose={() => setShowAutoLinkISOsModal(false)}
-				onLink={refreshFromDB}
-			/>
-
-			<AddAppleGameModal
-				isOpen={showAddAppleGameModal}
-				onClose={() => setShowAddAppleGameModal(false)}
-				onAdd={refreshFromDB}
-				userId={user.id}
-			/>
-
-			<AddMinecraftWorldModal
-				isOpen={showAddMinecraftWorldModal}
-				onClose={() => setShowAddMinecraftWorldModal(false)}
-				onAdd={refreshFromDB}
-				userId={user.id}
-			/>
 		</div>
 		</Suspense>
 	);

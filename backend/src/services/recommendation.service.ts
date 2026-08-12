@@ -177,7 +177,7 @@ async function fetchHltbForWishlistGame(
 class RecommendationService {
 	private async buildTagProfile(userId: string): Promise<TagProfile> {
 		const games = await prisma.libraryGame.findMany({
-			where: { userId, playtimeForever: { gt: 0 } },
+			where: { userId, platform: 'steam', playtimeForever: { gt: 0 } },
 			select: { platformData: true, userTags: true, playtimeForever: true, rating: true },
 		});
 

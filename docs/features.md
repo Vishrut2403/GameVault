@@ -1,8 +1,8 @@
 # Features
 
-## Multi-Platform Library
+## Game Library
 
-All games from all platforms in one unified view. Filter and sort across Steam, RetroAchievements, RetroArch, Minecraft, PCSX2, RPCS3, and PPSSPP.
+Your full Steam library in one view, with filtering and sorting.
 
 - Status tracking — Playing, Completed, Backlog, Unplayed
 - 1–5 star ratings and personal reviews
@@ -41,9 +41,7 @@ Every game modal shows three time estimates fetched from HLTB:
 - **Main + extras** — campaign plus side content
 - **Completionist** — full 100% run
 
-Steam games resolve via exact appId lookup. Non-Steam games search by name via the Steam store. Data is cached in-memory per session.
-
-> RetroArch games use ROM filenames which don't match HLTB names reliably — HLTB estimates won't show for these.
+Steam games resolve via exact appId lookup. Data is cached in-memory per session.
 
 ---
 

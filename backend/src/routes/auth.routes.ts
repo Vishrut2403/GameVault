@@ -87,8 +87,7 @@ router.post('/register', async (req: Request, res: Response) => {
 				avatar: user.avatar,
 				xp: user.xp,
 				level: user.level,
-				steamLinked: !!user.steamId,
-				raLinked: !!user.raUsername
+				steamLinked: !!user.steamId
 			}
 		});
 	} catch (error: any) {
@@ -163,14 +162,8 @@ router.post('/login', async (req: Request, res: Response) => {
 				xp: user.xp,
 				level: user.level,
 				steamLinked: !!user.steamId,
-				raLinked: !!user.raUsername,
 				steamUsername: user.steamUsername,
 				steamId: user.steamId,
-				raUsername: user.raUsername,
-				enablePCSX2:     user.enablePCSX2,
-				enableRPCS3:     user.enableRPCS3,
-				enablePPSSPP:    user.enablePPSSPP,
-				enableRetroArch: user.enableRetroArch,
 			}
 		});
 	} catch (error: any) {
@@ -220,14 +213,8 @@ router.get('/me', async (req: Request, res: Response) => {
 				xp: user.xp,
 				level: user.level,
 				steamLinked: !!user.steamId,
-				raLinked: !!user.raUsername,
 				steamUsername: user.steamUsername,
 				steamId: user.steamId,
-				raUsername: user.raUsername,
-				enablePCSX2:     user.enablePCSX2,
-				enableRPCS3:     user.enableRPCS3,
-				enablePPSSPP:    user.enablePPSSPP,
-				enableRetroArch: user.enableRetroArch,
 				createdAt: user.createdAt
 			}
 		});

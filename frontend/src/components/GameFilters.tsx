@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 
 export interface GameFilterState {
-  platforms: string[];
   statuses: string[];
   minRating: number | null;
   maxRating: number | null;
@@ -17,7 +16,6 @@ interface GameFiltersProps {
   availableTags: string[];
 }
 
-const PLATFORMS = ['steam', 'retroachievements', 'minecraft', 'apple_gc'];
 const STATUSES = ['playing', 'completed', 'backlog', 'unplayed'];
 
 export const GameFilters: React.FC<GameFiltersProps> = ({
@@ -25,21 +23,16 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
   onFiltersChange,
   availableTags,
 }) => {
-  const [showPlatformDropdown, setShowPlatformDropdown] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const platformDropdownRef = useRef<HTMLDivElement>(null);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
   const tagDropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
 	const handleClickOutside = (event: MouseEvent) => {
-	  if (platformDropdownRef.current && !platformDropdownRef.current.contains(event.target as Node)) {
-		setShowPlatformDropdown(false);
-	  }
 	  if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
 		setShowStatusDropdown(false);
 	  }
@@ -52,12 +45,6 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 	return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const togglePlatform = (platform: string) => {
-	const newPlatforms = filters.platforms.includes(platform)
-	  ? filters.platforms.filter(p => p !== platform)
-	  : [...filters.platforms, platform];
-	onFiltersChange({ ...filters, platforms: newPlatforms });
-  };
 
   const toggleStatus = (status: string) => {
 	const newStatuses = filters.statuses.includes(status)
@@ -89,7 +76,6 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 
   const clearAllFilters = () => {
 	onFiltersChange({
-	  platforms: [],
 	  statuses: [],
 	  minRating: null,
 	  maxRating: null,
@@ -99,8 +85,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 	});
   };
 
-  const hasActiveFilters = 
-	filters.platforms.length > 0 ||
+  const hasActiveFilters =
 	filters.statuses.length > 0 ||
 	filters.minRating !== null ||
 	filters.maxRating !== null ||
@@ -112,39 +97,6 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 	<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-4 space-y-4">
 	  {/* Filter Row */}
 	  <div className="flex flex-wrap gap-3">
-		{/* Platform Filter */}
-		<div className="relative" ref={platformDropdownRef}>
-		  <button
-			onClick={() => setShowPlatformDropdown(!showPlatformDropdown)}
-			className={`flex items-center gap-2 px-4 py-2 rounded border transition-all duration-200 ${
-			  filters.platforms.length > 0
-				? 'bg-[#5a7fa3] border-[#7a9fc3] text-[#e5e5e5]'
-				: 'bg-[#2a2a2a] border-[#333333] text-[#a0a0a0] hover:bg-[#333333]'
-			}`}
-		  >
-			Platform {filters.platforms.length > 0 && `(${filters.platforms.length})`}
-			<ChevronDown size={16} />
-		  </button>
-		  {showPlatformDropdown && (
-			<div className="absolute top-full mt-2 left-0 bg-[#2a2a2a] border border-[#333333] rounded shadow-lg z-50 min-w-[200px]">
-			  {PLATFORMS.map((platform) => (
-				<label
-				  key={platform}
-				  className="flex items-center gap-2 px-4 py-2 hover:bg-[#333333] cursor-pointer transition-colors capitalize"
-				>
-				  <input
-					type="checkbox"
-					checked={filters.platforms.includes(platform)}
-					onChange={() => togglePlatform(platform)}
-					className="w-4 h-4 cursor-pointer accent-[#5a7fa3]"
-				  />
-				  <span className="text-[#e5e5e5]">{platform}</span>
-				</label>
-			  ))}
-			</div>
-		  )}
-		</div>
-
 		{/* Status Filter */}
 		<div className="relative" ref={statusDropdownRef}>
 		  <button

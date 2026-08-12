@@ -165,8 +165,7 @@ Leverages existing tables:
 
 ## Limitations
 
-- **RetroArch games**: No HLTB data available (no match by ROM filename)
-- **Apple GameCenter**: Playtime not tracked
+- **Games with no HLTB match**: estimates are unavailable and the app falls back silently
 - **New users**: Predictions start vague, improve with data
 - **Genre tags**: Predictions improve if games are tagged
 

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import steamService from '../services/steam.service';
 import { PlatformBadge } from './PlatformBadge';
 import type { LibraryGame } from '../types/games.types';
-import { getGameImage, getConsoleDisplay } from '../utils/gameHelpers';
+import { getGameImage } from '../utils/gameHelpers';
 
 interface GameTableProps {
 	games: LibraryGame[];
@@ -36,17 +36,8 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 		setSavingPrice(gameKey);
 
 		try {
-			if (game.platform === 'steam') {
-				await steamService.updateGamePrice(steamId, game.platformGameId, price);
-			} else {
-				await steamService.updatePlatformGame(
-					game.platform,
-					game.platformGameId,
-					game.userId,
-					{ pricePaid: price }
-				);
-			}
-			
+			await steamService.updateGamePrice(steamId, game.platformGameId, price);
+
 			await onRefresh();
 			setEditingPrice((prev) => {
 				const newState = { ...prev };
@@ -75,17 +66,8 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 		setSavingTags(gameKey);
 
 		try {
-			if (game.platform === 'steam') {
-				await steamService.updateGameTags(steamId, game.platformGameId, tags);
-			} else {
-				await steamService.updatePlatformGame(
-					game.platform,
-					game.platformGameId,
-					game.userId,
-					{ userTags: tags }
-				);
-			}
-			
+			await steamService.updateGameTags(steamId, game.platformGameId, tags);
+
 			await onRefresh();
 			setEditingTags((prev) => {
 				const newState = { ...prev };
@@ -135,8 +117,7 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 							const isSavingTag = savingTags === gameKey;
 							const isEditingPriceField = editingPrice[gameKey] !== undefined;
 							const isSavingPriceField = savingPrice === gameKey;
-							const consoleDisplay = getConsoleDisplay(game);
-							
+								
 							return (
 								<tr
 									key={game.id}
@@ -164,11 +145,6 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 												<div className="text-[#e5e5e5] font-medium mb-1">{game.name}</div>
 												<div className="flex items-center gap-2">
 													<PlatformBadge platform={game.platform} />
-													{consoleDisplay && (
-														<span className="text-xs px-2 py-0.5 bg-[#2a2a2a] border border-[#5a7fa3] rounded text-[#7a9fc3]">
-															{consoleDisplay}
-														</span>
-													)}
 												</div>
 											</div>
 										</div>
@@ -228,36 +204,26 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 												<span className="text-[#e5e5e5] font-medium">
 													{game.pricePaid !== null && game.pricePaid !== undefined
 														? `₹ ${game.pricePaid.toFixed(0)}`
-														: (game.platform === 'apple_gc' || game.platform === 'retroachievements') ? '-' : 'Free'}
+														: 'Free'}
 												</span>
-												{game.platform !== 'apple_gc' && game.platform !== 'retroachievements' && (
-													<button
-														onClick={() =>
-															setEditingPrice((prev) => ({
-																...prev,
-																[gameKey]: game.pricePaid?.toString() || '',
-															}))
-														}
-														className="text-[#696969] hover:text-[#5a7fa3] text-xs transition-colors"
-													>
-														✎
-													</button>
-												)}
+												<button
+													onClick={() =>
+														setEditingPrice((prev) => ({
+															...prev,
+															[gameKey]: game.pricePaid?.toString() || '',
+														}))
+													}
+													className="text-[#696969] hover:text-[#5a7fa3] text-xs transition-colors"
+												>
+													✎
+												</button>
 											</div>
 										)}
 									</td>
 
 									{/* Time */}
 									<td className="px-6 py-4 text-right">
-										{game.platform === 'apple_gc' ? (
-											<span className="text-[#696969]">-</span>
-										) : game.platform === 'retroachievements' && (game.playtimeForever || 0) > 0 ? (
-											<span className="text-[#e5e5e5] font-medium">{hours}h</span>
-										) : game.platform === 'retroachievements' ? (
-											<span className="text-[#696969]">Not synced</span>
-										) : (
-											<span className="text-[#e5e5e5] font-medium">{hours}h</span>
-										)}
+										<span className="text-[#e5e5e5] font-medium">{hours}h</span>
 									</td>
 
 									{/* Rating */}

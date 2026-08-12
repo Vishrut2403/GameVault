@@ -28,13 +28,6 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
 		return Math.round(((game.achievementsEarned || 0) / game.achievementsTotal) * 100);
 	};
 
-	const getConsoleDisplay = () => {
-		if (game.platform !== 'retroachievements') return null;
-		return (game as any).platformData?.consoleDisplayName || (game as any).platformData?.consoleName || null;
-	};
-
-	const consoleDisplay = getConsoleDisplay();
-
 	return (
 		<div onClick={onClick} className="group relative cursor-pointer">
 			<div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-[#1a1a1a] border border-[#333333] transition-all duration-300 hover:border-[#5a7fa3]">
@@ -66,15 +59,6 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
 					<h3 className="text-sm font-semibold text-[#e5e5e5] line-clamp-2 mb-3">
 						{game.name}
 					</h3>
-					
-					{/* Console badge for RA games */}
-					{consoleDisplay && (
-						<div className="mb-2">
-							<span className="text-xs px-2 py-1 bg-[#2a2a2a] border border-[#5a7fa3] rounded text-[#7a9fc3] font-medium">
-								{consoleDisplay}
-							</span>
-						</div>
-					)}
 					
 					{/* Achievement Progress Bar */}
 					{game.achievementsTotal && game.achievementsTotal > 0 && (

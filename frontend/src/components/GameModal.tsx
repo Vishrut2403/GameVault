@@ -4,7 +4,7 @@ import steamService from '../services/steam.service';
 import { PlatformBadge } from './PlatformBadge';
 import { GameJournal } from './GameJournal';
 import type { LibraryGame } from '../types/games.types';
-import { getGameImage, getConsoleDisplay } from '../utils/gameHelpers';
+import { getGameImage } from '../utils/gameHelpers';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -42,7 +42,6 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
 	const [savingReview,  setSavingReview]  = useState(false);
 	const [editingImage,  setEditingImage]  = useState(game.imageUrl || '');
 	const [savingImage,   setSavingImage]   = useState(false);
-	const [deleting,      setDeleting]      = useState(false);
 	const [currentRating, setCurrentRating] = useState(game.rating || 0);
 
 	const [hltbData,    setHltbData]    = useState<HltbData | null>(null);
@@ -133,11 +132,7 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
 
 	const updateStatus = async (status: string) => {
 		try {
-			if (game.platform === 'steam') {
-				await steamService.updateGameStatus(steamId, game.platformGameId, status);
-			} else {
-				await steamService.updatePlatformGame(game.platform, game.platformGameId, game.userId, { status });
-			}
+			await steamService.updateGameStatus(steamId, game.platformGameId, status);
 			await onUpdate();
 		} catch {
 			console.error('Failed to update status');
@@ -147,11 +142,7 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
 	const updateRating = async (rating: number) => {
 		setCurrentRating(rating);
 		try {
-			if (game.platform === 'steam') {
-				await steamService.updateGameRating(steamId, game.platformGameId, rating);
-			} else {
-				await steamService.updatePlatformGame(game.platform, game.platformGameId, game.userId, { rating });
-			}
+			await steamService.updateGameRating(steamId, game.platformGameId, rating);
 			await onUpdate();
 		} catch {
 			console.error('Failed to update rating');
@@ -162,11 +153,7 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
 	const handleSaveReview = async () => {
 		setSavingReview(true);
 		try {
-			if (game.platform === 'steam') {
-				await steamService.updateGameReview(steamId, game.platformGameId, editingReview);
-			} else {
-				await steamService.updatePlatformGame(game.platform, game.platformGameId, game.userId, { review: editingReview });
-			}
+			await steamService.updateGameReview(steamId, game.platformGameId, editingReview);
 			await onUpdate();
 		} catch {
 			alert('Failed to save review');
@@ -183,11 +170,7 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
 		}
 		setSavingImage(true);
 		try {
-			if (game.platform === 'steam') {
-				await steamService.updateGameImage(steamId, game.platformGameId, editingImage);
-			} else {
-				await steamService.updatePlatformGame(game.platform, game.platformGameId, game.userId, { imageUrl: editingImage });
-			}
+			await steamService.updateGameImage(steamId, game.platformGameId, editingImage);
 			await onUpdate();
 		} catch {
 			alert('Failed to save image');
@@ -196,22 +179,6 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
 		}
 	};
 
-	const handleDeleteGame = async () => {
-		if (!window.confirm(`Are you sure you want to delete "${game.name}"? This cannot be undone.`)) return;
-		setDeleting(true);
-		try {
-			if (game.platform === 'steam') { alert('Cannot delete Steam games. They will re-sync from Steam.'); return; }
-			await steamService.deletePlatformGame(game.platform, game.platformGameId, game.userId);
-			onClose();
-			await onUpdate();
-		} catch {
-			alert('Failed to delete game');
-		} finally {
-			setDeleting(false);
-		}
-	};
-
-	const consoleDisplay        = getConsoleDisplay(game);
 	const achievementPercentage = getAchievementPercentage();
 
 	return (
@@ -272,11 +239,6 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
 						<>
 							<div>
 								<h2 className="text-3xl font-bold text-[#e5e5e5] mb-2">{game.name}</h2>
-								{consoleDisplay && (
-									<span className="inline-block px-3 py-1 bg-[#2a2a2a] border border-[#5a7fa3] rounded text-[#7a9fc3] text-sm font-medium">
-										{consoleDisplay}
-									</span>
-								)}
 							</div>
 
 							{/* Playtime + Value */}
@@ -284,15 +246,11 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
 								<div className="p-6 bg-[#1a1a1a] rounded-lg border border-[#333333]">
 									<p className="text-xs uppercase tracking-wider text-[#a0a0a0] mb-2 font-semibold">Playtime</p>
 									<p className="text-3xl font-bold text-[#e5e5e5]">
-										{game.platform === 'apple_gc'
-											? 'Not tracked'
-											: game.platform === 'retroachievements' && (game.playtimeForever || 0) === 0
-												? 'Not synced yet'
-												: `${Math.round((game.playtimeForever || 0) / 60)}h`}
+										{`${Math.round((game.playtimeForever || 0) / 60)}h`}
 									</p>
 								</div>
 
-								{game.pricePerHour && game.platform !== 'apple_gc' && game.platform !== 'retroachievements' && (
+								{game.pricePerHour && (
 									<div className="p-6 bg-[#1a1a1a] rounded-lg border border-[#333333]">
 										<p className="text-xs uppercase tracking-wider text-[#a0a0a0] mb-2 font-semibold">Value</p>
 										<p className="text-3xl font-bold text-[#7a9fc3]">₹{game.pricePerHour.toFixed(2)}/h</p>
@@ -516,19 +474,6 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
 								</p>
 							</div>
 
-							{/* Delete (non-Steam only) */}
-							{game.platform !== 'steam' && (
-								<div className="pt-4 border-t border-[#333333]">
-									<button
-										onClick={handleDeleteGame}
-										disabled={deleting}
-										className="w-full px-6 py-3 bg-[#4a3a3a] border border-[#5a4a4a] text-[#a0a0a0] rounded font-semibold hover:bg-[#5a4a4a] transition-all duration-200 disabled:opacity-50"
-									>
-										{deleting ? 'Deleting...' : '🗑️ Delete Game'}
-									</button>
-									<p className="text-xs text-[#696969] text-center mt-2">This action cannot be undone</p>
-								</div>
-							)}
 						</>
 					)}
 

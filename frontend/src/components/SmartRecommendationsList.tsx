@@ -70,7 +70,7 @@ export default function SmartRecommendationsList({
 	if (recommendations.length === 0) {
 		return (
 			<div className="p-8 text-center text-gray-400">
-				<p>No recommendations available. Add more games to your library to get personalized recommendations.</p>
+				<p>No recommendations yet. Mark some games as Backlog and they'll be ranked here.</p>
 			</div>
 		);
 	}

@@ -106,7 +106,6 @@ router.get('/library/:steamId', authMiddleware, async (req: AuthRequest, res: Re
 router.get('/library/:steamId/enriched', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
-		const platform = req.query.platform as string | undefined;
 
 		if (!steamId) {
 			res.status(400).json({ error: 'Steam ID is required' });
@@ -121,7 +120,10 @@ router.get('/library/:steamId/enriched', authMiddleware, async (req: AuthRequest
 			where: { steamId },
 			include: {
 				games: {
-					where: platform ? { platform } : undefined,
+					// Steam is the only supported platform. Rows left behind by the
+					// removed integrations stay in the DB but are never served, so the
+					// UI can't show games its Steam-only endpoints are unable to edit.
+					where: { platform: 'steam' },
 					orderBy: [
 						{ status: 'asc' },
 						{ playtimeForever: 'desc' }
@@ -170,46 +172,6 @@ router.get('/library/:steamId/enriched', authMiddleware, async (req: AuthRequest
 	}
 });
 
-router.get('/library/:steamId/platforms', authMiddleware, async (req: AuthRequest, res: Response) => {
-	try {
-		const steamId = req.params.steamId as string;
-
-		if (!steamId) {
-			res.status(400).json({ error: 'Steam ID is required' });
-			return;
-		}
-
-		if (!(await requireSteamOwnership(req, res, steamId))) {
-			return;
-		}
-
-		const user = await prisma.user.findUnique({ where: { steamId } });
-		if (!user) {
-			res.status(404).json({ error: 'User not found' });
-			return;
-		}
-
-		const platforms = await prisma.libraryGame.groupBy({
-			by: ['platform'],
-			where: { userId: user.id },
-			_count: true,
-		});
-
-		res.json({
-			success: true,
-			platforms: platforms.map(p => ({
-				platform: p.platform,
-				count: p._count,
-			})),
-		});
-	} catch (error) {
-		res.status(500).json({
-			error: 'Failed to fetch platforms',
-			message: error instanceof Error ? error.message : 'Unknown error'
-		});
-	}
-});
-
 router.get('/library/:steamId/filter', authMiddleware, async (req: AuthRequest, res: Response) => {
 	try {
 		const steamId = req.params.steamId as string;
@@ -229,7 +191,6 @@ router.get('/library/:steamId/filter', authMiddleware, async (req: AuthRequest, 
 			return;
 		}
 
-		const platformsParam = req.query.platforms as string | undefined;
 		const statusesParam = req.query.statuses as string | undefined;
 		const minRatingParam = req.query.minRating as string | undefined;
 		const maxRatingParam = req.query.maxRating as string | undefined;
@@ -237,14 +198,7 @@ router.get('/library/:steamId/filter', authMiddleware, async (req: AuthRequest, 
 		const tagsParam = req.query.tags as string | undefined;
 		const searchParam = req.query.search as string | undefined;
 
-		const whereClause: any = { userId: user.id };
-
-		if (platformsParam) {
-			const platforms = platformsParam.split(',').filter(p => p.trim());
-			if (platforms.length > 0) {
-				whereClause.platform = { in: platforms };
-			}
-		}
+		const whereClause: any = { userId: user.id, platform: 'steam' };
 
 		if (statusesParam) {
 			const statuses = statusesParam.split(',').filter(s => s.trim());

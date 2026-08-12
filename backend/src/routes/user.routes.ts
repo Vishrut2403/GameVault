@@ -2,8 +2,6 @@ import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 import { sessionTrackingService } from '../services/session-tracking.service';
-import { retroAchievementsService } from '../services/retroachievements.service';
-import { encrypt } from '../utils/encryption';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -31,15 +29,6 @@ router.get('/profile', async (req: AuthRequest, res: Response) => {
 				steamUsername: true,
 				steamAvatar: true,
 				steamLinkedAt: true,
-				raUsername: true,
-				raLinkedAt: true,
-				enablePCSX2: true,
-				enableRPCS3: true,
-				enablePPSSPP: true,
-				enableRetroArch: true,
-				autoSyncSteam: true,
-				autoSyncRA: true,
-				autoSyncEmulators: true,
 				createdAt: true,
 				lastLoginAt: true,
 			}
@@ -66,10 +55,7 @@ router.put('/profile', async (req: AuthRequest, res: Response) => {
 		const { 
 			username, 
 			displayName, 
-			avatar,
-			autoSyncSteam,
-			autoSyncRA,
-			autoSyncEmulators
+			avatar
 		} = req.body;
 
 		const user = await prisma.user.update({
@@ -78,9 +64,6 @@ router.put('/profile', async (req: AuthRequest, res: Response) => {
 				...(username && { username }),
 				...(displayName !== undefined && { displayName }),
 				...(avatar !== undefined && { avatar }),
-				...(autoSyncSteam !== undefined && { autoSyncSteam }),
-				...(autoSyncRA !== undefined && { autoSyncRA }),
-				...(autoSyncEmulators !== undefined && { autoSyncEmulators }),
 			},
 			select: {
 				id: true,
@@ -109,7 +92,7 @@ router.get('/library', async (req: AuthRequest, res: Response) => {
 		}
 
 		const games = await prisma.libraryGame.findMany({
-			where: { userId },
+			where: { userId, platform: 'steam' },
 			orderBy: { updatedAt: 'desc' }
 		});
 
@@ -162,71 +145,6 @@ router.get('/activity', async (req: AuthRequest, res: Response) => {
 	}
 });
 
-router.post('/connect-ra', async (req: AuthRequest, res: Response) => {
-	try {
-		const { raUsername, raApiKey } = req.body;
-		const userId = req.user?.userId;
-
-		if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
-		if (!raUsername || !raApiKey) return res.status(400).json({ success: false, error: 'Username and API key required' });
-
-		// Encrypt the API key before storing
-		const encryptedKey = encrypt(raApiKey);
-
-		await prisma.user.update({
-			where: { id: userId },
-			data: {
-				raUsername,
-				raApiKey: encryptedKey,
-				raLinkedAt: new Date()
-			}
-		});
-
-		// Attempt immediate sync using provided plaintext credentials, then clear them from memory
-		try {
-			retroAchievementsService.setCredentials(raUsername, raApiKey);
-			await retroAchievementsService.syncUserLibrary(raUsername);
-		} catch (syncError) {
-			console.error('RA sync failed (connection still saved):', syncError);
-		} finally {
-			try { retroAchievementsService.setCredentials('', ''); } catch (e) { /* ignore */ }
-		}
-
-		res.json({ success: true });
-	} catch (error: any) {
-		console.error('Error connecting RA:', error);
-		res.status(500).json({ success: false, error: 'Failed to connect' });
-	}
-});
-
-router.post('/disconnect-ra', async (req: AuthRequest, res: Response) => {
-	try {
-		const userId = req.user?.userId;
-		if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
-
-		await prisma.user.update({
-			where: { id: userId },
-			data: {
-				raUsername: null,
-				raApiKey: null,
-				raLinkedAt: null
-			}
-		});
-
-		// Clear credentials in the in-memory service as well
-		try {
-			retroAchievementsService.setCredentials('', '');
-		} catch (e) {
-			// ignore
-		}
-
-		res.json({ success: true });
-	} catch (error: any) {
-		console.error('Error disconnecting RA:', error);
-		res.status(500).json({ success: false, error: 'Failed to disconnect' });
-	}
-});
-
 router.post('/disconnect-steam', async (req: AuthRequest, res: Response) => {
 	try {
 		const userId = req.user?.userId;
@@ -249,39 +167,6 @@ router.post('/disconnect-steam', async (req: AuthRequest, res: Response) => {
 	} catch (error: any) {
 		console.error('Error disconnecting Steam:', error);
 		res.status(500).json({ success: false, error: 'Failed to disconnect' });
-	}
-});
-
-router.post('/toggle-emulator', async (req: AuthRequest, res: Response) => {
-	try {
-		const { emulator, enabled } = req.body;
-		const userId = req.user?.userId;
-
-		if (!userId) {
-			return res.status(401).json({ success: false, error: 'Unauthorized' });
-		}
-
-		const fieldMap: Record<string, string> = {
-			'PCSX2':      'enablePCSX2',
-			'RPCS3':      'enableRPCS3',
-			'PPSSPP':     'enablePPSSPP',
-			'RetroArch':  'enableRetroArch',
-		};
-
-		const field = fieldMap[emulator];
-		if (!field) {
-			return res.status(400).json({ success: false, error: 'Invalid emulator' });
-		}
-
-		await prisma.user.update({
-			where: { id: userId },
-			data: { [field]: enabled }
-		});
-
-		res.json({ success: true });
-	} catch (error: any) {
-		console.error('Error toggling emulator:', error);
-		res.status(500).json({ success: false, error: 'Failed to toggle' });
 	}
 });
 

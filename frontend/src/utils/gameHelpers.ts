@@ -34,8 +34,3 @@ export const formatRating = (game: LibraryGame): string => {
 	const percentage = (game.rating / 5) * 100;
 	return `${percentage.toFixed(2)}%`;
 };
-
-export const getConsoleDisplay = (game: LibraryGame): string | null => {
-	if (game.platform !== 'retroachievements') return null;
-	return (game as any).platformData?.consoleDisplayName || (game as any).platformData?.consoleName || null;
-};

@@ -12,9 +12,6 @@
 | Key | Required | Where to get it |
 |---|---|---|
 | Steam API Key | Yes | https://steamcommunity.com/dev/apikey |
-| RetroAchievements API Key | No | https://retroachievements.org/controlpanel.php → Keys |
-| Prism Launcher | No | https://prismlauncher.org/ |
-| RetroArch | No | https://www.retroarch.com/ |
 
 ---
 
@@ -61,11 +58,6 @@ STEAM_API_KEY=your_steam_api_key_here
 STEAM_RETURN_URL=http://localhost:3001/api/auth/callback
 
 JWT_SECRET=your_jwt_secret_here
-
-# Optional
-RA_USERNAME=your_ra_username
-RA_API_KEY=your_ra_api_key
-PRISM_LAUNCHER_PATH=/home/your_username/.local/share/PrismLauncher/instances
 ```
 
 Generate a JWT secret:

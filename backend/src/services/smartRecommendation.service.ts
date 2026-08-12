@@ -18,7 +18,7 @@ export class SmartRecommendationService {
 		try {
 			// Get user's library with ratings, status, playtime
 			const library = await prisma.libraryGame.findMany({
-				where: { userId },
+				where: { userId, platform: 'steam' },
 				select: {
 					id: true,
 					name: true,
