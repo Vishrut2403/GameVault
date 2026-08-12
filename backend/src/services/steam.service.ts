@@ -186,14 +186,15 @@ class SteamService {
 		}
 	}
 
+	/**
+	 * Always fetches fresh from Steam.
+	 *
+	 * This used to be cached for an hour, but the only caller is the library
+	 * sync, and a sync that returns an hour-old snapshot is worse than useless:
+	 * playtime never appears to change, so no session is recorded and the
+	 * activity heatmap stays empty no matter how often you press the button.
+	 */
 	async getUserLibrary(steamId: string): Promise<SteamGame[]> {
-		const cacheKey = `library_${steamId}`;
-		const cached = cache.get<SteamGame[]>(cacheKey);
-
-		if (cached) {
-			return cached;
-		}
-
 		try {
 			const url = `${STEAM_API_BASE}/IPlayerService/GetOwnedGames/v1/`;
 			const response = await axios.get<SteamLibraryResponse>(url, {
@@ -206,10 +207,7 @@ class SteamService {
 				}
 			});
 
-			const games = response.data.response.games || [];
-			cache.set(cacheKey, games);
-
-			return games;
+			return response.data.response.games || [];
 		} catch (error) {
 			throw new Error('Failed to fetch Steam library');
 		}
