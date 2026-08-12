@@ -21,6 +21,14 @@ const app: Express = express();
 const PORT = process.env.PORT || 3001;
 const isProd = process.env.NODE_ENV === 'production';
 
+// Behind a hosting provider's reverse proxy, req.ip is the proxy unless we
+// trust the first hop. Without this every visitor shares one rate-limit
+// bucket. Trust exactly one hop — trusting all of them lets clients spoof
+// X-Forwarded-For and evade the limiter entirely.
+if (isProd) {
+	app.set('trust proxy', 1);
+}
+
 const getCorsOrigin = () => {
 	if (isProd) {
 		const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(',') || [];
@@ -65,7 +73,10 @@ app.use('/api/predictions', expensiveOpLimiter);
 app.use('/api/predictions', predictionsRoutes);
 
 if (isProd) {
-	const frontendPath = path.join(__dirname, '../../frontend');
+	// __dirname is backend/dist at runtime, so this resolves to the Vite build
+	// output. Pointing at frontend/ instead serves the dev index.html, whose
+	// <script src="/src/main.tsx"> the browser cannot execute.
+	const frontendPath = path.join(__dirname, '../../frontend/dist');
 	app.use(express.static(frontendPath));
 
 	app.get(/^\/(?!api).*/, (_req, res) => {

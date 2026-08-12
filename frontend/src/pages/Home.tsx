@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, Suspense, lazy } from 'react';
 import steamService from '../services/steam.service';
+import { API_BASE_URL as API_URL } from '../services/api';
 import { GameCard } from '../components/GameCard';
 import { GameTable } from '../components/GameTable';
 import { GameFilters, type GameFilterState } from '../components/GameFilters';
@@ -40,8 +41,6 @@ function Home({ user, onLogout }: HomeProps) {
 		tags: [],
 		searchQuery: '',
 	});
-
-	const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 	// Load library on mount
 	useEffect(() => {

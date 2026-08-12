@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react'
 const AuthPage = lazy(() => import('./pages/AuthPage'));
 const Home = lazy(() => import('./pages/Home'));
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import { API_BASE_URL as API_URL } from './services/api';
 
 function App() {
 	const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);

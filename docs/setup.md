@@ -55,10 +55,13 @@ FRONTEND_URL=http://localhost:5173
 DATABASE_URL="postgresql://postgres:your_password@localhost:5432/gamevault"
 
 STEAM_API_KEY=your_steam_api_key_here
-STEAM_RETURN_URL=http://localhost:3001/api/auth/callback
+BACKEND_URL=http://localhost:3001
 
 JWT_SECRET=your_jwt_secret_here
 ```
+
+`BACKEND_URL` is the origin Steam redirects back to after login. It must match
+the deployed origin exactly, or the OpenID round-trip fails.
 
 Generate a JWT secret:
 ```bash

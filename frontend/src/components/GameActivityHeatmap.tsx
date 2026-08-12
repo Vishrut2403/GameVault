@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import type { LibraryGame } from '../types/games.types';
+import { API_BASE_URL } from '../services/api';
 
 interface GameActivityHeatmapProps {
 	games: LibraryGame[];
@@ -22,9 +23,8 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 	useEffect(() => {
 		const fetchSessions = async () => {
 			try {
-				const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 				const token = localStorage.getItem('token');
-				const response = await fetch(`${backendUrl}/api/sessions/daily-activity?days=365`, {
+				const response = await fetch(`${API_BASE_URL}/api/sessions/daily-activity?days=365`, {
 					headers: token ? { Authorization: `Bearer ${token}` } : undefined
 				});
 				const data = await response.json();

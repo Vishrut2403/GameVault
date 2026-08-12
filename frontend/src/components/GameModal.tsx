@@ -6,7 +6,7 @@ import { GameJournal } from './GameJournal';
 import type { LibraryGame } from '../types/games.types';
 import { getGameImage } from '../utils/gameHelpers';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import { API_BASE_URL as API_URL } from '../services/api';
 
 interface HltbData {
 	gameplayMain:          number;
