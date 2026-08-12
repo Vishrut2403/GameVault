@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { istDayBucket } from '../utils/dates';
 
 const prisma = new PrismaClient();
 
@@ -20,16 +21,19 @@ export class SessionTrackingService {
 			return;
 		}
 
-		let date = sessionDate ? new Date(sessionDate) : new Date();
+		let instant = sessionDate ? new Date(sessionDate) : new Date();
 
-		const year = date.getFullYear();
+		const year = instant.getFullYear();
 		if (isNaN(year) || year < 2000 || year > 2100) {
-			console.warn(`⚠️ Invalid session date detected (${date.toISOString()}), using today instead`);
-			date = new Date();
+			console.warn(`⚠️ Invalid session date detected, using today instead`);
+			instant = new Date();
 		}
-		
-		date.setUTCHours(0, 0, 0, 0);
-		
+
+		// Bucket by IST calendar day. A session at 02:00 IST belongs to that
+		// day, not to the previous one — which is what UTC bucketing gave,
+		// since UTC midnight is 05:30 IST.
+		const date = istDayBucket(instant);
+
 		await prisma.gameSession.upsert({
 			where: {
 				userId_gameId_date: {

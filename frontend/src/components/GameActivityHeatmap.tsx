@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import type { LibraryGame } from '../types/games.types';
 import { API_BASE_URL } from '../services/api';
+import { istDateString } from '../utils/dates';
 
 interface GameActivityHeatmapProps {
 	games: LibraryGame[];
@@ -37,7 +38,7 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 					const allDaysMap = new Map<string, DayActivity>();
 
 					for (let d = new Date(oneYearAgo); d <= today; d.setDate(d.getDate() + 1)) {
-						const dateStr = d.toISOString().split('T')[0];
+						const dateStr = istDateString(d);
 						allDaysMap.set(dateStr, {
 							date: dateStr,
 							hours: 0,
@@ -73,7 +74,7 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 		const activityMap = new Map<string, DayActivity>();
 		
 		for (let d = new Date(oneYearAgo); d <= today; d.setDate(d.getDate() + 1)) {
-			const dateStr = d.toISOString().split('T')[0];
+			const dateStr = istDateString(d);
 			activityMap.set(dateStr, {
 				date: dateStr,
 				hours: 0,
@@ -85,7 +86,7 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 		games.forEach(game => {
 			const lastPlayed = (game as any).lastPlayedAt;
 			if (lastPlayed) {
-				const dateStr = new Date(lastPlayed).toISOString().split('T')[0];
+				const dateStr = istDateString(new Date(lastPlayed));
 				const activity = activityMap.get(dateStr);
 				if (activity) {
 					const hoursToAdd = (game.playtimeForever || 0) / 60 / 30;

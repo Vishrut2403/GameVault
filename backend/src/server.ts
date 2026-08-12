@@ -15,6 +15,7 @@ import sessionsRoutes from './routes/sessions.routes';
 import journalRoutes from './routes/journal.routes';
 import userRoutes from './routes/user.routes';
 import hltbRoutes from './routes/hltb.routes';
+import cronRoutes from './routes/cron.routes';
 import predictionsRoutes from './routes/predictions.routes';
 
 const app: Express = express();
@@ -71,6 +72,8 @@ app.use('/api/user', userRoutes);
 app.use('/api/hltb', hltbRoutes);
 app.use('/api/predictions', expensiveOpLimiter);
 app.use('/api/predictions', predictionsRoutes);
+
+app.use('/api/cron', cronRoutes);
 
 if (isProd) {
 	// __dirname is backend/dist at runtime, so this resolves to the Vite build

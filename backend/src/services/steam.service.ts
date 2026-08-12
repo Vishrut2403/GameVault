@@ -15,7 +15,7 @@ const cache = new NodeCache({ stdTTL: CACHE_TTL });
 const STEAM_API_BASE = 'https://api.steampowered.com';
 const STEAM_STORE_API = 'https://store.steampowered.com/api';
 
-interface SteamGame {
+export interface SteamGame {
 	appid: number;
 	name: string;
 	playtime_forever: number;

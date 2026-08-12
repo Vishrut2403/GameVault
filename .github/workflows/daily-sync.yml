@@ -1,0 +1,44 @@
+name: Daily Steam sync
+
+# Closes out the previous IST day so the activity heatmap has a point per day.
+#
+# GitHub schedules in UTC, so 18:30 UTC is 00:00 IST the following day. Runs can
+# start several minutes late when GitHub is busy; the endpoint attributes to the
+# IST day that just ended rather than to the clock time it was called, so a late
+# run still records against the right day.
+on:
+  schedule:
+    - cron: '30 18 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger daily sync
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+
+          # A sleeping free-tier instance takes ~30-60s to wake, and this
+          # request is what wakes it, so allow a generous timeout and retry.
+          status=$(curl --silent --show-error \
+            --output response.json \
+            --write-out '%{http_code}' \
+            --request POST "${APP_URL%/}/api/cron/daily-sync" \
+            --header "x-cron-secret: ${CRON_SECRET}" \
+            --max-time 600 \
+            --retry 3 \
+            --retry-delay 30 \
+            --retry-connrefused)
+
+          echo "HTTP $status"
+          cat response.json
+          echo
+
+          if [ "$status" != "200" ]; then
+            echo "::error::Daily sync failed with HTTP $status"
+            exit 1
+          fi

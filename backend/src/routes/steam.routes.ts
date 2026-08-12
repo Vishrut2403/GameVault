@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import steamService from '../services/steam.service';
 import prisma from '../prisma';
-import { sessionTrackingService } from '../services/session-tracking.service';
+import { syncSteamLibrary } from '../services/steam-sync.service';
 import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -43,57 +43,12 @@ router.get('/library/:steamId', authMiddleware, async (req: AuthRequest, res: Re
 			return;
 		}
 
-		const library = await steamService.getUserLibrary(steamId);
-		
-		const user = await prisma.user.findUnique({ where: { steamId } });
-		
-		if (user) {
-			for (const steamGame of library) {
-				try {
-					const existingGame = await prisma.libraryGame.findUnique({
-						where: {
-							userId_platformGameId_platform: {
-								userId: user.id,
-								platformGameId: String(steamGame.appid),
-								platform: 'steam'
-							}
-						}
-					});
-
-					const newPlaytime = steamGame.playtime_forever || 0;
-
-					if (existingGame && newPlaytime > 0) {
-						const oldPlaytime = existingGame.playtimeForever || 0;
-						
-						if (newPlaytime > oldPlaytime) {
-							const delta = newPlaytime - oldPlaytime;
-							
-							const sessionDate = (steamGame as any).rtime_last_played 
-								? new Date((steamGame as any).rtime_last_played * 1000) 
-								: undefined;
-							
-							await sessionTrackingService.trackSession({
-								userId: user.id,
-								gameId: existingGame.id,
-								platform: 'steam',
-								newPlaytimeMinutes: newPlaytime,
-								oldPlaytimeMinutes: oldPlaytime,
-								sessionDate
-							});
-						}
-					}
-				} catch (error) {
-					console.error(`Failed to track session for ${steamGame.name}:`, error);
-				}
-			}
-		}
-
-		await steamService.saveLibrary(steamId, library);
+		const { count, games } = await syncSteamLibrary(steamId);
 
 		res.json({
 			success: true,
-			count: library.length,
-			games: library
+			count,
+			games
 		});
 	} catch (error) {
 		res.status(500).json({
