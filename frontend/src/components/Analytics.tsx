@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import type { LibraryGame } from '../types/games.types';
-import { AnalyticsDashboardPage } from './analytics/AnalyticsDashboardPage';
-import { AnalyticsPlaytimePage } from './analytics/AnalyticsPlaytimePage';
-import { AnalyticsAchievementsPage } from './analytics/AnalyticsAchievementsPage';
-import { AnalyticsValuePage } from './analytics/AnalyticsValuePage';
-import { AnalyticsLibraryPage } from './analytics/AnalyticsLibraryPage';
+
+const AnalyticsDashboardPage = lazy(() => import('./analytics/AnalyticsDashboardPage').then(m => ({ default: m.AnalyticsDashboardPage })));
+const AnalyticsPlaytimePage = lazy(() => import('./analytics/AnalyticsPlaytimePage').then(m => ({ default: m.AnalyticsPlaytimePage })));
+const AnalyticsAchievementsPage = lazy(() => import('./analytics/AnalyticsAchievementsPage').then(m => ({ default: m.AnalyticsAchievementsPage })));
+const AnalyticsValuePage = lazy(() => import('./analytics/AnalyticsValuePage').then(m => ({ default: m.AnalyticsValuePage })));
+const AnalyticsLibraryPage = lazy(() => import('./analytics/AnalyticsLibraryPage').then(m => ({ default: m.AnalyticsLibraryPage })));
 
 interface AnalyticsProps {
 	games: LibraryGame[];
@@ -24,6 +25,7 @@ export const Analytics: React.FC<AnalyticsProps> = ({ games }) => {
 	];
 
 	return (
+		<Suspense fallback={<div className="py-12 text-[#a0a0a0]">Loading analytics…</div>}>
 		<div className="space-y-6">
 			{/* Header */}
 			<div>
@@ -61,5 +63,6 @@ export const Analytics: React.FC<AnalyticsProps> = ({ games }) => {
 				{activeTab === 'library' && <AnalyticsLibraryPage games={games} />}
 			</div>
 		</div>
+		</Suspense>
 	);
 };

@@ -23,7 +23,10 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 		const fetchSessions = async () => {
 			try {
 				const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-				const response = await fetch(`${backendUrl}/api/sessions/daily-activity?userId=${userId}&days=365`);
+				const token = localStorage.getItem('token');
+				const response = await fetch(`${backendUrl}/api/sessions/daily-activity?days=365`, {
+					headers: token ? { Authorization: `Bearer ${token}` } : undefined
+				});
 				const data = await response.json();
 				
 				if (data.success) {

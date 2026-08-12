@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_BASE = 'http://localhost:3001/api';
+import api from './api';
 
 export interface RAUserSummary {
 	id: number;
@@ -60,43 +58,36 @@ export interface RASyncResponse {
 
 class RetroAchievementsService {
 	async getUserSummary(username: string): Promise<RAUserSummary> {
-		const response = await axios.get(`${API_BASE}/retroachievements/user/${username}`);
+		const response = await api.get(`/retroachievements/user/${username}`);
 		return response.data.data;
 	}
 
 	async getUserGames(username: string): Promise<RAGame[]> {
-		const response = await axios.get(`${API_BASE}/retroachievements/games/${username}`);
+		const response = await api.get(`/retroachievements/games/${username}`);
 		return response.data.data;
 	}
 
 	async getGameInfo(gameId: number): Promise<RAGameInfo> {
-		const response = await axios.get(`${API_BASE}/retroachievements/game/${gameId}`);
+		const response = await api.get(`/retroachievements/game/${gameId}`);
 		return response.data.data;
 	}
 
-	async syncLibrary(userId: string, username: string): Promise<RASyncResponse> {
-		const response = await axios.post(`${API_BASE}/retroachievements/sync`, {
-			userId,
-			username
-		});
+	async syncLibrary(_userId: string, username: string): Promise<RASyncResponse> {
+		const response = await api.post(`/retroachievements/sync`, { username });
 		return response.data;
 	}
 
-	async addGame(userId: string, gameId: number, username?: string): Promise<any> {
-		const response = await axios.post(`${API_BASE}/retroachievements/game`, {
-			userId,
-			gameId,
-			username
-		});
+	async addGame(_userId: string, gameId: number, username?: string): Promise<any> {
+		const response = await api.post(`/retroachievements/game`, { gameId, username });
 		return response.data.data;
 	}
 
-	async deleteGame(platformGameId: string, userId: string): Promise<void> {
-		await axios.delete(`${API_BASE}/retroachievements/game/${platformGameId}?userId=${userId}`);
+	async deleteGame(platformGameId: string, _userId: string): Promise<void> {
+		await api.delete(`/retroachievements/game/${platformGameId}`);
 	}
 
 	async getConsoles(): Promise<any[]> {
-		const response = await axios.get(`${API_BASE}/retroachievements/consoles`);
+		const response = await api.get(`/retroachievements/consoles`);
 		return response.data.data;
 	}
 

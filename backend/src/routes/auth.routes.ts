@@ -248,12 +248,30 @@ router.post('/logout', async (req: Request, res: Response) => {
 	});
 });
 
-// Steam OAuth start (authenticated + signed state)
-router.get('/steam', (req: Request, res: Response) => {
+function buildSteamLoginUrl(userId: string): string {
+	const secret = JWT_SECRET as string;
+	const state = jwt.sign(
+		{ userId, purpose: 'steam_oauth' },
+		secret,
+		{ expiresIn: '10m' }
+	);
+
+	const returnUrl = `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/auth/steam/callback?state=${encodeURIComponent(state)}`;
+	return `https://steamcommunity.com/openid/login?${new URLSearchParams({
+		'openid.ns': 'http://specs.openid.net/auth/2.0',
+		'openid.mode': 'checkid_setup',
+		'openid.return_to': returnUrl,
+		'openid.realm': process.env.BACKEND_URL || 'http://localhost:3001',
+		'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
+		'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select'
+	})}`;
+}
+
+// Steam OAuth bootstrap for authenticated clients
+router.get('/steam/start', async (req: Request, res: Response) => {
 	try {
 		const authHeaderToken = req.headers.authorization?.replace('Bearer ', '');
-		const queryToken = req.query.token as string | undefined;
-		const token = authHeaderToken || queryToken;
+		const token = authHeaderToken;
 
 		if (!token) {
 			res.status(401).send('Missing auth token');
@@ -266,23 +284,28 @@ router.get('/steam', (req: Request, res: Response) => {
 			return;
 		}
 
-		const state = jwt.sign(
-			{ userId: decoded.userId, purpose: 'steam_oauth' },
-			JWT_SECRET,
-			{ expiresIn: '10m' }
-		);
+		res.json({ success: true, url: buildSteamLoginUrl(decoded.userId) });
+	} catch {
+		res.status(401).send('Invalid auth token');
+	}
+});
 
-		const returnUrl = `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/auth/steam/callback?state=${encodeURIComponent(state)}`;
-		const steamLoginUrl = `https://steamcommunity.com/openid/login?${new URLSearchParams({
-			'openid.ns': 'http://specs.openid.net/auth/2.0',
-			'openid.mode': 'checkid_setup',
-			'openid.return_to': returnUrl,
-			'openid.realm': process.env.BACKEND_URL || 'http://localhost:3001',
-			'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
-			'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select'
-		})}`;
+// Backward-compatible direct redirect route (still requires auth header)
+router.get('/steam', (req: Request, res: Response) => {
+	try {
+		const authHeaderToken = req.headers.authorization?.replace('Bearer ', '');
+		if (!authHeaderToken) {
+			res.status(401).send('Missing auth token');
+			return;
+		}
 
-		res.redirect(steamLoginUrl);
+		const decoded = jwt.verify(authHeaderToken, JWT_SECRET) as { userId: string };
+		if (!decoded?.userId) {
+			res.status(401).send('Invalid auth token');
+			return;
+		}
+
+		res.redirect(buildSteamLoginUrl(decoded.userId));
 	} catch {
 		res.status(401).send('Invalid auth token');
 	}

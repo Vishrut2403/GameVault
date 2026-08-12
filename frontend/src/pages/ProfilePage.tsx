@@ -37,7 +37,17 @@ export default function ProfilePage({ user, onUpdate }: ProfilePageProps) {
 			alert('Please log in again.');
 			return;
 		}
-		window.location.href = `${API_URL}/api/auth/steam?token=${encodeURIComponent(token)}`;
+		fetch(`${API_URL}/api/auth/steam/start`, {
+			method: 'GET',
+			headers: { 'Authorization': `Bearer ${token}` }
+		})
+			.then(async (response) => {
+				if (!response.ok) throw new Error('Failed to start Steam auth');
+				const data = await response.json();
+				if (!data?.url) throw new Error('Missing Steam auth URL');
+				window.location.href = data.url;
+			})
+			.catch(() => alert('Failed to start Steam connection'));
 	};
 
 	const handleDisconnectSteam = async () => {

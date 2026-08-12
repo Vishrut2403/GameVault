@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import api from './api';
 
 export interface JournalEntry {
 	id: string;
@@ -12,9 +12,9 @@ export interface JournalEntry {
 
 class JournalService {
 	// Get all entries for a game
-	async getEntries(gameId: string, userId: string): Promise<JournalEntry[]> {
-		const response = await fetch(`${API_URL}/api/journal/${gameId}?userId=${userId}`);
-		const data = await response.json();
+	async getEntries(gameId: string, _userId: string): Promise<JournalEntry[]> {
+		const response = await api.get(`/journal/${gameId}`);
+		const data = response.data;
 		
 		if (!data.success) {
 			throw new Error(data.error || 'Failed to fetch journal entries');
@@ -24,16 +24,9 @@ class JournalService {
 	}
 
 	// Create a new entry
-	async createEntry(userId: string, gameId: string, heading: string, content: string): Promise<JournalEntry> {
-		const response = await fetch(`${API_URL}/api/journal`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({ userId, gameId, heading, content }),
-		});
-		
-		const data = await response.json();
+	async createEntry(_userId: string, gameId: string, heading: string, content: string): Promise<JournalEntry> {
+		const response = await api.post('/journal', { gameId, heading, content });
+		const data = response.data;
 		
 		if (!data.success) {
 			throw new Error(data.error || 'Failed to create journal entry');
@@ -43,16 +36,9 @@ class JournalService {
 	}
 
 	// Update an entry
-	async updateEntry(entryId: string, userId: string, heading: string, content: string): Promise<JournalEntry> {
-		const response = await fetch(`${API_URL}/api/journal/${entryId}`, {
-			method: 'PUT',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({ userId, heading, content }),
-		});
-		
-		const data = await response.json();
+	async updateEntry(entryId: string, _userId: string, heading: string, content: string): Promise<JournalEntry> {
+		const response = await api.put(`/journal/${entryId}`, { heading, content });
+		const data = response.data;
 		
 		if (!data.success) {
 			throw new Error(data.error || 'Failed to update journal entry');
@@ -62,12 +48,9 @@ class JournalService {
 	}
 
 	// Delete an entry
-	async deleteEntry(entryId: string, userId: string): Promise<void> {
-		const response = await fetch(`${API_URL}/api/journal/${entryId}?userId=${userId}`, {
-			method: 'DELETE',
-		});
-		
-		const data = await response.json();
+	async deleteEntry(entryId: string, _userId: string): Promise<void> {
+		const response = await api.delete(`/journal/${entryId}`);
+		const data = response.data;
 		
 		if (!data.success) {
 			throw new Error(data.error || 'Failed to delete journal entry');
