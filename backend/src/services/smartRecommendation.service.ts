@@ -12,92 +12,136 @@ interface GameScore {
 	achievementRate: number;
 }
 
+/**
+ * Weights for the "reclaim value" ranking. They sum to 75; every game starts at
+ * BASE, so scores land between 25 and 100 and the weakest candidate still reads
+ * as a number rather than a zero.
+ */
+const BASE = 25;
+const WEIGHT_COST_PER_HOUR = 35;
+const WEIGHT_PRICE = 20;
+const WEIGHT_REMAINING = 12;
+const WEIGHT_ACHIEVEMENT_DENSITY = 8;
+
+/** Hours floor, so a game with no playtime doesn't divide by zero. */
+const MIN_HOURS = 0.5;
+
+interface Candidate {
+	game: {
+		id: string;
+		name: string;
+		playtimeForever: number | null;
+		rating: number | null;
+		userTags: string[];
+		platform: string;
+		pricePaid: number | null;
+		achievementsEarned: number | null;
+		achievementsTotal: number | null;
+	};
+	hours: number;
+	price: number;
+	costPerHour: number;
+	remaining: number;
+	density: number;
+}
+
+/**
+ * Scales a value to 0..1 against the range present in the candidate set.
+ *
+ * Normalising against the candidates rather than fixed thresholds is what keeps
+ * the ranking meaningful: the previous scoring used absolute cutoffs on signals
+ * that were identical across an all-Steam, untagged library, so every game came
+ * out with the same number.
+ *
+ * When every candidate shares a value the factor carries no information, so it
+ * returns 0.5 for all of them rather than an arbitrary winner.
+ */
+function normalise(value: number, min: number, max: number): number {
+	if (!isFinite(value)) return 1;
+	if (max === min) return 0.5;
+	return (value - min) / (max - min);
+}
+
+function formatRupees(amount: number): string {
+	return `₹${Math.round(amount).toLocaleString('en-IN')}`;
+}
+
 export class SmartRecommendationService {
 
 	static async getSmartRecommendations(userId: string, limit: number = 5): Promise<GameScore[]> {
 		try {
-			// Get user's library with ratings, status, playtime
-			const library = await prisma.libraryGame.findMany({
-				where: { userId, platform: 'steam' },
+			// Backlog is a deliberate, manually applied mark. Games with no
+			// status are simply unplayed and are not candidates.
+			const backlog = await prisma.libraryGame.findMany({
+				where: { userId, platform: 'steam', status: 'backlog' },
 				select: {
 					id: true,
 					name: true,
 					platform: true,
 					playtimeForever: true,
 					rating: true,
-					status: true,
 					userTags: true,
+					pricePaid: true,
 					achievementsEarned: true,
 					achievementsTotal: true,
 				},
 			});
 
-			if (library.length === 0) {
+			if (backlog.length === 0) {
 				return [];
 			}
 
-			const userProfile = this.analyzeUserProfile(library);
-
-			const backlogGames = library.filter(g => g.status === 'backlog');
-			
-			if (backlogGames.length === 0) {
-				return [];
-			}
-
-			const scoredGames = backlogGames.map(game => {
-				const reasons: string[] = [];
-				let score = 50; // Base score
-
-				// Factor 1: Tag similarity (20 points max)
-				const tagScore = this.calculateTagSimilarity(game.userTags, userProfile.preferredTags);
-				score += tagScore;
-				if (tagScore > 5) reasons.push(`Matches your preferred tags`);
-
-				// Factor 2: Platform preference (15 points max)
-				const platformScore = this.calculatePlatformScore(
-					game.platform,
-					userProfile.platformDistribution
-				);
-				score += platformScore;
-
-				// Factor 3: Similar to highly-rated games (20 points max)
-				const similarityScore = this.calculateSimilarityToFavorites(
-					game.userTags,
-					userProfile.favoriteTagCombos
-				);
-				score += similarityScore;
-				if (similarityScore > 5) reasons.push(`Similar to games you love`);
-
-				// Factor 4: Completion potential (15 points max)
-				if (userProfile.completionRate > 0.7) {
-					score += 8;
-					reasons.push(`Good match for completion-oriented player`);
-				}
-
-				// Factor 5: Achievement density boost (10 points max)
-				if (userProfile.achievementHunter && game.achievementsTotal && game.achievementsTotal > 0) {
-					score += 8;
-					reasons.push(`Has achievements for you to hunt`);
-				}
-
-				score = Math.min(100, score);
-
-				const achievementRate = (game.achievementsEarned || 0) / Math.max(game.achievementsTotal || 1, 1);
+			const candidates: Candidate[] = backlog.map(game => {
+				const hours = (game.playtimeForever || 0) / 60;
+				const price = game.pricePaid || 0;
+				const total = game.achievementsTotal || 0;
+				const earned = game.achievementsEarned || 0;
 
 				return {
-					gameId: game.id,
-					name: game.name,
-					score,
-					reasons: reasons.length > 0 ? reasons : ['Based on your gaming profile'],
-					playtimeForever: game.playtimeForever || 0,
-					rating: game.rating,
-					userTags: game.userTags,
-					platform: game.platform,
-					achievementRate,
+					game,
+					hours,
+					price,
+					costPerHour: price / Math.max(hours, MIN_HOURS),
+					remaining: total > 0 ? 1 - earned / total : 0,
+					density: total,
 				};
 			});
 
-			return scoredGames
+			const range = (pick: (c: Candidate) => number) => {
+				const values = candidates.map(pick).filter(isFinite);
+				return { min: Math.min(...values), max: Math.max(...values) };
+			};
+
+			const costRange = range(c => c.costPerHour);
+			const priceRange = range(c => c.price);
+			const remainingRange = range(c => c.remaining);
+			const densityRange = range(c => c.density);
+
+			const scored = candidates.map(c => {
+				const score =
+					BASE +
+					WEIGHT_COST_PER_HOUR * normalise(c.costPerHour, costRange.min, costRange.max) +
+					WEIGHT_PRICE * normalise(c.price, priceRange.min, priceRange.max) +
+					WEIGHT_REMAINING * normalise(c.remaining, remainingRange.min, remainingRange.max) +
+					WEIGHT_ACHIEVEMENT_DENSITY * normalise(c.density, densityRange.min, densityRange.max);
+
+				const total = c.game.achievementsTotal || 0;
+				const earned = c.game.achievementsEarned || 0;
+
+				return {
+					gameId: c.game.id,
+					name: c.game.name,
+					score: Math.round(Math.min(100, score)),
+					reasons: buildReasons(c, earned, total),
+					playtimeForever: c.game.playtimeForever || 0,
+					rating: c.game.rating,
+					userTags: c.game.userTags,
+					platform: c.game.platform,
+					achievementRate: total > 0 ? earned / total : 0,
+				};
+			});
+
+			return scored
 				.sort((a, b) => b.score - a.score)
 				.slice(0, limit);
 		} catch (error) {
@@ -105,84 +149,29 @@ export class SmartRecommendationService {
 			throw error;
 		}
 	}
+}
 
-	private static analyzeUserProfile(library: any[]) {
-		const completedGames = library.filter(g => g.status === 'completed');
-		const ratedGames = library.filter(g => g.rating !== null && g.rating > 0);
-		const topRatedGames = ratedGames.sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 10);
+/** Only the first two are shown in the UI, so the value line comes first. */
+function buildReasons(c: Candidate, earned: number, total: number): string[] {
+	const reasons: string[] = [];
 
-		const preferredTags = new Map<string, number>();
-		topRatedGames.forEach(game => {
-			game.userTags?.forEach((tag: string) => {
-				preferredTags.set(tag, (preferredTags.get(tag) || 0) + 1);
-			});
-		});
-
-		const favoriteTagCombos = topRatedGames.map(g => g.userTags || []);
-
-		const platformDistribution = new Map<string, number>();
-		library.forEach(game => {
-			platformDistribution.set(
-				game.platform,
-				(platformDistribution.get(game.platform) || 0) + 1
+	if (c.price > 0) {
+		if (c.hours < MIN_HOURS) {
+			reasons.push(`${formatRupees(c.price)} spent, never played`);
+		} else {
+			reasons.push(
+				`${formatRupees(c.price)} spent over ${c.hours.toFixed(1)}h — ${formatRupees(c.costPerHour)}/hour so far`
 			);
-		});
-
-		const completionRate =
-			library.length > 0 ? completedGames.length / library.length : 0;
-
-		const achievementGames = library.filter(g => g.achievementsTotal && g.achievementsTotal > 0);
-		const avgAchievementRate =
-			achievementGames.length > 0
-				? achievementGames.reduce((sum, g) => sum + ((g.achievementsEarned || 0) / (g.achievementsTotal || 1)), 0) / achievementGames.length
-				: 0;
-		const achievementHunter = avgAchievementRate > 0.5;
-
-		return {
-			preferredTags: Array.from(preferredTags.entries())
-				.sort((a, b) => b[1] - a[1])
-				.slice(0, 10)
-				.map(([tag]) => tag),
-			favoriteTagCombos,
-			platformDistribution,
-			completionRate,
-			achievementHunter,
-			totalGames: library.length,
-		};
+		}
 	}
 
-	private static calculateTagSimilarity(gameTags: string[], preferredTags: string[]): number {
-		if (!gameTags || gameTags.length === 0) return 0;
-		const matches = gameTags.filter(tag => preferredTags.includes(tag)).length;
-		return Math.min(20, (matches / Math.max(gameTags.length, 1)) * 20);
+	if (total > 0 && earned < total) {
+		reasons.push(`${total - earned} of ${total} achievements still to earn`);
 	}
 
-	private static calculatePlatformScore(
-		platform: string,
-		platformDistribution: Map<string, number>
-	): number {
-		const count = platformDistribution.get(platform) || 0;
-		const totalGames = Array.from(platformDistribution.values()).reduce((a, b) => a + b, 0);
-
-		const proportion = count / Math.max(totalGames, 1);
-		if (proportion < 0.1) return 12;
-		if (proportion < 0.2) return 8;
-		return 3;
+	if (reasons.length === 0) {
+		reasons.push('In your backlog');
 	}
 
-	private static calculateSimilarityToFavorites(
-		gameTags: string[],
-		favoriteTagCombos: string[][]
-	): number {
-		if (!gameTags || gameTags.length === 0) return 0;
-
-		let maxSimilarity = 0;
-		favoriteTagCombos.forEach(combo => {
-			const matches = gameTags.filter(tag => combo.includes(tag)).length;
-			const similarity = (matches / Math.max(combo.length, 1)) * 100;
-			maxSimilarity = Math.max(maxSimilarity, similarity);
-		});
-
-		return Math.min(20, (maxSimilarity / 100) * 20);
-	}
+	return reasons;
 }
