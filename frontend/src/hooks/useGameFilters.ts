@@ -80,8 +80,8 @@ export const useGameFilters = ({
 		}
 
 		sorted.sort((a, b) => {
-			let aVal: any;
-			let bVal: any;
+			let aVal: string | number;
+			let bVal: string | number;
 
 			switch (sortField) {
 				case 'name':
@@ -94,11 +94,12 @@ export const useGameFilters = ({
 					bVal = b.rating ?? -1;
 					break;
 
-				case 'status':
+				case 'status': {
 					const statusOrder = { completed: 0, playing: 1, backlog: 2, unplayed: 3 };
 					aVal = statusOrder[a.status as keyof typeof statusOrder] ?? 4;
 					bVal = statusOrder[b.status as keyof typeof statusOrder] ?? 4;
 					break;
+				}
 
 				default:
 					return 0;

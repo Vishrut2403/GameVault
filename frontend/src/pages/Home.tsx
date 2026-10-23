@@ -5,6 +5,7 @@ import { GameCard } from '../components/GameCard';
 import { GameTable } from '../components/GameTable';
 import { GameFilters, type GameFilterState } from '../components/GameFilters';
 import type { LibraryGame, TabType, SortField, SortDirection } from '../types/games.types';
+import type { User } from '../types/user.types';
 
 const ProfilePage = lazy(() => import('../pages/ProfilePage'));
 const SteamWishlist = lazy(() => import('../components/SteamWishlist'));
@@ -13,6 +14,9 @@ const SmartRecommendationsList = lazy(() => import('../components/SmartRecommend
 const GameModal = lazy(() => import('../components/GameModal').then(m => ({ default: m.GameModal })));
 const Analytics = lazy(() => import('../components/Analytics').then(m => ({ default: m.Analytics })));
 const TierList = lazy(() => import('../components/TierList').then(m => ({ default: m.TierList })));
+
+// The library as Home keeps it: the enriched Steam library plus its owner.
+type Library = { games: LibraryGame[]; userId: string };
 
 const TABS: { key: TabType; label: string }[] = [
 	{ key: 'profile', label: 'Profile' },
@@ -26,15 +30,15 @@ const TABS: { key: TabType; label: string }[] = [
 ];
 
 interface HomeProps {
-	user: any;
+	user: User;
 	onLogout: () => void;
 }
 
 function Home({ user, onLogout }: HomeProps) {
 	const [loading, setLoading] = useState(false);
 	const [syncing, setSyncing] = useState(false);
-	const [library, setLibrary] = useState<any>(null);
-	const [originalLibrary, setOriginalLibrary] = useState<any>(null);
+	const [library, setLibrary] = useState<Library | null>(null);
+	const [originalLibrary, setOriginalLibrary] = useState<Library | null>(null);
 	const [error, setError] = useState('');
 	const [selectedGame, setSelectedGame] = useState<LibraryGame | null>(null);
 	const [activeTab, setActiveTab] = useState<TabType>('journal');
@@ -88,7 +92,7 @@ function Home({ user, onLogout }: HomeProps) {
 			const data = await steamService.getEnrichedLibrary(steamId);
 			setLibrary({ ...data, userId: user.id });
 			setOriginalLibrary({ ...data, userId: user.id });
-		} catch (err) {
+		} catch {
 			setError('Failed to load library');
 		} finally {
 			setLoading(false);
@@ -129,7 +133,7 @@ function Home({ user, onLogout }: HomeProps) {
 				tags: [],
 				searchQuery: '',
 			});
-		} catch (err) {
+		} catch {
 			setError('Failed to sync from Steam');
 		} finally {
 			setSyncing(false);
@@ -159,7 +163,7 @@ function Home({ user, onLogout }: HomeProps) {
 				tags: [],
 				searchQuery: '',
 			});
-		} catch (err) {
+		} catch {
 			console.error('Failed to refresh');
 		}
 	};
@@ -175,7 +179,7 @@ function Home({ user, onLogout }: HomeProps) {
 				localStorage.setItem('user', JSON.stringify(data.user));
 				window.location.reload();
 			}
-		} catch (error) {
+		} catch {
 			console.error('Failed to reload user');
 		}
 	};
@@ -232,12 +236,13 @@ function Home({ user, onLogout }: HomeProps) {
 	}, [library?.games, sortField, sortDirection]);
 
 	const getSortLabel = () => {
-		const sortLabels: any = {
+		const sortLabels: Record<SortField, string> = {
 			name: 'Recent',
 			playtime: 'Playtime',
 			pricePaid: 'Price',
 			pricePerHour: 'Price/Hour',
-			rating: 'Rating'
+			rating: 'Rating',
+			status: 'Status'
 		};
 		return sortLabels[sortField] || 'Recent';
 	};
@@ -465,7 +470,7 @@ function Home({ user, onLogout }: HomeProps) {
 				)}
 
 				{activeTab === 'wishlist' && (
-					<SteamWishlist userId={user.id} />
+					<SteamWishlist />
 				)}
 
 				{activeTab === 'recommendations' && (

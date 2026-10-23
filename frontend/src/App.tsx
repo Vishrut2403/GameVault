@@ -5,50 +5,49 @@ const AuthPage = lazy(() => import('./pages/AuthPage'));
 const Home = lazy(() => import('./pages/Home'));
 
 import { API_BASE_URL as API_URL } from './services/api';
+import type { User } from './types/user.types';
+
+/** The user the stored token belongs to, or null — clearing a token the server rejects. */
+async function fetchCurrentUser(): Promise<User | null> {
+	const token = localStorage.getItem('token');
+	if (!token) return null;
+
+	try {
+		const response = await fetch(`${API_URL}/api/auth/me`, {
+			headers: {
+				'Authorization': `Bearer ${token}`
+			}
+		});
+
+		const data = await response.json();
+		if (data.success) return data.user;
+	} catch (error) {
+		console.error('Auth check failed:', error);
+	}
+
+	localStorage.removeItem('token');
+	localStorage.removeItem('user');
+	return null;
+}
 
 function App() {
-	const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-	const [user, setUser] = useState<any>(null);
+	// Without a token there is nothing to check, so start logged out instead of loading.
+	const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => (localStorage.getItem('token') ? null : false));
+	const [user, setUser] = useState<User | null>(null);
 	const hasCheckedAuthRef = useRef(false);
 
-	const checkAuth = useCallback(async () => {
-		const token = localStorage.getItem('token');
-		
-		if (!token) {
-			setIsAuthenticated(false);
-			return;
-		}
-
-		try {
-			const response = await fetch(`${API_URL}/api/auth/me`, {
-				headers: {
-					'Authorization': `Bearer ${token}`
-				}
-			});
-
-			const data = await response.json();
-
-			if (data.success) {
-				setIsAuthenticated(true);
-				setUser(data.user);
-			} else {
-				localStorage.removeItem('token');
-				localStorage.removeItem('user');
-				setIsAuthenticated(false);
-			}
-		} catch (error) {
-			console.error('Auth check failed:', error);
-			localStorage.removeItem('token');
-			localStorage.removeItem('user');
-			setIsAuthenticated(false);
-		}
+	const checkAuth = useCallback(() => {
+		fetchCurrentUser().then((current) => {
+			setUser(current);
+			setIsAuthenticated(current !== null);
+		});
 	}, []);
 
 	useEffect(() => {
 		// Only check auth once on initial mount
 		if (!hasCheckedAuthRef.current) {
 			hasCheckedAuthRef.current = true;
-			checkAuth();
+			if (localStorage.getItem('token')) checkAuth();
 		}
 		
 		// Handle Steam OAuth callback
@@ -95,7 +94,7 @@ function App() {
 	);
 }
 
-function AppRoutes({ isAuthenticated, user, onLogout, onLoginSuccess }: { isAuthenticated: boolean; user: any; onLogout: () => void; onLoginSuccess: () => void }) {
+function AppRoutes({ isAuthenticated, user, onLogout, onLoginSuccess }: { isAuthenticated: boolean; user: User | null; onLogout: () => void; onLoginSuccess: () => void }) {
 	const location = useLocation();
 
 	// If user just logged in (token exists but isAuthenticated is still false), trigger auth check immediately
@@ -108,7 +107,7 @@ function AppRoutes({ isAuthenticated, user, onLogout, onLoginSuccess }: { isAuth
 
 	return (
 		<Routes>
-			{isAuthenticated ? (
+			{isAuthenticated && user ? (
 				<>
 					<Route path="/" element={<Home user={user} onLogout={onLogout} />} />
 					<Route path="*" element={<Navigate to="/" replace />} />

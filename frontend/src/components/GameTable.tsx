@@ -44,7 +44,7 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 				delete newState[gameKey];
 				return newState;
 			});
-		} catch (err) {
+		} catch {
 			alert('Failed to save price');
 		} finally {
 			setSavingPrice(null);
@@ -74,7 +74,7 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 				delete newState[gameKey];
 				return newState;
 			});
-		} catch (err) {
+		} catch {
 			alert('Failed to save tags');
 		} finally {
 			setSavingTags(null);

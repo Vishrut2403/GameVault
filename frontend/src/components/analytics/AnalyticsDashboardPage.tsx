@@ -2,16 +2,10 @@ import { useMemo, useState, useEffect } from 'react';
 import type { LibraryGame } from '../../types/games.types';
 import  api  from '../../services/api';
 import { PlatformBadge } from '../PlatformBadge';
+import { buildYear, heatClass, toWeeks, monthLabels as labelMonths, currentStreak, type DayActivity, type SessionRow } from '../../utils/heatmap';
 
 interface AnalyticsDashboardPageProps {
 	games: LibraryGame[];
-}
-
-interface DayActivity {
-	date: string;
-	count: number;
-	hours: number;
-	games: { name: string; hours: number }[];
 }
 
 type SortOption = 'mostPlayed' | 'mostAchievements' | 'recentlyPlayed' | 'alphabetical';
@@ -31,8 +25,7 @@ const WindowBar: React.FC<{ title: string; fill: 'lime' | 'pink' | 'yellow' }> =
 export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ games }) => {
 	const [selectedDay, setSelectedDay] = useState<DayActivity | null>(null);
 	const [coverSort, setCoverSort] = useState<SortOption>('mostPlayed');
-	const [sessionData, setSessionData] = useState<any[]>([]);
-	const [refreshKey, setRefreshKey] = useState(0); // Force recalculation
+	const [sessionData, setSessionData] = useState<SessionRow[]>([]);
 	
 	useEffect(() => {
 		const fetchSessions = async () => {
@@ -41,7 +34,6 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 				startDate.setFullYear(startDate.getFullYear() - 1);
 				const response = await api.get(`/user/sessions?startDate=${startDate.toISOString()}`);
 				setSessionData(response.data.sessions || []);
-				setRefreshKey(prev => prev + 1); // Force heatmap recalculation
 			} catch (err) {
 				console.error('Failed to fetch sessions:', err);
 			}
@@ -128,151 +120,15 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 		return hours > 0 ? `${hours}h` : `${minutes}m`;
 	};
 
-	const heatmapData = useMemo(() => {
-		const now = new Date();
-		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-		const getLocalDateString = (date: Date): string => {
-			const year = date.getFullYear();
-			const month = String(date.getMonth() + 1).padStart(2, '0');
-			const day = String(date.getDate()).padStart(2, '0');
-			return `${year}-${month}-${day}`;
-		};
-		
-		const startDate = new Date(today);
-		startDate.setDate(today.getDate() - 364);
-
-		const days: DayActivity[] = [];
-		const currentDate = new Date(startDate);
-
-		for (let i = 0; i < 365; i++) {
-			const dateStr = getLocalDateString(currentDate);
-			days.push({ date: dateStr, count: 0, hours: 0, games: [] });
-			currentDate.setDate(currentDate.getDate() + 1);
-		}
-
-		const sessionsByDate = new Map<string, Map<string, number>>();
-		
-		sessionData.forEach((session) => {
-			const dateStr = new Date(session.date).toISOString().split('T')[0];
-			const gameName = session.game?.name || 'Unknown Game';
-			const minutes = session.minutes || 0;
-			
-			if (!sessionsByDate.has(dateStr)) {
-				sessionsByDate.set(dateStr, new Map());
-			}
-			
-			const dayGames = sessionsByDate.get(dateStr)!;
-			const currentMinutes = dayGames.get(gameName) || 0;
-			dayGames.set(gameName, currentMinutes + minutes);
-		});
-
-		sessionsByDate.forEach((gamesMap, dateStr) => {
-			const dayIndex = days.findIndex(d => d.date === dateStr);
-			if (dayIndex !== -1) {
-				const gamesList: { name: string; hours: number }[] = [];
-				let totalHours = 0;
-				
-				gamesMap.forEach((minutes, gameName) => {
-					const hours = Math.round((minutes / 60) * 10) / 10;
-					totalHours += hours;
-					gamesList.push({ name: gameName, hours });
-				});
-				
-				days[dayIndex] = {
-					date: dateStr,
-					count: gamesList.length,
-					hours: Math.round(totalHours * 10) / 10,
-					games: gamesList.sort((a, b) => b.hours - a.hours)
-				};
-			} else {
-			}
-		});
-
-		return days;
-	}, [sessionData, refreshKey]);
-
-	// Shade by hours played that day, not by how many games were played.
-	const getColor = (day: DayActivity): string => {
-		if (day.count === 0) return 'bg-raised nb-heat-0';
-		if (day.hours < 1) return 'bg-ok/40 nb-heat-1';
-		if (day.hours < 3) return 'bg-ok/60 nb-heat-2';
-		return 'bg-ok-hi nb-heat-3';
-	};
-
-	const weeks = useMemo(() => {
-		const result: DayActivity[][] = [];
-		let currentWeek: DayActivity[] = [];
-		
-		// Parse as local midnight; a bare YYYY-MM-DD parses as UTC and can land on the previous local day.
-		const firstDay = heatmapData[0] ? new Date(`${heatmapData[0].date}T00:00`) : new Date();
-		const firstDayOfWeek = firstDay.getDay();
-		
-		for (let i = 0; i < firstDayOfWeek; i++) {
-			currentWeek.push({ date: '', count: 0, hours: 0, games: [] });
-		}
-
-		heatmapData.forEach((day) => {
-			currentWeek.push(day);
-			
-			if (currentWeek.length === 7) {
-				result.push([...currentWeek]);
-				currentWeek = [];
-			}
-		});
-
-		while (currentWeek.length > 0 && currentWeek.length < 7) {
-			currentWeek.push({ date: '', count: 0, hours: 0, games: [] });
-		}
-		if (currentWeek.length === 7) {
-			result.push(currentWeek);
-		}
-
-		return result;
-	}, [heatmapData]);
-
-	// One label slot per week column, filled where a new month starts. A label
-	// closer than 3 columns to the previous one is dropped so the two don't overlap.
-	const monthLabels = useMemo(() => {
-		const labels: string[] = weeks.map(() => '');
-		let currentMonth = '';
-		let lastLabelled = -Infinity;
-
-		weeks.forEach((week, weekIndex) => {
-			const firstValidDay = week.find(d => d.date !== '');
-			if (!firstValidDay) return;
-			const monthName = new Date(`${firstValidDay.date}T00:00`).toLocaleDateString('en-US', { month: 'short' });
-			if (monthName === currentMonth) return;
-			currentMonth = monthName;
-			if (weekIndex - lastLabelled < 3) return;
-			labels[weekIndex] = monthName;
-			lastLabelled = weekIndex;
-		});
-
-		return labels;
-	}, [weeks]);
+	const heatmapData = useMemo(() => buildYear(sessionData, new Date()), [sessionData]);
+	const weeks = useMemo(() => toWeeks(heatmapData), [heatmapData]);
+	const monthLabels = useMemo(() => labelMonths(weeks), [weeks]);
 
 	const totalActivity = useMemo(() => {
 		return heatmapData.reduce((sum, day) => sum + day.count, 0);
 	}, [heatmapData]);
 
-	const activeStreak = useMemo(() => {
-		let streak = 0;
-		const reversedData = [...heatmapData].reverse();
-		// Sessions are recorded by the midnight sync, so today is usually still
-		// empty; count back from yesterday then instead of reporting 0.
-		if (reversedData[0]?.count === 0) reversedData.shift();
-		
-		for (const day of reversedData) {
-			if (day.count > 0) {
-				streak++;
-			} else {
-				break;
-			}
-		}
-		
-		return streak;
-	}, [heatmapData]);
+	const activeStreak = useMemo(() => currentStreak(heatmapData), [heatmapData]);
 
 	return (
 		<div className="space-y-8">
@@ -364,7 +220,7 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 											<div
 												key={dayIdx}
 												className={`w-3 h-3 rounded-sm cursor-pointer transition-all duration-200 ${
-													day.date ? `nb-heat ${getColor(day)}` : 'bg-transparent'
+													day.date ? `nb-heat ${heatClass(day)}` : 'bg-transparent'
 												} ${day.count > 0 ? 'hover:ring-2 hover:ring-accent-line hover:scale-125' : ''}`}
 												onClick={() => day.count > 0 && setSelectedDay(day)}
 												title={day.date ? `${day.date}: ${day.count} game${day.count !== 1 ? 's' : ''}, ${day.hours}h` : ''}

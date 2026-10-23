@@ -12,7 +12,7 @@ export interface JournalEntry {
 
 class JournalService {
 	// Get all entries for a game
-	async getEntries(gameId: string, _userId: string): Promise<JournalEntry[]> {
+	async getEntries(gameId: string): Promise<JournalEntry[]> {
 		const response = await api.get(`/journal/${gameId}`);
 		const data = response.data;
 		
@@ -48,7 +48,7 @@ class JournalService {
 	}
 
 	// Delete an entry
-	async deleteEntry(entryId: string, _userId: string): Promise<void> {
+	async deleteEntry(entryId: string): Promise<void> {
 		const response = await api.delete(`/journal/${entryId}`);
 		const data = response.data;
 		

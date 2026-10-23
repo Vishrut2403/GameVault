@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-import { API_BASE_URL as API_URL } from '../services/api';
+import { API_BASE_URL as API_URL, errorMessage } from '../services/api';
 
 interface WishlistItem {
 	id: string;
@@ -15,11 +15,7 @@ interface WishlistItem {
 	createdAt: string;
 }
 
-interface SteamWishlistProps {
-	userId: string;
-}
-
-function SteamWishlist({}: SteamWishlistProps) {
+function SteamWishlist() {
 	const [items, setItems] = useState<WishlistItem[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [showAddForm, setShowAddForm] = useState(false);
@@ -62,9 +58,9 @@ function SteamWishlist({}: SteamWishlistProps) {
 		try {
 			const response = await axios.get(`${API_URL}/api/wishlist`, getAuthHeaders());
 			setItems(response.data.data || response.data.wishlist || []);
-		} catch (err: any) {
+		} catch (err) {
 			console.error('Failed to load wishlist:', err);
-			setError(err.response?.data?.error || 'Failed to load wishlist');
+			setError(errorMessage(err, 'Failed to load wishlist'));
 		} finally {
 			setLoading(false);
 		}
@@ -119,9 +115,9 @@ function SteamWishlist({}: SteamWishlistProps) {
 			setShowAddForm(false);
 			setEditingId(null);
 			await loadWishlist();
-		} catch (err: any) {
+		} catch (err) {
 			console.error('Failed to save wishlist item:', err);
-			setError(err.response?.data?.error || 'Failed to save item');
+			setError(errorMessage(err, 'Failed to save item'));
 		}
 	};
 
@@ -145,9 +141,9 @@ function SteamWishlist({}: SteamWishlistProps) {
 		try {
 			await axios.delete(`${API_URL}/api/wishlist/item/${id}`, getAuthHeaders());
 			await loadWishlist();
-		} catch (err: any) {
+		} catch (err) {
 			console.error('Failed to delete item:', err);
-			setError(err.response?.data?.error || 'Failed to delete item');
+			setError(errorMessage(err, 'Failed to delete item'));
 		}
 	};
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import journalService from '../services/journal.service';
+import { errorMessage } from '../services/api';
 import type { JournalEntry } from '../services/journal.service';
 
 interface GameJournalProps {
@@ -29,10 +30,10 @@ export const GameJournal: React.FC<GameJournalProps> = ({ gameId, gameName, user
 		try {
 			setLoading(true);
 			setError('');
-			const data = await journalService.getEntries(gameId, userId);
+			const data = await journalService.getEntries(gameId);
 			setEntries(data);
-		} catch (err: any) {
-			setError(err.message || 'Failed to load journal entries');
+		} catch (err) {
+			setError(errorMessage(err, 'Failed to load journal entries'));
 		} finally {
 			setLoading(false);
 		}
@@ -58,8 +59,8 @@ export const GameJournal: React.FC<GameJournalProps> = ({ gameId, gameName, user
 			setNewEntryContent('');
 			setIsAddingNew(false);
 			await loadEntries();
-		} catch (err: any) {
-			setError(err.message || 'Failed to create entry');
+		} catch (err) {
+			setError(errorMessage(err, 'Failed to create entry'));
 		}
 	};
 
@@ -73,8 +74,8 @@ export const GameJournal: React.FC<GameJournalProps> = ({ gameId, gameName, user
 			setEditHeading('');
 			setEditContent('');
 			await loadEntries();
-		} catch (err: any) {
-			setError(err.message || 'Failed to update entry');
+		} catch (err) {
+			setError(errorMessage(err, 'Failed to update entry'));
 		}
 	};
 
@@ -83,10 +84,10 @@ export const GameJournal: React.FC<GameJournalProps> = ({ gameId, gameName, user
 
 		try {
 			setError('');
-			await journalService.deleteEntry(entryId, userId);
+			await journalService.deleteEntry(entryId);
 			await loadEntries();
-		} catch (err: any) {
-			setError(err.message || 'Failed to delete entry');
+		} catch (err) {
+			setError(errorMessage(err, 'Failed to delete entry'));
 		}
 	};
 

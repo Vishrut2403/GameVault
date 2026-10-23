@@ -204,7 +204,7 @@ export const AnalyticsValuePage: React.FC<AnalyticsValuePageProps> = ({ games })
 							<Tooltip 
 								contentStyle={{ backgroundColor: 'var(--tip-bg)', border: '1px solid var(--tip-line)', borderRadius: '8px' }}
 								labelStyle={{ color: 'var(--tip-fg)' }}
-								formatter={(value: any) => [formatCurrency(value), 'Price']}
+								formatter={(value) => [formatCurrency(Number(value)), 'Price']}
 							/>
 							<Bar dataKey="price" fill="#ec4899" />
 						</BarChart>
@@ -221,7 +221,7 @@ export const AnalyticsValuePage: React.FC<AnalyticsValuePageProps> = ({ games })
 							<Tooltip 
 								contentStyle={{ backgroundColor: 'var(--tip-bg)', border: '1px solid var(--tip-line)', borderRadius: '8px' }}
 								labelStyle={{ color: 'var(--tip-fg)' }}
-								formatter={(value: any) => [formatCurrency(value) + '/hour', 'Cost']}
+								formatter={(value) => [formatCurrency(Number(value)) + '/hour', 'Cost']}
 							/>
 							<Bar dataKey="pricePerHour" fill="#10b981" />
 						</BarChart>

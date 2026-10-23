@@ -81,6 +81,7 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
 				setHltbData(res.data.data);
 			}
 		} catch {
+			// HLTB is optional; the modal works without it.
 		} finally {
 			setHltbLoading(false);
 		}
@@ -111,7 +112,7 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
 				const predData = res.data.data;
 				setPrediction(predData);
 			}
-		} catch (error: any) {
+		} catch {
 			// Silently fail - prediction is optional, don't block UI if it fails
 		} finally {
 			setPredictionLoading(false);

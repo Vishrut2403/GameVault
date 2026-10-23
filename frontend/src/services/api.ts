@@ -41,4 +41,11 @@ api.interceptors.response.use(
 	}
 );
 
+/** The server's error text for a failed request, else the thrown message, else `fallback`. */
+export function errorMessage(err: unknown, fallback: string): string {
+	if (axios.isAxiosError(err)) return err.response?.data?.error || fallback;
+	if (err instanceof Error && err.message) return err.message;
+	return fallback;
+}
+
 export default api;

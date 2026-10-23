@@ -1,7 +1,8 @@
 import { API_BASE_URL as API_URL } from '../services/api';
+import type { User } from '../types/user.types';
 
 interface ProfilePageProps {
-	user: any;
+	user: User;
 	onUpdate: () => void;
 }
 

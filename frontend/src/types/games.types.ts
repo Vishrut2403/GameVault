@@ -35,7 +35,7 @@ export interface LibraryGame {
 	
 	// Platform-specific metadata (JSON)
 	platformData?: {
-		[key: string]: any;
+		[key: string]: unknown;
 	} | null;
 	
 	createdAt: Date;

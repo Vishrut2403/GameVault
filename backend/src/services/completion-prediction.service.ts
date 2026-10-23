@@ -86,17 +86,18 @@ export class CompletionPredictionService {
 		const totalPlaytime = completedGames.reduce((sum, g) => sum + (g.playtimeForever || 0), 0);
 		const avgPlaytimePerGame = totalPlaytime / completedGames.length;
 
-		// Calculate days to complete (using session data)
-		const daysToCompleteList: number[] = [];
+		// Days from first to last session per completed game, from the sessions
+		// loaded above. The genre pass below reuses these instead of querying again.
+		const daysSpentByGame = new Map<string, number>();
 		for (const game of completedGames) {
 			if (game.sessions && game.sessions.length > 0) {
 				const sessions = game.sessions.sort((a, b) => a.date.getTime() - b.date.getTime());
 				const firstSession = sessions[0].date;
 				const lastSession = sessions[sessions.length - 1].date;
-				const daysSpent = Math.max(1, (lastSession.getTime() - firstSession.getTime()) / (1000 * 60 * 60 * 24));
-				daysToCompleteList.push(daysSpent);
+				daysSpentByGame.set(game.id, Math.max(1, (lastSession.getTime() - firstSession.getTime()) / (1000 * 60 * 60 * 24)));
 			}
 		}
+		const daysToCompleteList = [...daysSpentByGame.values()];
 
 		const avgDaysToComplete = daysToCompleteList.length > 0
 			? daysToCompleteList.reduce((a, b) => a + b, 0) / daysToCompleteList.length
@@ -121,15 +122,8 @@ export class CompletionPredictionService {
 
 				if (game.status === 'completed') {
 					genreStats[genre].completed += 1;
-					// Find session data for this game
-					const gameSessions = await this.prisma.gameSession.findMany({
-						where: { gameId: game.id },
-						orderBy: { date: 'asc' },
-					});
-					if (gameSessions.length > 0) {
-						const daysSpent = Math.max(1, 
-							(gameSessions[gameSessions.length - 1].date.getTime() - gameSessions[0].date.getTime()) / (1000 * 60 * 60 * 24)
-						);
+					const daysSpent = daysSpentByGame.get(game.id);
+					if (daysSpent !== undefined) {
 						genreStats[genre].days.push(daysSpent);
 					}
 				}
@@ -165,7 +159,6 @@ export class CompletionPredictionService {
 		try {
 			const game = await this.prisma.libraryGame.findUnique({
 				where: { id: gameId },
-				include: { sessions: true },
 			});
 
 			if (!game || game.userId !== userId) {
