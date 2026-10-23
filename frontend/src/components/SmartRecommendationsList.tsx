@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import api from '../services/api';
+import { useCachedGet, smartPicksUrl } from '../services/cachedGet';
 
 interface GameScore {
 	gameId: string;
@@ -24,32 +23,10 @@ export default function SmartRecommendationsList({
 	limit = 5,
 	onSelectGame,
 }: SmartRecommendationsListProps) {
-	const [recommendations, setRecommendations] = useState<GameScore[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-
-	useEffect(() => {
-		const fetchRecommendations = async () => {
-			try {
-				setLoading(true);
-				setError(null);
-				const response = await api.get(`/recommendations/${userId}/smart`, {
-					params: { limit },
-				});
-				setRecommendations(response.data.recommendations || []);
-			} catch (err) {
-				console.error('Failed to fetch smart recommendations:', err);
-				setError('Failed to load recommendations');
-				setRecommendations([]);
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		if (userId) {
-			fetchRecommendations();
-		}
-	}, [userId, limit]);
+	const { data, error: loadError, loading } = useCachedGet<{ recommendations?: GameScore[] }>(smartPicksUrl(userId, limit));
+	const recommendations = data?.recommendations || [];
+	// Keep showing the last picks if only the background refresh failed.
+	const error = loadError && !data ? 'Failed to load recommendations' : null;
 
 	if (loading) {
 		return (

@@ -7,14 +7,33 @@ import { GameFilters, type GameFilterState } from '../components/GameFilters';
 import type { LibraryGame, TabType, SortField, SortDirection } from '../types/games.types';
 import type { User } from '../types/user.types';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { prefetch, smartPicksUrl, sessionsUrl, WISHLIST_URL } from '../services/cachedGet';
 
-const ProfilePage = lazy(() => import('../pages/ProfilePage'));
-const SteamWishlist = lazy(() => import('../components/SteamWishlist'));
-const RecommendationSystem = lazy(() => import('../components/RecommendationSystem'));
-const SmartRecommendationsList = lazy(() => import('../components/SmartRecommendationsList'));
-const GameModal = lazy(() => import('../components/GameModal').then(m => ({ default: m.GameModal })));
-const Analytics = lazy(() => import('../components/Analytics').then(m => ({ default: m.Analytics })));
-const TierList = lazy(() => import('../components/TierList').then(m => ({ default: m.TierList })));
+const loadProfile = () => import('../pages/ProfilePage');
+const loadWishlist = () => import('../components/SteamWishlist');
+const loadRecommendations = () => import('../components/RecommendationSystem');
+const loadSmartPicks = () => import('../components/SmartRecommendationsList');
+const loadGameModal = () => import('../components/GameModal');
+const loadAnalytics = () => import('../components/Analytics');
+const loadTierList = () => import('../components/TierList');
+
+const ProfilePage = lazy(loadProfile);
+const SteamWishlist = lazy(loadWishlist);
+const RecommendationSystem = lazy(loadRecommendations);
+const SmartRecommendationsList = lazy(loadSmartPicks);
+const GameModal = lazy(() => loadGameModal().then(m => ({ default: m.GameModal })));
+const Analytics = lazy(() => loadAnalytics().then(m => ({ default: m.Analytics })));
+const TierList = lazy(() => loadTierList().then(m => ({ default: m.TierList })));
+
+// Every tab's code, plus the Analytics sub-pages, fetched once the page is idle.
+const PRELOAD = [
+	loadProfile, loadWishlist, loadRecommendations, loadSmartPicks, loadGameModal, loadAnalytics, loadTierList,
+	() => import('../components/analytics/AnalyticsDashboardPage'),
+	() => import('../components/analytics/AnalyticsAchievementsPage'),
+	() => import('../components/analytics/AnalyticsValuePage'),
+];
+
+const SMART_PICK_LIMIT = 10;
 
 // The library as Home keeps it: the enriched Steam library plus its owner.
 type Library = { games: LibraryGame[]; userId: string };
@@ -43,6 +62,18 @@ function Home({ user, onLogout }: HomeProps) {
 	const [error, setError] = useState('');
 	const [selectedGame, setSelectedGame] = useState<LibraryGame | null>(null);
 	const [activeTab, setActiveTab] = useState<TabType>('journal');
+
+	// Once the page has settled, load every tab's code and the data of the tabs
+	// that fetch their own, so even a tab's first visit doesn't wait on the network.
+	useEffect(() => {
+		const id = setTimeout(() => {
+			PRELOAD.forEach((load) => load().catch(() => { /* the tab retries when opened */ }));
+			prefetch(smartPicksUrl(user.id, SMART_PICK_LIMIT));
+			prefetch(WISHLIST_URL);
+			prefetch(sessionsUrl());
+		}, 1000);
+		return () => clearTimeout(id);
+	}, [user.id]);
 
 	const [sortField, setSortField] = useState<SortField>('playtime');
 	const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -430,7 +461,12 @@ function Home({ user, onLogout }: HomeProps) {
 					</div>
 				)}
 
-				{/* Content based on active tab */}
+				{/* Content based on active tab. Its own Suspense keeps the header and tabs on screen while a tab's code loads. */}
+				<Suspense fallback={
+					<div className="flex justify-center py-16">
+						<div className="w-10 h-10 border-4 border-line border-t-accent-line rounded-full animate-spin" />
+					</div>
+				}>
 				{activeTab === 'profile' && (
 					<ProfilePage user={user} onUpdate={reloadUser} />
 				)}
@@ -465,7 +501,7 @@ function Home({ user, onLogout }: HomeProps) {
 				)}
 
 				{activeTab === 'smart-recommendations' && (
-					<SmartRecommendationsList userId={user.id} limit={10} onSelectGame={(gameId) => {
+					<SmartRecommendationsList userId={user.id} limit={SMART_PICK_LIMIT} onSelectGame={(gameId) => {
 						const game = library?.games?.find((g: LibraryGame) => g.id === gameId);
 						setSelectedGame(game || null);
 					}} />
@@ -478,6 +514,7 @@ function Home({ user, onLogout }: HomeProps) {
 				{activeTab === 'tierlist' && !loading && (
 					<TierList games={library?.games || []} />
 				)}
+				</Suspense>
 
 				{/* Empty State */}
 				{filteredGames.length === 0 && !loading && activeTab !== 'profile' && activeTab !== 'wishlist' && activeTab !== 'recommendations' && activeTab !== 'smart-recommendations' && activeTab !== 'analytics' && activeTab !== 'tierlist' && (

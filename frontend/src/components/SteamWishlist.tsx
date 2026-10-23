@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 
 import { API_BASE_URL as API_URL, errorMessage } from '../services/api';
+import { useCachedGet, WISHLIST_URL } from '../services/cachedGet';
 
 interface WishlistItem {
 	id: string;
@@ -16,8 +17,8 @@ interface WishlistItem {
 }
 
 function SteamWishlist() {
-	const [items, setItems] = useState<WishlistItem[]>([]);
-	const [loading, setLoading] = useState(true);
+	const { data, error: loadError, loading, reload: loadWishlist } = useCachedGet<{ data?: WishlistItem[]; wishlist?: WishlistItem[] }>(WISHLIST_URL);
+	const items = data?.data || data?.wishlist || [];
 	const [showAddForm, setShowAddForm] = useState(false);
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
@@ -46,24 +47,6 @@ function SteamWishlist() {
 		const timestamp = Date.now();
 		const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
 		return `manual_${cleanName}_${timestamp}`;
-	};
-
-	useEffect(() => {
-		loadWishlist();
-	}, []);
-
-	const loadWishlist = async () => {
-		setLoading(true);
-		setError(null);
-		try {
-			const response = await axios.get(`${API_URL}/api/wishlist`, getAuthHeaders());
-			setItems(response.data.data || response.data.wishlist || []);
-		} catch (err) {
-			console.error('Failed to load wishlist:', err);
-			setError(errorMessage(err, 'Failed to load wishlist'));
-		} finally {
-			setLoading(false);
-		}
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -184,9 +167,9 @@ function SteamWishlist() {
 			</div>
 
 			{/* Error Message */}
-			{error && (
+			{(error || loadError !== null) && (
 				<div className="bg-danger border border-danger-line rounded-lg p-4">
-					<p className="text-danger-fg text-sm">{error}</p>
+					<p className="text-danger-fg text-sm">{error || errorMessage(loadError, 'Failed to load wishlist')}</p>
 				</div>
 			)}
 

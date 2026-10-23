@@ -6,6 +6,7 @@ const Home = lazy(() => import('./pages/Home'));
 
 import { API_BASE_URL as API_URL } from './services/api';
 import type { User } from './types/user.types';
+import { clearCache } from './services/cachedGet';
 
 /** The user the stored token belongs to, or null — clearing a token the server rejects. */
 async function fetchCurrentUser(): Promise<User | null> {
@@ -63,6 +64,7 @@ function App() {
 	}, [checkAuth]);
 
 	const handleLogout = () => {
+		clearCache();
 		localStorage.removeItem('token');
 		localStorage.removeItem('user');
 		setIsAuthenticated(false);

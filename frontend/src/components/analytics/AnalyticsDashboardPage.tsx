@@ -1,6 +1,6 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import type { LibraryGame } from '../../types/games.types';
-import  api  from '../../services/api';
+import { useCachedGet, sessionsUrl } from '../../services/cachedGet';
 import { PlatformBadge } from '../PlatformBadge';
 import { buildYear, heatClass, toWeeks, monthLabels as labelMonths, currentStreak, type DayActivity, type SessionRow } from '../../utils/heatmap';
 
@@ -25,21 +25,9 @@ const WindowBar: React.FC<{ title: string; fill: 'lime' | 'pink' | 'yellow' }> =
 export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ games }) => {
 	const [selectedDay, setSelectedDay] = useState<DayActivity | null>(null);
 	const [coverSort, setCoverSort] = useState<SortOption>('mostPlayed');
-	const [sessionData, setSessionData] = useState<SessionRow[]>([]);
-	
-	useEffect(() => {
-		const fetchSessions = async () => {
-			try {
-				const startDate = new Date();
-				startDate.setFullYear(startDate.getFullYear() - 1);
-				const response = await api.get(`/user/sessions?startDate=${startDate.toISOString()}`);
-				setSessionData(response.data.sessions || []);
-			} catch (err) {
-				console.error('Failed to fetch sessions:', err);
-			}
-		};
-		fetchSessions();
-	}, [games]); // Refetch when games change (after sync)
+	// Refetched when games change, i.e. after a sync.
+	const { data: sessionBody } = useCachedGet<{ sessions?: SessionRow[] }>(sessionsUrl(), games);
+	const sessionData = useMemo(() => sessionBody?.sessions || [], [sessionBody]);
 	
 	const stats = useMemo(() => {
 		const totalGames = games.length;
