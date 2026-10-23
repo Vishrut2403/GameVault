@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
 import prisma from '../prisma';
 import { syncSteamLibrary } from '../services/steam-sync.service';
+import { syncSteamWishlist } from '../services/steam-wishlist.service';
 import { previousIstDayBucket } from '../utils/dates';
 
 const router = Router();
@@ -60,6 +61,7 @@ router.post('/daily-sync', async (req: Request, res: Response) => {
 		let synced = 0;
 		let failed = 0;
 		let sessionsTracked = 0;
+		let wishlistsFailed = 0;
 
 		for (const user of users) {
 			try {
@@ -71,12 +73,21 @@ router.post('/daily-sync', async (req: Request, res: Response) => {
 				failed++;
 				console.error(`[cron] Steam sync failed for user ${user.id}:`, error);
 			}
+
+			// Separate from the library: a wishlist failure (say, a private
+			// profile) must not count against, or undo, the library sync.
+			try {
+				await syncSteamWishlist(user.id, user.steamId as string);
+			} catch (error) {
+				wishlistsFailed++;
+				console.error(`[cron] Wishlist sync failed for user ${user.id}:`, error);
+			}
 		}
 
 		const day = sessionDate.toISOString().slice(0, 10);
-		console.log(`[cron] Daily sync for ${day}: ${synced} synced, ${failed} failed, ${sessionsTracked} sessions recorded`);
+		console.log(`[cron] Daily sync for ${day}: ${synced} synced, ${failed} failed, ${sessionsTracked} sessions recorded, ${wishlistsFailed} wishlists failed`);
 
-		res.json({ success: true, day, synced, failed, sessionsTracked });
+		res.json({ success: true, day, synced, failed, sessionsTracked, wishlistsFailed });
 	} catch (error) {
 		console.error('[cron] Daily sync failed:', error);
 		res.status(500).json({ success: false, error: 'Daily sync failed' });

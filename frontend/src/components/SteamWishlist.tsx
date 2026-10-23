@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 
-import { API_BASE_URL as API_URL, errorMessage } from '../services/api';
+import api, { API_BASE_URL as API_URL, errorMessage } from '../services/api';
 import { useCachedGet, WISHLIST_URL } from '../services/cachedGet';
 
 interface WishlistItem {
@@ -22,6 +22,8 @@ function SteamWishlist() {
 	const [showAddForm, setShowAddForm] = useState(false);
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	const [syncing, setSyncing] = useState(false);
+	const [syncNote, setSyncNote] = useState<string | null>(null);
 	
 	const [formData, setFormData] = useState({
 		name: '',
@@ -137,6 +139,21 @@ function SteamWishlist() {
 		setError(null);
 	};
 
+	const handleSync = async () => {
+		setSyncing(true);
+		setError(null);
+		setSyncNote(null);
+		try {
+			const { data } = await api.post('/wishlist/sync');
+			setSyncNote(`Synced ${data.synced} ${data.synced === 1 ? 'game' : 'games'} from your Steam wishlist${data.removed ? `, removed ${data.removed}` : ''}.`);
+			await loadWishlist();
+		} catch (err) {
+			setError(errorMessage(err, 'Failed to sync from Steam'));
+		} finally {
+			setSyncing(false);
+		}
+	};
+
 	if (loading) {
 		return (
 			<div className="flex items-center justify-center py-40">
@@ -154,17 +171,28 @@ function SteamWishlist() {
 			<div className="nb-pagehead flex items-center justify-between mb-2">
 				<div>
 					<h2 className="text-3xl font-bold text-ink mb-2">Wishlist</h2>
-					<p className="text-muted text-sm">Track games you want to buy and monitor their prices</p>
+					<p className="text-muted text-sm">Synced from your Steam wishlist every night, with current prices. Add games that aren't on Steam by hand.</p>
 				</div>
-				{!showAddForm && (
+				<div className="flex flex-wrap gap-3">
 					<button
-						onClick={() => setShowAddForm(true)}
-						className="px-6 py-3 bg-accent hover:bg-accent-hi border border-accent-line text-ink font-semibold rounded-lg hover:scale-[1.02] transition-all duration-300"
+						onClick={handleSync}
+						disabled={syncing}
+						className="px-6 py-3 bg-surface hover:bg-raised border border-line text-ink font-semibold rounded-lg transition-all duration-300 disabled:opacity-50"
 					>
-						+ Add Game
+						{syncing ? 'Syncing…' : 'Sync from Steam'}
 					</button>
-				)}
+					{!showAddForm && (
+						<button
+							onClick={() => setShowAddForm(true)}
+							className="px-6 py-3 bg-accent hover:bg-accent-hi border border-accent-line text-ink font-semibold rounded-lg hover:scale-[1.02] transition-all duration-300"
+						>
+							+ Add Game
+						</button>
+					)}
+				</div>
 			</div>
+
+			{syncNote && <p className="text-ok-fg text-sm">{syncNote}</p>}
 
 			{/* Error Message */}
 			{(error || loadError !== null) && (
@@ -300,6 +328,9 @@ function SteamWishlist() {
 								{items.map((item, index) => {
 									const discount = item.discountPercent || 
 										(item.listPrice > 0 ? Math.round(((item.listPrice - item.currentPrice) / item.listPrice) * 100) : 0);
+									// Hand-added games get a made-up `manual_…` id; everything else came from Steam.
+									const fromSteam = !item.appId.startsWith('manual_');
+									const unpriced = fromSteam && item.listPrice === 0 && item.currentPrice === 0;
 									
 									return (
 										<tr 
@@ -321,6 +352,9 @@ function SteamWishlist() {
 														/>
 													)}
 													<span className="text-ink font-medium">{item.name}</span>
+													{fromSteam && (
+														<span className="px-2 py-0.5 bg-raised border border-line rounded text-xs font-semibold text-muted">Steam</span>
+													)}
 												</div>
 											</td>
 											<td className="px-6 py-4">
@@ -340,14 +374,22 @@ function SteamWishlist() {
 												</div>
 											</td>
 											<td className="px-6 py-4 text-right">
-												<span className="text-muted font-medium line-through">
-													₹{item.listPrice.toFixed(2)}
-												</span>
+												{unpriced ? (
+													<span className="text-faint">-</span>
+												) : (
+													<span className={`text-muted font-medium ${discount > 0 ? 'line-through' : ''}`}>
+														₹{item.listPrice.toFixed(2)}
+													</span>
+												)}
 											</td>
 											<td className="px-6 py-4 text-right">
-												<span className="text-ok-fg font-semibold text-lg">
-													₹{item.currentPrice.toFixed(2)}
-												</span>
+												{unpriced ? (
+													<span className="text-faint text-sm">Not priced yet</span>
+												) : (
+													<span className="text-ok-fg font-semibold text-lg">
+														₹{item.currentPrice.toFixed(2)}
+													</span>
+												)}
 											</td>
 											<td className="px-6 py-4 text-center">
 												{discount > 0 ? (
@@ -360,6 +402,17 @@ function SteamWishlist() {
 											</td>
 											<td className="px-6 py-4 text-center">
 												<div className="flex items-center justify-center gap-2">
+													{fromSteam ? (
+														<a
+															href={`https://store.steampowered.com/app/${item.appId}`}
+															target="_blank"
+															rel="noopener noreferrer"
+															title="Synced from Steam: remove it from your wishlist on Steam"
+															className="px-4 py-2 bg-surface hover:bg-raised border border-line text-ink text-xs font-semibold rounded-lg transition-all duration-300"
+														>
+															Store ↗
+														</a>
+													) : (<>
 													<button
 														onClick={() => handleEdit(item)}
 														className="px-4 py-2 bg-accent hover:bg-accent-hi border border-accent-line text-ink text-xs font-semibold rounded-lg transition-all duration-300"
@@ -372,6 +425,7 @@ function SteamWishlist() {
 													>
 														Delete
 													</button>
+													</>)}
 												</div>
 											</td>
 										</tr>

@@ -88,8 +88,17 @@ Drag games into S / A / B / C / D tiers. Visual display with game covers.
 
 ## Wishlist
 
-Manual wishlist with:
+Your Steam wishlist, synced automatically every night (and with the Sync from Steam button):
+- Current store prices in rupees, with the original price and discount % during a sale
+- Games removed on Steam are removed here; an empty response (a private profile, or Steam being down) never removes anything
+- Two Steam requests per sync however long the wishlist is, so it stays clear of Steam's rate limits
+- Your Steam profile's game details must be public for the wishlist to be readable
+
+Games that aren't on Steam can still be added by hand, with:
 - Custom list price, current price, and discount %
 - Tags for genre matching
 - Cover image URL
-- Recommendation score (updated on each recommendation run)
+
+A hand-added game with the same name as one on your Steam wishlist is taken over by the synced entry at the next sync, keeping its tags.
+
+Every entry has a recommendation score, updated on each recommendation run.

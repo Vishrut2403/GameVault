@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
 import wishlistService from '../services/wishlist.service';
+import { syncSteamWishlist } from '../services/steam-wishlist.service';
+import prisma from '../prisma';
 import recommendationService from '../services/recommendation.service';
 import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 
@@ -28,6 +30,28 @@ router.get('/', async (req: AuthRequest, res: Response) => {
 			success: false,
 			error: error.message || 'Failed to fetch wishlist'
 		});
+	}
+});
+
+router.post('/sync', async (req: AuthRequest, res: Response) => {
+	try {
+		const userId = req.user?.userId;
+		if (!userId) {
+			res.status(401).json({ success: false, error: 'Unauthorized' });
+			return;
+		}
+
+		const user = await prisma.user.findUnique({ where: { id: userId }, select: { steamId: true } });
+		if (!user?.steamId) {
+			res.status(400).json({ success: false, error: 'Link your Steam account in Profile to sync your wishlist' });
+			return;
+		}
+
+		const result = await syncSteamWishlist(userId, user.steamId);
+		res.json({ success: true, ...result });
+	} catch (error: any) {
+		console.error('Error syncing wishlist:', error);
+		res.status(502).json({ success: false, error: 'Could not reach Steam to sync your wishlist' });
 	}
 });
 
