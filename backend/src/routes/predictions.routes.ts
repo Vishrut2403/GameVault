@@ -61,26 +61,4 @@ router.get('/playstyle/current', async (req: AuthRequest, res: Response) => {
 	}
 });
 
-router.get('/accuracy/metrics', async (req: AuthRequest, res: Response) => {
-	try {
-		const userId = req.user?.userId;
-		if (!userId) {
-			return res.status(401).json({ success: false, error: 'Unauthorized' });
-		}
-
-		const accuracy = await predictionService.getPredictionAccuracy(userId);
-
-		return res.json({
-			success: true,
-			data: accuracy,
-		});
-	} catch (error: any) {
-		console.error('[Predictions] Error getting accuracy:', error);
-		return res.status(500).json({
-			success: false,
-			error: error.message || 'Failed to get accuracy metrics',
-		});
-	}
-});
-
 export default router;

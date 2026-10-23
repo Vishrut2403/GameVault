@@ -278,18 +278,4 @@ export class CompletionPredictionService {
 			throw error;
 		}
 	}
-
-	async getPredictionAccuracy(userId: string): Promise<{
-		totalPredictions: number;
-		accurateWithin7Days: number;
-		accurateWithin14Days: number;
-		avgErrorDays: number;
-	}> {
-		return {
-			totalPredictions: 0,
-			accurateWithin7Days: 0,
-			accurateWithin14Days: 0,
-			avgErrorDays: 0,
-		};
-	}
 }

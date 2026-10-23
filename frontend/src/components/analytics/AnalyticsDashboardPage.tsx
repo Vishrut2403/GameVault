@@ -259,6 +259,9 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 	const activeStreak = useMemo(() => {
 		let streak = 0;
 		const reversedData = [...heatmapData].reverse();
+		// Sessions are recorded by the midnight sync, so today is usually still
+		// empty; count back from yesterday then instead of reporting 0.
+		if (reversedData[0]?.count === 0) reversedData.shift();
 		
 		for (const day of reversedData) {
 			if (day.count > 0) {

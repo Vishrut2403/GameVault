@@ -2,7 +2,7 @@
 
 ## Overview
 
-The **Time-to-Complete Predictions** feature uses machine learning to estimate when you'll finish a game based on:
+The **Time-to-Complete Predictions** feature uses simple statistics over your own data to estimate when you'll finish a game, based on:
 
 - Your playstyle patterns (average playtime per game)
 - How fast you typically complete games
@@ -22,44 +22,37 @@ When you open a game's details, the system analyzes your completed games to buil
 - **Genre Patterns**: Different completion behaviors for different game genres
 
 ### 2. **Prediction Calculation**
-For each game, the system combines:
+The total hours a game needs comes from the first source that applies:
 
-| Factor | Weight | Description |
-|--------|--------|-------------|
-| HLTB Estimate | 75% | Completionist time from HowLongToBeat |
-| Your Playstyle | 15% | Adjusted based on your avg completion speed |
-| Current Progress | 10% | Already-played hours factored in |
+| Source | Used when | Confidence |
+|--------|-----------|------------|
+| HLTB completionist time | HLTB has the game | 85% |
+| Your genre pace (days you take on that tag × your daily average) | No HLTB, and the game has a tag | 80% |
+| Your average completed game × 1.2 | Neither of the above | 50% |
 
-The formula:
+If you have already played longer than that estimate, it becomes your playtime × 1.2 (confidence 60%).
+A game you have started gets +15% confidence (capped at 95%) and its progress in the reasoning text.
+
 ```
-Remaining Time = (HLTB Hours × Your Speed Ratio) - Current Hours
+Remaining Time   = Estimated Total - Hours Played
 Daily Pace       = your avg playtime on days you play (last 30 days, nearest 0.5h)
 Days to Complete = (Remaining Time ÷ Daily Pace) ÷ share of days you play
 ```
 
-### 3. **Confidence Scoring**
-The confidence score (0-100%) reflects reliability:
-
-- **50%**: First game prediction (limited data)
-- **75%**: Using HLTB data
-- **85%+**: Game matches your genre patterns
-
-Higher confidence = more historical data to base prediction on.
+With no sessions in the last 30 days, Daily Pace falls back to 2h a day, every day.
 
 ## Example
 
 **Game:** Baldur's Gate 3  
-**HLTB Completionist:** 180 hours  
-**Your Average Playtime/Game:** 50 hours  
-**Your Speed Ratio:** 0.8 (you take 20% longer than HLTB estimates)  
-**Current Progress:** 40 hours  
+**HLTB Completionist:** 144 hours  
+**Hours Played:** 40  
+**Your habits:** 3 hours on days you play, 5 days a week  
 
 ```
-Adjusted Time = 180 × 0.8 = 144 hours
-Remaining = 144 - 40 = 104 hours
-Daily Pace = 3 hours/day, played 5 days/week
-Estimated Days = (104 ÷ 3 = 35 play days) ÷ (5/7) = ~49 days
-Confidence = 82%
+Remaining      = 144 - 40 = 104 hours
+Play days      = 104 ÷ 3 = 35
+Estimated Days = 35 ÷ (5/7) = 49 days
+Confidence     = 85% + 15% (started), capped = 95%
 ```
 
 ## API Endpoints
@@ -75,11 +68,16 @@ Calculate completion time prediction for a game.
 {
   "success": true,
   "data": {
-    "estimatedDays": 35,
-    "estimatedCompletionDate": "2026-05-27",
-    "confidence": 0.82,
-    "reasoning": "Based on HLTB estimates adjusted to your playstyle (40% progress)",
-    "hltbEstimate": 180
+    "estimatedDays": 49,
+    "estimatedCompletionDate": "2026-12-11",
+    "confidence": 0.95,
+    "reasoning": "Based on HLTB estimates (28% progress)",
+    "hltbEstimate": 8640,
+    "hoursPlayed": 40,
+    "hoursRemaining": 104,
+    "estimatedTotalHours": 144,
+    "avgHoursPerDay": 3,
+    "playDaysPerWeek": 5
   }
 }
 ```
@@ -118,12 +116,12 @@ In the **Game Modal**, you'll see:
 ```
 ┌─────────────────────────────────────┐
 │ Estimated Completion                │
-│ 35 days                             │
-│ Est. May 27                         │
-│                       82% confidence │
+│ 49 days                             │
+│ Est. Dec 11                         │
+│                       95% confidence │
 │                                     │
-│ Based on HLTB estimates adjusted to │
-│ your playstyle (40% progress)       │
+│ Based on HLTB estimates             │
+│ (28% progress)                      │
 └─────────────────────────────────────┘
 ```
 
@@ -141,14 +139,6 @@ Predictions work best when you have:
 - 0-3 completed games (uses 50% default confidence)
 - No HLTB data available (uses average playtime instead)
 - New user (no historical data)
-
-## Accuracy & Improvement
-
-The system learns from your patterns over time:
-
-- **First predictions:** ±2-4 weeks error margin (50% confidence)
-- **After 10 games:** ±1-2 weeks error margin (75% confidence)
-- **After 30+ games:** ±3-7 days error margin (85%+ confidence)
 
 ## Technical Details
 
