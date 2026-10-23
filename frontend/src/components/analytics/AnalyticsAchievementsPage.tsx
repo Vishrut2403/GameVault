@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { LibraryGame } from '../../types/games.types';
 import { PlatformBadge } from '../PlatformBadge';
 
@@ -15,30 +14,6 @@ export const AnalyticsAchievementsPage: React.FC<AnalyticsAchievementsPageProps>
 			g.achievementsTotal > 0 && 
 			g.achievementsEarned === g.achievementsTotal
 		);
-	}, [games]);
-	
-	const achievementDistribution = useMemo(() => {
-		const buckets = {
-			'0-10': 0,
-			'10-25': 0,
-			'25-50': 0,
-			'50-75': 0,
-			'75-100': 0,
-			'100+': 0
-		};
-		
-		games.forEach(game => {
-			const count = game.achievementsTotal || 0;
-			if (count === 0) return;
-			if (count <= 10) buckets['0-10']++;
-			else if (count <= 25) buckets['10-25']++;
-			else if (count <= 50) buckets['25-50']++;
-			else if (count <= 75) buckets['50-75']++;
-			else if (count <= 100) buckets['75-100']++;
-			else buckets['100+']++;
-		});
-		
-		return Object.entries(buckets).map(([range, count]) => ({ range, count }));
 	}, [games]);
 	
 	const topProgress = useMemo(() => {
@@ -153,27 +128,6 @@ export const AnalyticsAchievementsPage: React.FC<AnalyticsAchievementsPageProps>
 					</div>
 				</div>
 			)}
-			
-			{/* Achievement Distribution */}
-			<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
-				<h3 className="text-xl font-bold text-[#e5e5e5] mb-6">Achievement Distribution</h3>
-				<ResponsiveContainer width="100%" height={300}>
-					<BarChart data={achievementDistribution}>
-						<CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-						<XAxis 
-							dataKey="range" 
-							stroke="#9ca3af"
-							label={{ value: 'Achievement Count Range', position: 'insideBottom', offset: -5, fill: '#9ca3af' }}
-						/>
-						<YAxis stroke="#9ca3af" label={{ value: 'Games', angle: -90, position: 'insideLeft', fill: '#9ca3af' }} />
-						<Tooltip 
-							contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }}
-							labelStyle={{ color: '#f1f5f9' }}
-						/>
-						<Bar dataKey="count" fill="#8b5cf6" />
-					</BarChart>
-				</ResponsiveContainer>
-			</div>
 			
 			{/* Stats Summary */}
 			<div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -2,7 +2,6 @@ import { Suspense, lazy, useState } from 'react';
 import type { LibraryGame } from '../types/games.types';
 
 const AnalyticsDashboardPage = lazy(() => import('./analytics/AnalyticsDashboardPage').then(m => ({ default: m.AnalyticsDashboardPage })));
-const AnalyticsPlaytimePage = lazy(() => import('./analytics/AnalyticsPlaytimePage').then(m => ({ default: m.AnalyticsPlaytimePage })));
 const AnalyticsAchievementsPage = lazy(() => import('./analytics/AnalyticsAchievementsPage').then(m => ({ default: m.AnalyticsAchievementsPage })));
 const AnalyticsValuePage = lazy(() => import('./analytics/AnalyticsValuePage').then(m => ({ default: m.AnalyticsValuePage })));
 
@@ -10,14 +9,13 @@ interface AnalyticsProps {
 	games: LibraryGame[];
 }
 
-type AnalyticsTab = 'dashboard' | 'playtime' | 'achievements' | 'value';
+type AnalyticsTab = 'dashboard' | 'achievements' | 'value';
 
 export const Analytics: React.FC<AnalyticsProps> = ({ games }) => {
 	const [activeTab, setActiveTab] = useState<AnalyticsTab>('dashboard');
 
 	const tabs = [
 		{ key: 'dashboard' as const, label: 'Dashboard', icon: '📊' },
-		{ key: 'playtime' as const, label: 'Playtime', icon: '⏱️' },
 		{ key: 'achievements' as const, label: 'Achievements', icon: '🏆' },
 		{ key: 'value' as const, label: 'Value', icon: '💰' },
 	];
@@ -55,7 +53,6 @@ export const Analytics: React.FC<AnalyticsProps> = ({ games }) => {
 			{/* Content */}
 			<div>
 				{activeTab === 'dashboard' && <AnalyticsDashboardPage games={games} />}
-				{activeTab === 'playtime' && <AnalyticsPlaytimePage games={games} />}
 				{activeTab === 'achievements' && <AnalyticsAchievementsPage games={games} />}
 				{activeTab === 'value' && <AnalyticsValuePage games={games} />}
 			</div>
