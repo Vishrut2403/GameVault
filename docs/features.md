@@ -91,7 +91,8 @@ Drag games into S / A / B / C / D tiers. Visual display with game covers.
 Your Steam wishlist, synced automatically every night (and with the Sync from Steam button):
 - Current store prices in rupees, with the original price and discount % during a sale
 - Games removed on Steam are removed here; an empty response (a private profile, or Steam being down) never removes anything
-- Two Steam requests per sync however long the wishlist is, so it stays clear of Steam's rate limits
+- Two Steam requests per sync however long the wishlist is, sent with the app's Steam API key, so it stays clear of Steam's rate limits
+- The sync buttons refresh the wishlist at most once every 10 minutes; the Wishlist page's button greys out with a countdown until then. The nightly sync always runs
 - Your Steam profile's game details must be public for the wishlist to be readable
 
 Games that aren't on Steam can still be added by hand, with:

@@ -10,6 +10,27 @@ const API = 'https://api.steampowered.com';
 // The store region prices are fetched for; the app shows rupees.
 const STORE_COUNTRY = 'IN';
 const ITEMS_PER_REQUEST = 100;
+// Sent when configured, so the calls count against the key's documented daily
+// quota rather than an unpublished per-IP limit shared with other tenants of
+// the host. Both endpoints also work without one.
+const apiKey = () => process.env.STEAM_API_KEY || undefined;
+
+// The sync buttons may run a wishlist sync once per user per window, so
+// repeated presses can't add up to a burst of Steam calls; failed attempts
+// count too. The nightly job always runs. Kept in memory: a restart only
+// forgets recent syncs, allowing at most one extra.
+export const MANUAL_SYNC_COOLDOWN_MS = 10 * 60 * 1000;
+const lastSyncAt = new Map<string, number>();
+
+/** When this user may next sync by hand (ms since epoch), or null if they can now. */
+export function nextManualSyncAt(userId: string, now = Date.now()): number | null {
+	const last = lastSyncAt.get(userId);
+	return last !== undefined && now - last < MANUAL_SYNC_COOLDOWN_MS ? last + MANUAL_SYNC_COOLDOWN_MS : null;
+}
+
+export function noteSyncAttempt(userId: string, at = Date.now()): void {
+	lastSyncAt.set(userId, at);
+}
 
 interface StoreItem {
 	appid?: number;
@@ -53,7 +74,7 @@ export function toWishlistRow(item: StoreItem): WishlistRow | null {
 
 /** Every game on a public Steam wishlist, with current store prices. */
 export async function fetchSteamWishlist(steamId: string): Promise<WishlistRow[]> {
-	const { data } = await axios.get(`${API}/IWishlistService/GetWishlist/v1/`, { params: { steamid: steamId }, timeout: 10_000 });
+	const { data } = await axios.get(`${API}/IWishlistService/GetWishlist/v1/`, { params: { key: apiKey(), steamid: steamId }, timeout: 10_000 });
 	const appIds: number[] = (data?.response?.items ?? []).map((item: { appid: number }) => item.appid);
 
 	const rows: WishlistRow[] = [];
@@ -64,7 +85,7 @@ export async function fetchSteamWishlist(steamId: string): Promise<WishlistRow[]
 			data_request: { include_basic_info: true },
 		};
 		const { data: store } = await axios.get(`${API}/IStoreBrowseService/GetItems/v1/`, {
-			params: { input_json: JSON.stringify(input) },
+			params: { key: apiKey(), input_json: JSON.stringify(input) },
 			timeout: 10_000,
 		});
 		for (const item of store?.response?.store_items ?? []) {
@@ -82,6 +103,7 @@ export async function fetchSteamWishlist(steamId: string): Promise<WishlistRow[]
  * Steam wishlist game is taken over by it, keeping its tags and HLTB data.
  */
 export async function syncSteamWishlist(userId: string, steamId: string) {
+	noteSyncAttempt(userId);
 	const rows = await fetchSteamWishlist(steamId);
 
 	for (const row of rows) {

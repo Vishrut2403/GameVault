@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 
 import api, { API_BASE_URL as API_URL, errorMessage } from '../services/api';
@@ -17,13 +17,26 @@ interface WishlistItem {
 }
 
 function SteamWishlist() {
-	const { data, error: loadError, loading, reload: loadWishlist } = useCachedGet<{ data?: WishlistItem[]; wishlist?: WishlistItem[] }>(WISHLIST_URL);
+	const { data, error: loadError, loading, reload: loadWishlist } = useCachedGet<{ data?: WishlistItem[]; wishlist?: WishlistItem[]; nextSyncAt?: number | null }>(WISHLIST_URL);
 	const items = data?.data || data?.wishlist || [];
 	const [showAddForm, setShowAddForm] = useState(false);
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [syncing, setSyncing] = useState(false);
 	const [syncNote, setSyncNote] = useState<string | null>(null);
+	// Steam syncs by hand are limited to one every few minutes; the server says
+	// until when, in the wishlist response and in each sync response.
+	const [lockedUntil, setLockedUntil] = useState(0);
+	const [now, setNow] = useState(() => Date.now());
+	const cooldownUntil = Math.max(data?.nextSyncAt ?? 0, lockedUntil);
+	const coolingDown = cooldownUntil > now;
+
+	// Tick while cooling down, so the countdown updates and the button re-enables on time.
+	useEffect(() => {
+		if (cooldownUntil <= now) return;
+		const id = setTimeout(() => setNow(Date.now()), Math.min(30_000, cooldownUntil - now));
+		return () => clearTimeout(id);
+	}, [cooldownUntil, now]);
 	
 	const [formData, setFormData] = useState({
 		name: '',
@@ -146,11 +159,14 @@ function SteamWishlist() {
 		try {
 			const { data } = await api.post('/wishlist/sync');
 			setSyncNote(`Synced ${data.synced} ${data.synced === 1 ? 'game' : 'games'} from your Steam wishlist${data.removed ? `, removed ${data.removed}` : ''}.`);
+			setLockedUntil(data.nextSyncAt ?? 0);
 			await loadWishlist();
 		} catch (err) {
 			setError(errorMessage(err, 'Failed to sync from Steam'));
+			if (axios.isAxiosError(err) && err.response?.data?.nextSyncAt) setLockedUntil(err.response.data.nextSyncAt);
 		} finally {
 			setSyncing(false);
+			setNow(Date.now());
 		}
 	};
 
@@ -176,10 +192,15 @@ function SteamWishlist() {
 				<div className="flex flex-wrap gap-3">
 					<button
 						onClick={handleSync}
-						disabled={syncing}
-						className="px-6 py-3 bg-surface hover:bg-raised border border-line text-ink font-semibold rounded-lg transition-all duration-300 disabled:opacity-50"
+						disabled={syncing || coolingDown}
+						title={coolingDown ? 'Steam syncs are limited to one every 10 minutes' : undefined}
+						className="px-6 py-3 bg-surface hover:bg-raised border border-line text-ink font-semibold rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface"
 					>
-						{syncing ? 'Syncing…' : 'Sync from Steam'}
+						{syncing
+							? 'Syncing…'
+							: coolingDown
+								? `Synced · again in ${Math.ceil((cooldownUntil - now) / 60_000)} min`
+								: 'Sync from Steam'}
 					</button>
 					{!showAddForm && (
 						<button

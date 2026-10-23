@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import wishlistService from '../services/wishlist.service';
-import { syncSteamWishlist } from '../services/steam-wishlist.service';
+import { syncSteamWishlist, nextManualSyncAt } from '../services/steam-wishlist.service';
 import prisma from '../prisma';
 import recommendationService from '../services/recommendation.service';
 import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
@@ -22,7 +22,8 @@ router.get('/', async (req: AuthRequest, res: Response) => {
 		res.json({
 			success: true,
 			count: wishlist.length,
-			data: wishlist
+			data: wishlist,
+			nextSyncAt: nextManualSyncAt(userId),
 		});
 	} catch (error: any) {
 		console.error('Error fetching wishlist:', error);
@@ -47,8 +48,14 @@ router.post('/sync', async (req: AuthRequest, res: Response) => {
 			return;
 		}
 
+		const nextSyncAt = nextManualSyncAt(userId);
+		if (nextSyncAt) {
+			res.status(429).json({ success: false, error: 'Your wishlist was synced recently; try again in a few minutes', nextSyncAt });
+			return;
+		}
+
 		const result = await syncSteamWishlist(userId, user.steamId);
-		res.json({ success: true, ...result });
+		res.json({ success: true, ...result, nextSyncAt: nextManualSyncAt(userId) });
 	} catch (error: any) {
 		console.error('Error syncing wishlist:', error);
 		res.status(502).json({ success: false, error: 'Could not reach Steam to sync your wishlist' });

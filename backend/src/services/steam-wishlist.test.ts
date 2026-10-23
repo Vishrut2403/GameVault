@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { toWishlistRow } from './steam-wishlist.service';
+import { toWishlistRow, nextManualSyncAt, noteSyncAttempt, MANUAL_SYNC_COOLDOWN_MS } from './steam-wishlist.service';
 
 test('toWishlistRow reads paise strings as rupees at full price', () => {
 	const row = toWishlistRow({ appid: 1030300, name: 'Hollow Knight: Silksong', best_purchase_option: { final_price_in_cents: '88000' } });
@@ -32,4 +32,14 @@ test('toWishlistRow prices an unreleased game at 0, and skips items without an a
 	assert.equal(row?.listPrice, 0);
 	assert.equal(row?.discountPercent, 0);
 	assert.equal(toWishlistRow({ name: 'no id' }), null);
+});
+
+test('a manual sync is allowed again only once the cooldown has passed', () => {
+	const at = Date.UTC(2026, 9, 23, 12, 0);
+	assert.equal(nextManualSyncAt('never-synced', at), null);
+	noteSyncAttempt('user-1', at);
+	assert.equal(nextManualSyncAt('user-1', at + 60_000), at + MANUAL_SYNC_COOLDOWN_MS);
+	assert.equal(nextManualSyncAt('user-1', at + MANUAL_SYNC_COOLDOWN_MS - 1), at + MANUAL_SYNC_COOLDOWN_MS);
+	assert.equal(nextManualSyncAt('user-1', at + MANUAL_SYNC_COOLDOWN_MS), null);
+	assert.equal(nextManualSyncAt('user-2', at + 60_000), null, 'cooldowns are per user');
 });

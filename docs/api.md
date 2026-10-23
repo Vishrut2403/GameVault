@@ -61,7 +61,7 @@ Authorization: Bearer <JWT_TOKEN>
 | PATCH | `/api/wishlist/item/:id` | Update item |
 | DELETE | `/api/wishlist/item/:id` | Delete item |
 | GET | `/api/wishlist/recommendations` | Get recommendations |
-| POST | `/api/wishlist/sync` | Sync from your Steam wishlist now |
+| POST | `/api/wishlist/sync` | Sync from your Steam wishlist now (429 with `nextSyncAt` within 10 minutes of the last sync) |
 
 ---
 

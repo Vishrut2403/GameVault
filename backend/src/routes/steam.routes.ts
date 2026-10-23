@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import steamService from '../services/steam.service';
 import prisma from '../prisma';
 import { syncSteamLibrary } from '../services/steam-sync.service';
-import { syncSteamWishlist } from '../services/steam-wishlist.service';
+import { syncSteamWishlist, nextManualSyncAt } from '../services/steam-wishlist.service';
 import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -46,12 +46,16 @@ router.get('/library/:steamId', authMiddleware, async (req: AuthRequest, res: Re
 
 		const { count, games } = await syncSteamLibrary(steamId);
 
-		// The sync button refreshes the wishlist too. Its failure is logged,
-		// not returned: the library sync above has already succeeded.
-		try {
-			await syncSteamWishlist(req.user!.userId, steamId);
-		} catch (error) {
-			console.error('Wishlist sync failed:', error);
+		// The sync button refreshes the wishlist too, unless it was synced in
+		// the last few minutes. Its failure is logged, not returned: the
+		// library sync above has already succeeded.
+		const userId = req.user!.userId;
+		if (!nextManualSyncAt(userId)) {
+			try {
+				await syncSteamWishlist(userId, steamId);
+			} catch (error) {
+				console.error('Wishlist sync failed:', error);
+			}
 		}
 
 		res.json({
