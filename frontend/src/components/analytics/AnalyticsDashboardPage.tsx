@@ -1,5 +1,4 @@
 import { useMemo, useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { LibraryGame } from '../../types/games.types';
 import  api  from '../../services/api';
 import { PlatformBadge } from '../PlatformBadge';
@@ -92,31 +91,6 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 		}
 	}, [games, coverSort]);
 
-	const backlogEvolution = useMemo(() => {
-		const months = [];
-		const totalGames = games.length;
-		const completedGames = games.filter(g => g.status === 'completed').length;
-		
-		for (let i = 11; i >= 0; i--) {
-			const date = new Date();
-			date.setMonth(date.getMonth() - i);
-			const monthName = date.toLocaleDateString('default', { month: 'short' });
-			
-			const owned = Math.round(totalGames * (0.5 + (i / 24)));
-			const completed = Math.round(completedGames * (0.3 + (i / 36)));
-			const backlog = owned - completed;
-			
-			months.push({
-				month: monthName,
-				owned,
-				completed,
-				backlog
-			});
-		}
-		
-		return months;
-	}, [games]);
-	
 	const completionFunnel = useMemo(() => {
 		const owned = games.length;
 		const started = games.filter(g => (g.playtimeForever || 0) > 0).length;
@@ -495,24 +469,6 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 				</div>
 			</div>
 			
-			{/* Backlog Evolution */}
-			<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
-				<h3 className="text-xl font-bold text-[#e5e5e5] mb-6">Backlog Evolution</h3>
-				<ResponsiveContainer width="100%" height={300}>
-					<BarChart data={backlogEvolution}>
-						<CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-						<XAxis dataKey="month" stroke="#9ca3af" />
-						<YAxis stroke="#9ca3af" />
-						<Tooltip 
-							contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }}
-							labelStyle={{ color: '#f1f5f9' }}
-						/>
-						<Bar dataKey="owned" fill="#3b82f6" name="Owned" stackId="a" />
-						<Bar dataKey="completed" fill="#10b981" name="Completed" stackId="a" />
-					</BarChart>
-				</ResponsiveContainer>
-			</div>
-			
 			{/* Completion Funnel */}
 			<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
 				<h3 className="text-xl font-bold text-[#e5e5e5] mb-6">Completion Funnel</h3>
@@ -548,15 +504,7 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 			</div>
 			
 			{/* Stats Summary */}
-			<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-				<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
-					<div className="text-3xl mb-2">📚</div>
-					<div className="text-2xl font-bold text-[#e5e5e5] mb-1">
-						{games.length}
-					</div>
-					<div className="text-sm text-[#a0a0a0]">Total Library Size</div>
-				</div>
-				
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 				<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
 					<div className="text-3xl mb-2">✅</div>
 					<div className="text-2xl font-bold text-[#e5e5e5] mb-1">
