@@ -192,10 +192,11 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 		return days;
 	}, [sessionData, refreshKey]);
 
-	const getColor = (count: number): string => {
-		if (count === 0) return 'bg-raised nb-heat-0';
-		if (count === 1) return 'bg-ok/40 nb-heat-1';
-		if (count === 2) return 'bg-ok/60 nb-heat-2';
+	// Shade by hours played that day, not by how many games were played.
+	const getColor = (day: DayActivity): string => {
+		if (day.count === 0) return 'bg-raised nb-heat-0';
+		if (day.hours < 1) return 'bg-ok/40 nb-heat-1';
+		if (day.hours < 3) return 'bg-ok/60 nb-heat-2';
 		return 'bg-ok-hi nb-heat-3';
 	};
 
@@ -203,7 +204,8 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 		const result: DayActivity[][] = [];
 		let currentWeek: DayActivity[] = [];
 		
-		const firstDay = new Date(heatmapData[0]?.date || new Date());
+		// Parse as local midnight; a bare YYYY-MM-DD parses as UTC and can land on the previous local day.
+		const firstDay = heatmapData[0] ? new Date(`${heatmapData[0].date}T00:00`) : new Date();
 		const firstDayOfWeek = firstDay.getDay();
 		
 		for (let i = 0; i < firstDayOfWeek; i++) {
@@ -229,24 +231,25 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 		return result;
 	}, [heatmapData]);
 
-	const months = useMemo(() => {
-		const monthLabels: { label: string; weekIndex: number }[] = [];
+	// One label slot per week column, filled where a new month starts. A label
+	// closer than 3 columns to the previous one is dropped so the two don't overlap.
+	const monthLabels = useMemo(() => {
+		const labels: string[] = weeks.map(() => '');
 		let currentMonth = '';
+		let lastLabelled = -Infinity;
 
 		weeks.forEach((week, weekIndex) => {
 			const firstValidDay = week.find(d => d.date !== '');
-			if (firstValidDay) {
-				const firstDay = new Date(firstValidDay.date);
-				const monthName = firstDay.toLocaleDateString('en-US', { month: 'short' });
-				
-				if (monthName !== currentMonth) {
-					monthLabels.push({ label: monthName, weekIndex });
-					currentMonth = monthName;
-				}
-			}
+			if (!firstValidDay) return;
+			const monthName = new Date(`${firstValidDay.date}T00:00`).toLocaleDateString('en-US', { month: 'short' });
+			if (monthName === currentMonth) return;
+			currentMonth = monthName;
+			if (weekIndex - lastLabelled < 3) return;
+			labels[weekIndex] = monthName;
+			lastLabelled = weekIndex;
 		});
 
-		return monthLabels;
+		return labels;
 	}, [weeks]);
 
 	const totalActivity = useMemo(() => {
@@ -325,26 +328,22 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 
 				<div className="overflow-x-auto pb-4">
 					<div className="inline-block min-w-full">
-						{/* Month Labels */}
-						<div className="flex mb-2 ml-8">
-							{months.map((month, idx) => (
-								<div
-									key={idx}
-									className="text-xs text-muted font-medium"
-									style={{ 
-										marginLeft: idx === 0 ? 0 : `${(month.weekIndex - (months[idx - 1]?.weekIndex || 0)) * 14}px`,
-										minWidth: '40px'
-									}}
-								>
-									{month.label}
-								</div>
-							))}
+						{/* Month Labels: same column widths and gaps as the grid below, so each label sits over its week */}
+						<div className="flex gap-1 mb-2">
+							<div className="w-8 shrink-0" />
+							<div className="flex gap-1">
+								{monthLabels.map((label, idx) => (
+									<div key={idx} className="w-3 shrink-0 overflow-visible whitespace-nowrap text-xs text-muted font-medium">
+										{label}
+									</div>
+								))}
+							</div>
 						</div>
 
 						{/* Day Labels + Grid */}
 						<div className="flex gap-1">
 							{/* Day of week labels */}
-							<div className="flex flex-col gap-1 text-xs text-muted pr-2">
+							<div className="w-8 shrink-0 flex flex-col gap-1 text-xs text-muted">
 								<div className="h-3"></div>
 								<div className="h-3">Mon</div>
 								<div className="h-3"></div>
@@ -362,7 +361,7 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 											<div
 												key={dayIdx}
 												className={`w-3 h-3 rounded-sm cursor-pointer transition-all duration-200 ${
-													day.date ? `nb-heat ${getColor(day.count)}` : 'bg-transparent'
+													day.date ? `nb-heat ${getColor(day)}` : 'bg-transparent'
 												} ${day.count > 0 ? 'hover:ring-2 hover:ring-accent-line hover:scale-125' : ''}`}
 												onClick={() => day.count > 0 && setSelectedDay(day)}
 												title={day.date ? `${day.date}: ${day.count} game${day.count !== 1 ? 's' : ''}, ${day.hours}h` : ''}
@@ -376,10 +375,10 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 						{/* Legend */}
 						<div className="flex items-center gap-3 mt-6 text-xs text-muted">
 							<span>Less</span>
-							<div className="w-3 h-3 rounded-sm nb-heat bg-raised nb-heat-0"></div>
-							<div className="w-3 h-3 rounded-sm nb-heat bg-ok/40 nb-heat-1"></div>
-							<div className="w-3 h-3 rounded-sm nb-heat bg-ok/60 nb-heat-2"></div>
-							<div className="w-3 h-3 rounded-sm nb-heat bg-ok-hi nb-heat-3"></div>
+							<div className="w-3 h-3 rounded-sm nb-heat bg-raised nb-heat-0" title="No play"></div>
+							<div className="w-3 h-3 rounded-sm nb-heat bg-ok/40 nb-heat-1" title="Under 1h"></div>
+							<div className="w-3 h-3 rounded-sm nb-heat bg-ok/60 nb-heat-2" title="1–3h"></div>
+							<div className="w-3 h-3 rounded-sm nb-heat bg-ok-hi nb-heat-3" title="3h or more"></div>
 							<span>More</span>
 						</div>
 					</div>
