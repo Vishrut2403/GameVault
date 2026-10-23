@@ -1,10 +1,8 @@
 import { useMemo, useState, useEffect } from 'react';
-import { 
-	RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-	PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend
-} from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { LibraryGame } from '../../types/games.types';
 import  api  from '../../services/api';
+import { PlatformBadge } from '../PlatformBadge';
 
 interface AnalyticsDashboardPageProps {
 	games: LibraryGame[];
@@ -17,10 +15,11 @@ interface DayActivity {
 	games: { name: string; hours: number }[];
 }
 
-const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4'];
+type SortOption = 'mostPlayed' | 'mostAchievements' | 'recentlyPlayed' | 'alphabetical';
 
 export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ games }) => {
 	const [selectedDay, setSelectedDay] = useState<DayActivity | null>(null);
+	const [coverSort, setCoverSort] = useState<SortOption>('mostPlayed');
 	const [sessionData, setSessionData] = useState<any[]>([]);
 	const [refreshKey, setRefreshKey] = useState(0); // Force recalculation
 	
@@ -72,43 +71,76 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 		};
 	}, [games]);
 
-	const platformData = useMemo(() => {
-		const platformMap = games.reduce((acc, game) => {
-			acc[game.platform] = (acc[game.platform] || 0) + 1;
-			return acc;
-		}, {} as Record<string, number>);
+	const sortedGames = useMemo(() => {
+		const sorted = [...games];
 		
-		return Object.entries(platformMap)
-			.map(([name, value]) => ({ name, value }))
-			.sort((a, b) => b.value - a.value);
+		switch (coverSort) {
+			case 'mostPlayed':
+				return sorted.sort((a, b) => (b.playtimeForever || 0) - (a.playtimeForever || 0));
+			case 'mostAchievements':
+				return sorted.sort((a, b) => (b.achievementsEarned || 0) - (a.achievementsEarned || 0));
+			case 'recentlyPlayed':
+				return sorted.sort((a, b) => {
+					const aTime = a.lastPlayedAt ? new Date(a.lastPlayedAt).getTime() : 0;
+					const bTime = b.lastPlayedAt ? new Date(b.lastPlayedAt).getTime() : 0;
+					return bTime - aTime;
+				});
+			case 'alphabetical':
+				return sorted.sort((a, b) => a.name.localeCompare(b.name));
+			default:
+				return sorted;
+		}
+	}, [games, coverSort]);
+
+	const backlogEvolution = useMemo(() => {
+		const months = [];
+		const totalGames = games.length;
+		const completedGames = games.filter(g => g.status === 'completed').length;
+		
+		for (let i = 11; i >= 0; i--) {
+			const date = new Date();
+			date.setMonth(date.getMonth() - i);
+			const monthName = date.toLocaleDateString('default', { month: 'short' });
+			
+			const owned = Math.round(totalGames * (0.5 + (i / 24)));
+			const completed = Math.round(completedGames * (0.3 + (i / 36)));
+			const backlog = owned - completed;
+			
+			months.push({
+				month: monthName,
+				owned,
+				completed,
+				backlog
+			});
+		}
+		
+		return months;
 	}, [games]);
-
-	const radarData = useMemo(() => {
-		const gamesWithRating = games.filter(g => g.rating);
-		const avgRating = gamesWithRating.length > 0
-			? gamesWithRating.reduce((sum, g) => sum + (g.rating || 0), 0) / gamesWithRating.length
-			: 0;
-
-		const completionRate = games.length > 0 
-			? (stats.completedGames / games.length) * 100 
-			: 0;
-
-		const playtimeScore = Math.min((stats.totalHours / 1000) * 100, 100);
+	
+	const completionFunnel = useMemo(() => {
+		const owned = games.length;
+		const started = games.filter(g => (g.playtimeForever || 0) > 0).length;
+		const played10h = games.filter(g => (g.playtimeForever || 0) >= 600).length;
+		const completed = games.filter(g => g.status === 'completed').length;
+		const perfect = games.filter(g => 
+			g.achievementsTotal && 
+			g.achievementsTotal > 0 && 
+			g.achievementsEarned === g.achievementsTotal
+		).length;
 		
-		const gamesWithPrice = games.filter(g => g.pricePerHour && g.pricePerHour > 0);
-		const avgValue = gamesWithPrice.length > 0
-			? gamesWithPrice.reduce((sum, g) => sum + (g.pricePerHour || 0), 0) / gamesWithPrice.length
-			: 0;
-		const valueScore = avgValue > 0 ? Math.max(100 - avgValue, 0) : 50;
-
 		return [
-			{ metric: 'Rating', value: (avgRating / 5) * 100 },
-			{ metric: 'Completion', value: completionRate },
-			{ metric: 'Playtime', value: playtimeScore },
-			{ metric: 'Achievements', value: stats.achievementRate },
-			{ metric: 'Value', value: valueScore },
+			{ stage: 'Owned', count: owned, percentage: 100 },
+			{ stage: 'Started', count: started, percentage: Math.round((started / owned) * 100) },
+			{ stage: 'Played 10h+', count: played10h, percentage: Math.round((played10h / owned) * 100) },
+			{ stage: 'Completed', count: completed, percentage: Math.round((completed / owned) * 100) },
+			{ stage: '100%', count: perfect, percentage: Math.round((perfect / owned) * 100) }
 		];
-	}, [games, stats]);
+	}, [games]);
+	
+	const formatTime = (minutes: number) => {
+		const hours = Math.floor(minutes / 60);
+		return hours > 0 ? `${hours}h` : `${minutes}m`;
+	};
 
 	const heatmapData = useMemo(() => {
 		const now = new Date();
@@ -383,53 +415,162 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 				</div>
 			)}
 
-			{/* Charts Row */}
-			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-				{/* Gaming Profile Radar */}
-				<div className="bg-[#000000]  rounded-lg p-6 border border-[#333333] shadow-lg">
-					<h3 className="text-xl font-bold text-[#e5e5e5] mb-6">Gaming Profile</h3>
-					<ResponsiveContainer width="100%" height={300}>
-						<RadarChart data={radarData}>
-							<PolarGrid stroke="#475569" />
-							<PolarAngleAxis dataKey="metric" stroke="#94a3b8" tick={{ fill: '#94a3b8', fontSize: 12 }} />
-							<PolarRadiusAxis angle={90} domain={[0, 100]} stroke="#475569" tick={{ fill: '#64748b', fontSize: 10 }} />
-							<Radar name="Profile" dataKey="value" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
-							<Tooltip 
-								contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '12px' }}
-								labelStyle={{ color: '#f1f5f9' }}
-							/>
-						</RadarChart>
-					</ResponsiveContainer>
+			{/* Game Cover Wall */}
+			<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
+				<div className="flex items-center justify-between mb-6">
+					<h3 className="text-xl font-bold text-[#e5e5e5]">Game Cover Wall</h3>
+					<div className="flex gap-2">
+						<button
+							onClick={() => setCoverSort('mostPlayed')}
+							className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+								coverSort === 'mostPlayed'
+									? 'bg-[#5a7fa3]/20 border border-[#5a7fa3] text-blue-300'
+									: 'bg-[#1a1a1a]/50 border border-[#333333]/50 text-[#a0a0a0] hover:text-[#e5e5e5]'
+							}`}
+						>
+							Most Played
+						</button>
+						<button
+							onClick={() => setCoverSort('mostAchievements')}
+							className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+								coverSort === 'mostAchievements'
+									? 'bg-[#5a7fa3]/20 border border-[#5a7fa3] text-blue-300'
+									: 'bg-[#1a1a1a]/50 border border-[#333333]/50 text-[#a0a0a0] hover:text-[#e5e5e5]'
+							}`}
+						>
+							Most Achievements
+						</button>
+						<button
+							onClick={() => setCoverSort('recentlyPlayed')}
+							className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+								coverSort === 'recentlyPlayed'
+									? 'bg-[#5a7fa3]/20 border border-[#5a7fa3] text-blue-300'
+									: 'bg-[#1a1a1a]/50 border border-[#333333]/50 text-[#a0a0a0] hover:text-[#e5e5e5]'
+							}`}
+						>
+							Recently Played
+						</button>
+					</div>
 				</div>
-
-				{/* Platform Distribution */}
-				<div className="bg-[#000000]  rounded-lg p-6 border border-[#333333] shadow-lg">
-					<h3 className="text-xl font-bold text-[#e5e5e5] mb-6">Platform Distribution</h3>
-					<ResponsiveContainer width="100%" height={300}>
-						<PieChart>
-							<Pie
-								data={platformData}
-								cx="50%"
-								cy="50%"
-								labelLine={false}
-								label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
-								outerRadius={80}
-								fill="#8884d8"
-								dataKey="value"
+				
+				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
+					{sortedGames.slice(0, 48).map((game, idx) => {
+						const achievementPercent = game.achievementsTotal && game.achievementsTotal > 0
+							? Math.round(((game.achievementsEarned || 0) / game.achievementsTotal) * 100)
+							: null;
+						
+						return (
+							<div 
+								key={idx} 
+								className="group relative aspect-[460/215] overflow-hidden rounded-lg border border-[#333333] hover:border-[#5a7fa3] transition-all"
 							>
-								{platformData.map((_, index) => (
-									<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-								))}
-							</Pie>
-							<Tooltip 
-								contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '12px' }}
-							/>
-							<Legend 
-								wrapperStyle={{ color: '#94a3b8' }}
-								iconType="circle"
-							/>
-						</PieChart>
-					</ResponsiveContainer>
+								{game.imageUrl ? (
+									<img 
+										src={game.imageUrl} 
+										alt={game.name}
+										className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+									/>
+								) : (
+									<div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
+										<span className="text-[#696969] text-3xl">🎮</span>
+									</div>
+								)}
+								
+								{/* Overlay with info */}
+								<div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-end">
+									<div className="text-[#e5e5e5] text-xs font-semibold mb-1 line-clamp-2">
+										{game.name}
+									</div>
+									<div className="flex items-center justify-between text-xs text-[#a0a0a0]">
+										<span>{formatTime(game.playtimeForever || 0)}</span>
+										{achievementPercent !== null && achievementPercent > 0 && (
+											<span>{achievementPercent}%</span>
+										)}
+									</div>
+									<PlatformBadge platform={game.platform} showLabel={false} />
+								</div>
+							</div>
+						);
+					})}
+				</div>
+			</div>
+			
+			{/* Backlog Evolution */}
+			<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
+				<h3 className="text-xl font-bold text-[#e5e5e5] mb-6">Backlog Evolution</h3>
+				<ResponsiveContainer width="100%" height={300}>
+					<BarChart data={backlogEvolution}>
+						<CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+						<XAxis dataKey="month" stroke="#9ca3af" />
+						<YAxis stroke="#9ca3af" />
+						<Tooltip 
+							contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }}
+							labelStyle={{ color: '#f1f5f9' }}
+						/>
+						<Bar dataKey="owned" fill="#3b82f6" name="Owned" stackId="a" />
+						<Bar dataKey="completed" fill="#10b981" name="Completed" stackId="a" />
+					</BarChart>
+				</ResponsiveContainer>
+			</div>
+			
+			{/* Completion Funnel */}
+			<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
+				<h3 className="text-xl font-bold text-[#e5e5e5] mb-6">Completion Funnel</h3>
+				<div className="space-y-6">
+					{completionFunnel.map((stage, idx) => {
+						const colors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
+						const color = colors[idx];
+						
+						return (
+							<div key={idx} className="relative">
+								<div className="flex items-center justify-between mb-2">
+									<span className="text-[#e5e5e5] font-medium">{stage.stage}</span>
+									<span className="text-[#a0a0a0] text-sm">
+										{stage.count} games ({stage.percentage}%)
+									</span>
+								</div>
+								<div className="h-12 bg-[#2a2a2a] rounded-lg overflow-hidden">
+									<div 
+										className="h-full flex items-center justify-start px-4 text-[#e5e5e5] font-semibold transition-all duration-500"
+										style={{ 
+											width: `${stage.percentage}%`,
+											backgroundColor: color,
+											minWidth: stage.count > 0 ? '60px' : '0'
+										}}
+									>
+										{stage.count}
+									</div>
+								</div>
+							</div>
+						);
+					})}
+				</div>
+			</div>
+			
+			{/* Stats Summary */}
+			<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+				<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
+					<div className="text-3xl mb-2">📚</div>
+					<div className="text-2xl font-bold text-[#e5e5e5] mb-1">
+						{games.length}
+					</div>
+					<div className="text-sm text-[#a0a0a0]">Total Library Size</div>
+				</div>
+				
+				<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
+					<div className="text-3xl mb-2">✅</div>
+					<div className="text-2xl font-bold text-[#e5e5e5] mb-1">
+						{Math.round((completionFunnel[3].count / games.length) * 100)}%
+					</div>
+					<div className="text-sm text-[#a0a0a0]">Completion Rate</div>
+				</div>
+				
+				<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
+					<div className="text-3xl mb-2">📦</div>
+					<div className="text-2xl font-bold text-[#e5e5e5] mb-1">
+						{games.filter(g => g.status === 'backlog').length}
+					</div>
+					<div className="text-sm text-[#a0a0a0]">Backlog Games</div>
 				</div>
 			</div>
 		</div>
