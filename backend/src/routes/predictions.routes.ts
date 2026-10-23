@@ -39,6 +39,24 @@ router.post('/:gameId', async (req: AuthRequest, res: Response) => {
 	}
 });
 
+router.get('/backlog-plan', async (req: AuthRequest, res: Response) => {
+	try {
+		const userId = req.user?.userId;
+		if (!userId) {
+			return res.status(401).json({ success: false, error: 'Unauthorized' });
+		}
+
+		const plan = await predictionService.planBacklog(userId);
+		return res.json({ success: true, data: plan });
+	} catch (error: any) {
+		console.error('[Predictions] Error planning backlog:', error);
+		return res.status(500).json({
+			success: false,
+			error: error.message || 'Failed to plan backlog',
+		});
+	}
+});
+
 router.get('/playstyle/current', async (req: AuthRequest, res: Response) => {
 	try {
 		const userId = req.user?.userId;

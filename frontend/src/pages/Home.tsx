@@ -7,12 +7,13 @@ import { GameFilters, type GameFilterState } from '../components/GameFilters';
 import type { LibraryGame, TabType, SortField, SortDirection } from '../types/games.types';
 import type { User } from '../types/user.types';
 import { ThemeToggle } from '../components/ThemeToggle';
-import { prefetch, smartPicksUrl, sessionsUrl, WISHLIST_URL } from '../services/cachedGet';
+import { prefetch, smartPicksUrl, sessionsUrl, WISHLIST_URL, BACKLOG_PLAN_URL } from '../services/cachedGet';
 
 const loadProfile = () => import('../pages/ProfilePage');
 const loadWishlist = () => import('../components/SteamWishlist');
 const loadRecommendations = () => import('../components/RecommendationSystem');
 const loadSmartPicks = () => import('../components/SmartRecommendationsList');
+const loadPlanner = () => import('../components/BacklogPlanner');
 const loadGameModal = () => import('../components/GameModal');
 const loadAnalytics = () => import('../components/Analytics');
 const loadTierList = () => import('../components/TierList');
@@ -21,13 +22,14 @@ const ProfilePage = lazy(loadProfile);
 const SteamWishlist = lazy(loadWishlist);
 const RecommendationSystem = lazy(loadRecommendations);
 const SmartRecommendationsList = lazy(loadSmartPicks);
+const BacklogPlanner = lazy(loadPlanner);
 const GameModal = lazy(() => loadGameModal().then(m => ({ default: m.GameModal })));
 const Analytics = lazy(() => loadAnalytics().then(m => ({ default: m.Analytics })));
 const TierList = lazy(() => loadTierList().then(m => ({ default: m.TierList })));
 
 // Every tab's code, plus the Analytics sub-pages, fetched once the page is idle.
 const PRELOAD = [
-	loadProfile, loadWishlist, loadRecommendations, loadSmartPicks, loadGameModal, loadAnalytics, loadTierList,
+	loadProfile, loadWishlist, loadRecommendations, loadSmartPicks, loadPlanner, loadGameModal, loadAnalytics, loadTierList,
 	() => import('../components/analytics/AnalyticsDashboardPage'),
 	() => import('../components/analytics/AnalyticsAchievementsPage'),
 	() => import('../components/analytics/AnalyticsValuePage'),
@@ -45,6 +47,7 @@ const TABS: { key: TabType; label: string }[] = [
 	{ key: 'wishlist', label: 'Wishlist' },
 	{ key: 'recommendations', label: 'Recommendations' },
 	{ key: 'smart-recommendations', label: 'Smart Pick' },
+	{ key: 'planner', label: 'Planner' },
 	{ key: 'analytics', label: 'Analytics' },
 	{ key: 'tierlist', label: 'Tier List' },
 ];
@@ -62,6 +65,8 @@ function Home({ user, onLogout }: HomeProps) {
 	const [error, setError] = useState('');
 	const [selectedGame, setSelectedGame] = useState<LibraryGame | null>(null);
 	const [activeTab, setActiveTab] = useState<TabType>('journal');
+	// The tabs that show the library itself, with its filters and toolbar.
+	const isLibraryTab = activeTab === 'journal' || activeTab === 'dashboard' || activeTab === 'library';
 
 	// Once the page has settled, load every tab's code and the data of the tabs
 	// that fetch their own, so even a tab's first visit doesn't wait on the network.
@@ -71,6 +76,7 @@ function Home({ user, onLogout }: HomeProps) {
 			prefetch(smartPicksUrl(user.id, SMART_PICK_LIMIT));
 			prefetch(WISHLIST_URL);
 			prefetch(sessionsUrl());
+			prefetch(BACKLOG_PLAN_URL);
 		}, 1000);
 		return () => clearTimeout(id);
 	}, [user.id]);
@@ -356,7 +362,7 @@ function Home({ user, onLogout }: HomeProps) {
 				</div>
 
 				{/* Filters & Toolbar */}
-				{activeTab !== 'profile' && activeTab !== 'wishlist' && activeTab !== 'recommendations' && activeTab !== 'smart-recommendations' && activeTab !== 'analytics' && activeTab !== 'tierlist' && (
+				{isLibraryTab && (
 					<div className="mb-12 space-y-4">
 						{/* Full-width Search Bar */}
 						<input
@@ -507,6 +513,13 @@ function Home({ user, onLogout }: HomeProps) {
 					}} />
 				)}
 
+				{activeTab === 'planner' && (
+					<BacklogPlanner onSelectGame={(gameId) => {
+						const game = library?.games?.find((g: LibraryGame) => g.id === gameId);
+						setSelectedGame(game || null);
+					}} />
+				)}
+
 				{activeTab === 'analytics' && !loading && (
 					<Analytics games={library?.games || []} />
 				)}
@@ -517,7 +530,7 @@ function Home({ user, onLogout }: HomeProps) {
 				</Suspense>
 
 				{/* Empty State */}
-				{filteredGames.length === 0 && !loading && activeTab !== 'profile' && activeTab !== 'wishlist' && activeTab !== 'recommendations' && activeTab !== 'smart-recommendations' && activeTab !== 'analytics' && activeTab !== 'tierlist' && (
+				{filteredGames.length === 0 && !loading && isLibraryTab && (
 					<div className="flex items-center justify-center min-h-[400px]">
 						<div className="text-center mx-auto px-6">
 							<div className="w-20 h-20 mx-auto mb-4 rounded-lg bg-surface border border-line flex items-center justify-center shadow-md">

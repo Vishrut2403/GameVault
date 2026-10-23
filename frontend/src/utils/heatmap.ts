@@ -147,3 +147,31 @@ export function currentStreak(days: DayActivity[]): number {
 	}
 	return streak;
 }
+
+export interface WeekRecap {
+	hours: number;
+	previousHours: number;
+	daysPlayed: number;
+	games: number;
+	topGame: { name: string; hours: number } | null;
+}
+
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
+/** The last 7 days against the 7 before them: hours, days played, games and the most-played one. */
+export function weekRecap(days: DayActivity[]): WeekRecap {
+	const week = days.slice(-7);
+	const totalHours = (span: DayActivity[]) => round1(span.reduce((sum, d) => sum + d.hours, 0));
+
+	const hoursByGame = new Map<string, number>();
+	week.forEach(d => d.games.forEach(g => hoursByGame.set(g.name, (hoursByGame.get(g.name) ?? 0) + g.hours)));
+	const [top] = [...hoursByGame].sort((a, b) => b[1] - a[1]);
+
+	return {
+		hours: totalHours(week),
+		previousHours: totalHours(days.slice(-14, -7)),
+		daysPlayed: week.filter(d => d.count > 0).length,
+		games: hoursByGame.size,
+		topGame: top ? { name: top[0], hours: round1(top[1]) } : null,
+	};
+}

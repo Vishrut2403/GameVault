@@ -61,6 +61,7 @@ export function useCachedGet<T>(url: string, refreshKey?: unknown) {
 
 export const smartPicksUrl = (userId: string, limit: number) => `/recommendations/${userId}/smart?limit=${limit}`;
 export const WISHLIST_URL = '/wishlist';
+export const BACKLOG_PLAN_URL = '/predictions/backlog-plan';
 
 /** Sessions for the last year. Date-only, so the URL — and the cache entry — is stable for the day. */
 export const sessionsUrl = () => {

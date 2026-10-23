@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { LibraryGame } from '../../types/games.types';
 import { useCachedGet, sessionsUrl } from '../../services/cachedGet';
 import { PlatformBadge } from '../PlatformBadge';
-import { buildYear, heatClass, toWeeks, monthLabels as labelMonths, currentStreak, type DayActivity, type SessionRow } from '../../utils/heatmap';
+import { buildYear, heatClass, toWeeks, monthLabels as labelMonths, currentStreak, weekRecap, type DayActivity, type SessionRow } from '../../utils/heatmap';
 
 interface AnalyticsDashboardPageProps {
 	games: LibraryGame[];
@@ -117,6 +117,8 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 	}, [heatmapData]);
 
 	const activeStreak = useMemo(() => currentStreak(heatmapData), [heatmapData]);
+	const recap = useMemo(() => weekRecap(heatmapData), [heatmapData]);
+	const recapChange = Math.round((recap.hours - recap.previousHours) * 10) / 10;
 
 	return (
 		<div className="space-y-8">
@@ -146,6 +148,37 @@ export const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ 
 					<p className="brutal-only nb-chip">{completionFunnel[4].count} at 100%</p>
 				</div>
 			</div>
+
+			{/* Weekly Recap */}
+			<section className="nb-panel nb-bar-cyan bg-panel rounded-lg p-6 border border-line shadow-lg">
+				<h3 className="nb-title text-xl font-bold text-ink mb-4">This Week</h3>
+				{recap.daysPlayed === 0 ? (
+					<p className="text-muted">No play logged in the last 7 days.</p>
+				) : (
+					<div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+						<div>
+							<p className="nb-num text-3xl font-bold text-ink">{recap.hours}h</p>
+							<p className="text-sm text-muted">
+								{recapChange === 0 ? 'same as' : `${recapChange > 0 ? '+' : '−'}${Math.abs(recapChange)}h vs`} the week before
+							</p>
+						</div>
+						<div>
+							<p className="nb-num text-3xl font-bold text-ink">{recap.daysPlayed}/7</p>
+							<p className="text-sm text-muted">days played</p>
+						</div>
+						<div>
+							<p className="nb-num text-3xl font-bold text-ink">{recap.games}</p>
+							<p className="text-sm text-muted">{recap.games === 1 ? 'game' : 'games'} played</p>
+						</div>
+						{recap.topGame && (
+							<div className="min-w-0">
+								<p className="text-xl font-bold text-ink truncate" title={recap.topGame.name}>{recap.topGame.name}</p>
+								<p className="text-sm text-muted">most played · {recap.topGame.hours}h</p>
+							</div>
+						)}
+					</div>
+				)}
+			</section>
 
 			{/* Gaming Activity Heatmap */}
 			<section className="nb-window bg-panel  rounded-lg p-6 border border-line shadow-lg">

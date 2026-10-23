@@ -69,6 +69,17 @@ Authorization: Bearer <JWT_TOKEN>
 | Method | Endpoint | Description |
 |---|---|---|
 | POST | `/api/recommendations/:userId/optimize` | Run knapsack optimization |
+| GET | `/api/recommendations/:userId/smart` | Ranked backlog picks (`?limit=`) |
+
+---
+
+## Predictions
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/predictions/:gameId` | Time-to-complete prediction for a game |
+| GET | `/api/predictions/backlog-plan` | Finish date for each backlog game at your pace |
+| GET | `/api/predictions/playstyle/current` | Your playstyle metrics |
 
 ---
 

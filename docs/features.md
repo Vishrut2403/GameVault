@@ -14,23 +14,32 @@ Your full Steam library in one view, with filtering and sorting.
 
 ## Analytics Dashboard
 
+### This Week
+The last 7 days at a glance: hours played against the week before, days played, how many games, and the most-played one.
+
 ### Activity Heatmap
-GitHub-style contribution graph showing 365 days of gaming activity. Click any square to see a breakdown of every game played that day.
+GitHub-style contribution graph showing 365 days of gaming activity, shaded by hours played each day. Click any square to see a breakdown of every game played that day.
 
-### Gaming Profile Radar
-Multi-dimensional chart across rating, completion rate, playtime, achievements, and value.
-
-### Platform Distribution
-Pie chart showing your library split across platforms.
-
-### Playtime Analytics
-Breakdowns by game, platform, and time period.
+### Game Cover Wall and Completion Funnel
+Your covers sorted by playtime, achievements or recency, and how many games you've started, played 10h+, completed and 100%'d.
 
 ### Achievement Analytics
 Completion rates, perfect games, and achievement progress.
 
 ### Value Analytics
 Price-per-hour rankings, total spending, and best-value games.
+
+---
+
+## Backlog Planner
+
+When you'd finish each game you've marked as Backlog, at your own pace. It takes HowLongToBeat main-story time minus what you've already played, plays the backlog shortest first, gives each play day your usual daily playtime, and spreads play days over the calendar at the rate you actually play (from the last 30 days of sessions). Games are grouped by the month they'd be finished; games HowLongToBeat doesn't know are listed rather than guessed.
+
+---
+
+## Themes
+
+A header button switches between the default dark theme and a neo-brutalist one (pastel grid background, black outlines, hard shadows, window-style panels). The choice is remembered per browser.
 
 ---
 

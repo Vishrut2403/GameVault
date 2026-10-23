@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { istDayBucket } from '../utils/dates';
+import { hltbBySteamAppId } from './hltb.service';
 
 const HABIT_WINDOW_DAYS = 30;
 
@@ -18,6 +19,8 @@ export function gamingHabits(sessions: { date: Date; minutes: number }[], window
 	return { minutesPerPlayDay: totalMinutes / playDays, playDayRatio: Math.min(1, playDays / windowDays) };
 }
 
+export type GamingHabits = ReturnType<typeof gamingHabits>;
+
 /** Recommended hours a play day, in half-hour steps and never under 30 minutes. */
 export function recommendedPaceMinutes(minutesPerPlayDay: number): number {
 	return Math.max(30, Math.round(minutesPerPlayDay / 30) * 30);
@@ -30,6 +33,38 @@ interface UserPlaystyle {
 	genrePlaystyles: Record<string, { completionRate: number; avgDaysToComplete: number }>;
 	totalCompletedGames: number;
 	totalPlayedGames: number;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export interface BacklogGame {
+	gameId: string;
+	name: string;
+	imageUrl: string | null;
+	remainingMinutes: number;
+}
+
+export interface PlannedGame extends BacklogGame {
+	finishDate: string; // IST calendar date, YYYY-MM-DD
+}
+
+/**
+ * Finish dates for backlog games played one at a time, shortest first so the
+ * most games get done soonest. Every play day goes to the current game at the
+ * user's usual pace, and play days are spread over the calendar at the rate
+ * they actually play.
+ */
+export function scheduleBacklog(games: BacklogGame[], habits: GamingHabits, now: Date): PlannedGame[] {
+	const pace = recommendedPaceMinutes(habits.minutesPerPlayDay);
+	const today = istDayBucket(now).getTime();
+	let minutes = 0;
+	return [...games]
+		.sort((a, b) => a.remainingMinutes - b.remainingMinutes)
+		.map((game) => {
+			minutes += game.remainingMinutes;
+			const calendarDays = Math.ceil(Math.ceil(minutes / pace) / habits.playDayRatio);
+			return { ...game, finishDate: new Date(today + calendarDays * DAY_MS).toISOString().slice(0, 10) };
+		});
 }
 
 interface PredictionResult {
@@ -47,6 +82,57 @@ interface PredictionResult {
 
 export class CompletionPredictionService {
 	constructor(private prisma: PrismaClient) {}
+
+	/** The user's gaming habits over the last HABIT_WINDOW_DAYS IST days. */
+	async loadHabits(userId: string): Promise<GamingHabits> {
+		const windowStart = istDayBucket(new Date(Date.now() - (HABIT_WINDOW_DAYS - 1) * DAY_MS));
+		const recentSessions = await this.prisma.gameSession.findMany({
+			where: { userId, date: { gte: windowStart } },
+			select: { date: true, minutes: true },
+		});
+		return gamingHabits(recentSessions);
+	}
+
+	/**
+	 * When each backlog game would be finished at the user's pace, from HLTB
+	 * main-story time minus what they've played. Games HLTB doesn't know are
+	 * listed separately rather than guessed.
+	 */
+	async planBacklog(userId: string) {
+		const backlog = await this.prisma.libraryGame.findMany({
+			where: { userId, platform: 'steam', status: 'backlog' },
+			select: { id: true, name: true, imageUrl: true, platformGameId: true, playtimeForever: true },
+		});
+		const habits = await this.loadHabits(userId);
+
+		const known: BacklogGame[] = [];
+		const withoutHltb: { gameId: string; name: string }[] = [];
+		// A few lookups at a time, so a large backlog's first plan doesn't wait on them one by one.
+		for (let i = 0; i < backlog.length; i += 4) {
+			const batch = backlog.slice(i, i + 4);
+			const times = await Promise.all(batch.map((game) => hltbBySteamAppId(game.platformGameId).catch(() => null)));
+			batch.forEach((game, k) => {
+				const mainHours = times[k]?.gameplayMain ?? 0;
+				if (mainHours > 0) {
+					known.push({
+						gameId: game.id,
+						name: game.name,
+						imageUrl: game.imageUrl,
+						remainingMinutes: Math.max(0, Math.round(mainHours * 60) - (game.playtimeForever || 0)),
+					});
+				} else {
+					withoutHltb.push({ gameId: game.id, name: game.name });
+				}
+			});
+		}
+
+		return {
+			paceHours: recommendedPaceMinutes(habits.minutesPerPlayDay) / 60,
+			playDaysPerWeek: Math.round(habits.playDayRatio * 7 * 10) / 10,
+			plan: scheduleBacklog(known, habits, new Date()),
+			withoutHltb,
+		};
+	}
 
 	async getUserPlaystyle(userId: string): Promise<UserPlaystyle> {
 		// Get all completed games with their session data
@@ -169,12 +255,7 @@ export class CompletionPredictionService {
 
 			const currentPlaytimeMinutes = game.playtimeForever || 0;
 
-			const windowStart = istDayBucket(new Date(Date.now() - (HABIT_WINDOW_DAYS - 1) * 24 * 60 * 60 * 1000));
-			const recentSessions = await this.prisma.gameSession.findMany({
-				where: { userId, date: { gte: windowStart } },
-				select: { date: true, minutes: true },
-			});
-			const habits = gamingHabits(recentSessions);
+			const habits = await this.loadHabits(userId);
 			// Recommend a normal gaming day's worth for this game, then spread the
 			// play days over the calendar at the rate you actually play.
 			const paceMinutes = recommendedPaceMinutes(habits.minutesPerPlayDay);

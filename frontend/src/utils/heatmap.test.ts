@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildYear, heatClass, toWeeks, monthLabels, currentStreak, type DayActivity } from './heatmap';
+import { buildYear, heatClass, toWeeks, monthLabels, currentStreak, weekRecap, type DayActivity } from './heatmap';
 
 const NOW = new Date(2026, 9, 23, 15, 0); // 23 Oct 2026, mid-afternoon local time
 const at = (date: string) => `${date}T00:00:00.000Z`; // how the server stamps an IST day
@@ -70,4 +70,25 @@ test('currentStreak counts back from yesterday while today is still empty', () =
 test('currentStreak includes today once it has play, and stops at a gap', () => {
 	assert.equal(currentStreak([day('2026-10-20', 1), day('2026-10-21', 0), day('2026-10-22', 1), day('2026-10-23', 1)]), 2);
 	assert.equal(currentStreak([day('2026-10-22', 0), day('2026-10-23', 0)]), 0);
+});
+
+test('weekRecap sums the last 7 days per game and compares with the week before', () => {
+	const played = (date: string, games: [string, number][]): DayActivity =>
+		({ date, count: games.length, hours: games.reduce((t, [, h]) => t + h, 0), games: games.map(([name, hours]) => ({ name, hours })) });
+	const days = [
+		played('2026-10-10', [['Celeste', 4]]), // the week before
+		...Array.from({ length: 6 }, (_, i) => day(`2026-10-1${i + 1}`, 0)),
+		played('2026-10-17', [['Hades II', 2], ['Celeste', 1]]),
+		day('2026-10-18', 0),
+		played('2026-10-19', [['Hades II', 1.5]]),
+		day('2026-10-20', 0), day('2026-10-21', 0), day('2026-10-22', 0), day('2026-10-23', 0),
+	];
+	assert.deepEqual(weekRecap(days), {
+		hours: 4.5,
+		previousHours: 4,
+		daysPlayed: 2,
+		games: 2,
+		topGame: { name: 'Hades II', hours: 3.5 },
+	});
+	assert.equal(weekRecap(days.slice(-7).map(d => ({ ...d, count: 0, hours: 0, games: [] }))).topGame, null);
 });
