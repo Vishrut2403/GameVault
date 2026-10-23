@@ -9,18 +9,18 @@ export function PlatformBadge({ platform, className = '', showLabel = true }: Pl
 		steam: { 
 			icon: '🎮', 
 			label: 'Steam', 
-			bgColor: 'bg-[#1a1a1a]',
-			textColor: 'text-[#7a9fc3]',
-			borderColor: 'border-[#5a7fa3]'
+			bgColor: 'bg-surface',
+			textColor: 'text-accent-hi-fg',
+			borderColor: 'border-accent-line'
 		},
 	};
 
 	const badge = badges[platform] || { 
 		icon: '📝', 
 		label: 'Other', 
-		bgColor: 'bg-[#1a1a1a]',
-		textColor: 'text-[#a0a0a0]',
-		borderColor: 'border-[#5a5a5a]'
+		bgColor: 'bg-surface',
+		textColor: 'text-muted',
+		borderColor: 'border-line-strong'
 	};
 
 	if (!showLabel) {

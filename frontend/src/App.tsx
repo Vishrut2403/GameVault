@@ -72,9 +72,9 @@ function App() {
 
 	if (isAuthenticated === null) {
 		return (
-			<div className="min-h-screen bg-[#000000] flex items-center justify-center">
+			<div className="min-h-screen bg-page flex items-center justify-center">
 				<div className="relative">
-					<div className="w-16 h-16 border-3 border-[#333333] border-t-[#5a7fa3] rounded-full animate-spin" />
+					<div className="w-16 h-16 border-3 border-line border-t-accent-line rounded-full animate-spin" />
 				</div>
 			</div>
 		);
@@ -83,9 +83,9 @@ function App() {
 	return (
 		<Router>
 			<Suspense fallback={
-				<div className="min-h-screen bg-[#000000] flex items-center justify-center">
+				<div className="min-h-screen bg-page flex items-center justify-center">
 					<div className="relative">
-						<div className="w-16 h-16 border-3 border-[#333333] border-t-[#5a7fa3] rounded-full animate-spin" />
+						<div className="w-16 h-16 border-3 border-line border-t-accent-line rounded-full animate-spin" />
 					</div>
 				</div>
 			}>

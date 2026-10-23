@@ -95,13 +95,13 @@ export const TierList: React.FC<TierListProps> = ({ games }) => {
 
 	if (totalRatedGames === 0) {
 		return (
-			<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-12 text-center">
+			<div className="bg-surface border border-line rounded-lg p-12 text-center">
 				<div className="text-6xl mb-4">🎮</div>
-				<h3 className="text-xl font-bold text-[#e5e5e5] mb-2">No Rated Games Yet</h3>
-				<p className="text-[#a0a0a0]">
+				<h3 className="text-xl font-bold text-ink mb-2">No Rated Games Yet</h3>
+				<p className="text-muted">
 					Rate your games to generate your personal tier list!
 				</p>
-				<p className="text-sm text-[#696969] mt-4">
+				<p className="text-sm text-faint mt-4">
 					Click on any game and add a star rating (1-5 stars)
 				</p>
 			</div>
@@ -111,17 +111,17 @@ export const TierList: React.FC<TierListProps> = ({ games }) => {
 	return (
 		<div className="space-y-4">
 			{/* Header */}
-			<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
+			<div className="bg-surface border border-line rounded-lg p-6">
 				<div className="flex items-center justify-between">
 					<div>
-						<h2 className="text-2xl font-bold text-[#e5e5e5] mb-2">🏆 Your Gaming Tier List</h2>
-						<p className="text-[#a0a0a0]">
+						<h2 className="text-2xl font-bold text-ink mb-2">🏆 Your Gaming Tier List</h2>
+						<p className="text-muted">
 							Automatically generated from your star ratings • {totalRatedGames} games rated
 						</p>
 					</div>
 					<div className="text-right">
-						<div className="text-sm text-[#696969]">Legend</div>
-						<div className="text-xs text-[#696969] mt-1">
+						<div className="text-sm text-faint">Legend</div>
+						<div className="text-xs text-faint mt-1">
 							S = 5⭐ • A = 4⭐ • B = 3⭐ • C = 2⭐ • D = 1⭐ • F = Unrated
 						</div>
 					</div>
@@ -132,7 +132,7 @@ export const TierList: React.FC<TierListProps> = ({ games }) => {
 			{tierData.map(({ tier, games, color, bgColor }) => (
 				<div
 					key={tier}
-					className="bg-[#1a1a1a] border border-[#333333] rounded-lg overflow-hidden hover:border-[#5a7fa3] transition-all"
+					className="bg-surface border border-line rounded-lg overflow-hidden hover:border-accent-line transition-all"
 				>
 					<div className="flex">
 						{/* Tier Label */}
@@ -150,7 +150,7 @@ export const TierList: React.FC<TierListProps> = ({ games }) => {
 						{/* Games in this tier */}
 						<div className="flex-1 p-4">
 							{games.length === 0 ? (
-								<div className="flex items-center justify-center h-full text-[#696969] italic">
+								<div className="flex items-center justify-center h-full text-faint italic">
 									No games in this tier
 								</div>
 							) : (
@@ -175,7 +175,7 @@ export const TierList: React.FC<TierListProps> = ({ games }) => {
 													/>
 												) : (
 													<div 
-														className="w-full h-full flex items-center justify-center text-xs text-[#a0a0a0] p-2 text-center"
+														className="w-full h-full flex items-center justify-center text-xs text-muted p-2 text-center"
 														style={{ backgroundColor: `${color}10` }}
 													>
 														{game.name}
@@ -183,8 +183,8 @@ export const TierList: React.FC<TierListProps> = ({ games }) => {
 												)}
 												
 												{/* Hover overlay with game name */}
-												<div className="absolute inset-0 bg-gradient-to-t from-[#000000] via-[#000000]/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-													<div className="text-[#e5e5e5] text-xs font-semibold leading-tight">
+												<div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+													<div className="text-ink text-xs font-semibold leading-tight">
 														{game.name}
 													</div>
 												</div>
@@ -199,8 +199,8 @@ export const TierList: React.FC<TierListProps> = ({ games }) => {
 			))}
 
 			{/* Stats Summary */}
-			<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
-				<h3 className="text-lg font-bold text-[#e5e5e5] mb-4">Tier Distribution</h3>
+			<div className="bg-surface border border-line rounded-lg p-6">
+				<h3 className="text-lg font-bold text-ink mb-4">Tier Distribution</h3>
 				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
 					{tierData.map(({ tier, games, color }) => {
 						const percentage = totalRatedGames > 0 
@@ -212,13 +212,13 @@ export const TierList: React.FC<TierListProps> = ({ games }) => {
 								<div className="text-3xl font-bold mb-1" style={{ color }}>
 									{tier}
 								</div>
-								<div className="text-2xl font-bold text-[#e5e5e5] mb-1">
+								<div className="text-2xl font-bold text-ink mb-1">
 									{games.length}
 								</div>
-								<div className="text-sm text-[#a0a0a0]">
+								<div className="text-sm text-muted">
 									{percentage}%
 								</div>
-								<div className="mt-2 h-2 bg-[#2a2a2a] rounded-full overflow-hidden">
+								<div className="mt-2 h-2 bg-raised rounded-full overflow-hidden">
 									<div
 										className="h-full rounded-full transition-all duration-500"
 										style={{

@@ -94,7 +94,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 	filters.searchQuery !== '';
 
   return (
-	<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-4 space-y-4">
+	<div className="bg-surface border border-line rounded-lg p-4 space-y-4">
 	  {/* Filter Row */}
 	  <div className="flex flex-wrap gap-3">
 		{/* Status Filter */}
@@ -103,27 +103,27 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 			onClick={() => setShowStatusDropdown(!showStatusDropdown)}
 			className={`flex items-center gap-2 px-4 py-2 rounded border transition-all duration-200 ${
 			  filters.statuses.length > 0
-				? 'bg-[#5a7fa3] border-[#7a9fc3] text-[#e5e5e5]'
-				: 'bg-[#2a2a2a] border-[#333333] text-[#a0a0a0] hover:bg-[#333333]'
+				? 'bg-accent border-accent-hi-line text-ink'
+				: 'bg-raised border-line text-muted hover:bg-subtle'
 			}`}
 		  >
 			Status {filters.statuses.length > 0 && `(${filters.statuses.length})`}
 			<ChevronDown size={16} />
 		  </button>
 		  {showStatusDropdown && (
-			<div className="absolute top-full mt-2 left-0 bg-[#2a2a2a] border border-[#333333] rounded shadow-lg z-50 min-w-[180px]">
+			<div className="absolute top-full mt-2 left-0 bg-raised border border-line rounded shadow-lg z-50 min-w-[180px]">
 			  {STATUSES.map((status) => (
 				<label
 				  key={status}
-				  className="flex items-center gap-2 px-4 py-2 hover:bg-[#333333] cursor-pointer transition-colors capitalize"
+				  className="flex items-center gap-2 px-4 py-2 hover:bg-subtle cursor-pointer transition-colors capitalize"
 				>
 				  <input
 					type="checkbox"
 					checked={filters.statuses.includes(status)}
 					onChange={() => toggleStatus(status)}
-					className="w-4 h-4 cursor-pointer accent-[#5a7fa3]"
+					className="w-4 h-4 cursor-pointer accent-accent-line"
 				  />
-				  <span className="text-[#e5e5e5]">{status}</span>
+				  <span className="text-ink">{status}</span>
 				</label>
 			  ))}
 			</div>
@@ -137,27 +137,27 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 			  onClick={() => setShowTagDropdown(!showTagDropdown)}
 			  className={`flex items-center gap-2 px-4 py-2 rounded border transition-all duration-200 ${
 				filters.tags.length > 0
-				  ? 'bg-[#5a7fa3] border-[#7a9fc3] text-[#e5e5e5]'
-				  : 'bg-[#2a2a2a] border-[#333333] text-[#a0a0a0] hover:bg-[#333333]'
+				  ? 'bg-accent border-accent-hi-line text-ink'
+				  : 'bg-raised border-line text-muted hover:bg-subtle'
 			  }`}
 			>
 			  Tags {filters.tags.length > 0 && `(${filters.tags.length})`}
 			  <ChevronDown size={16} />
 			</button>
 			{showTagDropdown && (
-			  <div className="absolute top-full mt-2 left-0 bg-[#2a2a2a] border border-[#333333] rounded shadow-lg z-50 min-w-[180px] max-h-[300px] overflow-y-auto">
+			  <div className="absolute top-full mt-2 left-0 bg-raised border border-line rounded shadow-lg z-50 min-w-[180px] max-h-[300px] overflow-y-auto">
 				{availableTags.map((tag) => (
 				  <label
 					key={tag}
-					className="flex items-center gap-2 px-4 py-2 hover:bg-[#333333] cursor-pointer transition-colors text-[#e5e5e5]"
+					className="flex items-center gap-2 px-4 py-2 hover:bg-subtle cursor-pointer transition-colors text-ink"
 				  >
 					<input
 					  type="checkbox"
 					  checked={filters.tags.includes(tag)}
 					  onChange={() => toggleTag(tag)}
-					  className="w-4 h-4 cursor-pointer accent-[#5a7fa3]"
+					  className="w-4 h-4 cursor-pointer accent-accent-line"
 					/>
-					<span className="text-[#e5e5e5] text-sm">{tag}</span>
+					<span className="text-ink text-sm">{tag}</span>
 				  </label>
 				))}
 			  </div>
@@ -168,7 +168,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 		{/* Advanced Filters Toggle */}
 		<button
 		  onClick={() => setShowAdvanced(!showAdvanced)}
-		  className="px-4 py-2 bg-[#2a2a2a] border border-[#333333] text-[#a0a0a0] rounded hover:bg-[#333333] transition-colors"
+		  className="px-4 py-2 bg-raised border border-line text-muted rounded hover:bg-subtle transition-colors"
 		>
 		  {showAdvanced ? '▼ Rating & Price' : '▶ Rating & Price'}
 		</button>
@@ -177,7 +177,7 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 		{hasActiveFilters && (
 		  <button
 			onClick={clearAllFilters}
-			className="px-4 py-2 bg-[#3a3a3a] border border-[#4a4a4a] text-[#a0a0a0] rounded hover:bg-[#4a4a4a] transition-colors flex items-center gap-2"
+			className="px-4 py-2 bg-subtle border border-line-strong text-muted rounded hover:bg-subtle-hi transition-colors flex items-center gap-2"
 		  >
 			<X size={16} />
 			Clear All
@@ -187,14 +187,14 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 
 	  {/* Advanced Filters */}
 	  {showAdvanced && (
-		<div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-[#333333]">
+		<div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-line">
 		  {/* Min Rating */}
 		  <div>
-			<label className="block text-sm font-semibold text-[#a0a0a0] mb-2">Min Rating</label>
+			<label className="block text-sm font-semibold text-muted mb-2">Min Rating</label>
 			<select
 			  value={filters.minRating ?? ''}
 			  onChange={(e) => updateRatingFilter('min', e.target.value)}
-			  className="w-full px-3 py-2 bg-[#2a2a2a] rounded border border-[#333333] text-[#e5e5e5] focus:border-[#5a7fa3] outline-none transition-all"
+			  className="w-full px-3 py-2 bg-raised rounded border border-line text-ink focus:border-accent-line outline-none transition-all"
 			>
 			  <option value="">Any</option>
 			  {[1, 2, 3, 4, 5].map((rating) => (
@@ -207,11 +207,11 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 
 		  {/* Max Rating */}
 		  <div>
-			<label className="block text-sm font-semibold text-[#a0a0a0] mb-2">Max Rating</label>
+			<label className="block text-sm font-semibold text-muted mb-2">Max Rating</label>
 			<select
 			  value={filters.maxRating ?? ''}
 			  onChange={(e) => updateRatingFilter('max', e.target.value)}
-			  className="w-full px-3 py-2 bg-[#2a2a2a] rounded border border-[#333333] text-[#e5e5e5] focus:border-[#5a7fa3] outline-none transition-all"
+			  className="w-full px-3 py-2 bg-raised rounded border border-line text-ink focus:border-accent-line outline-none transition-all"
 			>
 			  <option value="">Any</option>
 			  {[1, 2, 3, 4, 5].map((rating) => (
@@ -224,13 +224,13 @@ export const GameFilters: React.FC<GameFiltersProps> = ({
 
 		  {/* Max Price */}
 		  <div>
-			<label className="block text-sm font-semibold text-[#a0a0a0] mb-2">Max Price (₹)</label>
+			<label className="block text-sm font-semibold text-muted mb-2">Max Price (₹)</label>
 			<input
 			  type="number"
 			  placeholder="e.g., 500"
 			  value={filters.maxPrice ?? ''}
 			  onChange={(e) => updatePriceFilter(e.target.value)}
-			  className="w-full px-3 py-2 bg-[#2a2a2a] rounded border border-[#333333] text-[#e5e5e5] placeholder-[#696969] focus:border-[#5a7fa3] outline-none transition-all"
+			  className="w-full px-3 py-2 bg-raised rounded border border-line text-ink placeholder-faint focus:border-accent-line outline-none transition-all"
 			  min="0"
 			  step="10"
 			/>

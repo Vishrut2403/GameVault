@@ -1,16 +1,54 @@
 @import "tailwindcss";
 
 :root {
-	/* Minimalist dark palette from wallpaper */
-	--bg-primary: #000000;
-	--bg-secondary: #1a1a1a;
-	--bg-tertiary: #2a2a2a;
-	--text-primary: #e5e5e5;
-	--text-secondary: #a0a0a0;
-	--text-tertiary: #696969;
-	--accent-blue: #5a7fa3;
-	--accent-blue-light: #7a9fc3;
-	--border-color: #333333;
+	/* Dark theme (default). Each name is a role, so the brutal theme below can
+	   give it a different value. Fill, line and text roles are kept apart
+	   because brutal draws every line in black while dark tints them. */
+	--page: #000000;
+	--panel: #000000;
+	--surface: #1a1a1a;
+	--raised: #2a2a2a;
+	--subtle: #333333;
+	--subtle-hi: #404040;
+	--ink: #e5e5e5;
+	--muted: #a0a0a0;
+	--faint: #696969;
+	--line: #333333;
+	--line-strong: #5a5a5a;
+	--accent: #5a7fa3;
+	--accent-hi: #7a9fc3;
+	--accent-deep: #1a3a4a;
+	--accent-line: #5a7fa3;
+	--accent-hi-line: #7a9fc3;
+	--accent-fg: #5a7fa3;
+	--accent-hi-fg: #7a9fc3;
+	--highlight-fg: #c084fc;
+	--ok: #5a8a6a;
+	--ok-hi: #7aaa8a;
+	--ok-line: #5a8a6a;
+	--ok-fg: #7aaa8a;
+	--danger: #8b3a3a;
+	--danger-hi: #9b4a4a;
+	--danger-deep: #4a3a3a;
+	--danger-line: #a84a4a;
+	--danger-fg: #ff9999;
+	--warn-fg: #f0b050;
+	--heat-0: #161b22;
+	--heat-1: #0e4429;
+	--heat-2: #006d32;
+	--heat-3: #26a641;
+	--heat-4: #39d353;
+	--chart-grid: #374151;
+	--chart-axis: #9ca3af;
+	--chart-track: #334155;
+	--tip-bg: #1e293b;
+	--tip-line: #475569;
+	--tip-fg: #f1f5f9;
+	--funnel-0: #3b82f6;
+	--funnel-1: #8b5cf6;
+	--funnel-2: #ec4899;
+	--funnel-3: #f59e0b;
+	--funnel-4: #10b981;
 	
 	/* Consistent spacing scale */
 	--spacing-xs: 4px;
@@ -34,12 +72,92 @@
 	--gap-spacious: 24px;
 }
 
+/* Neo-brutalist theme: pastel ground, black ink and lines, flat bright fills. */
+:root[data-theme="brutal"] {
+	--page: #b9f3f7;
+	--panel: #ffffff;
+	--surface: #ffffff;
+	--raised: #fff8e1;
+	--subtle: #f2efe6;
+	--subtle-hi: #e4dfd2;
+	--ink: #111111;
+	--muted: #333333;
+	--faint: #555555;
+	--line: #111111;
+	--line-strong: #111111;
+	--accent: #ffe45c;
+	--accent-hi: #ffd60a;
+	--accent-deep: #ff90e8;
+	--accent-line: #111111;
+	--accent-hi-line: #111111;
+	--accent-fg: #1e3a8a;
+	--accent-hi-fg: #1e40af;
+	--highlight-fg: #6d28d9;
+	--ok: #b8ff9f;
+	--ok-hi: #4fd66b;
+	--ok-line: #111111;
+	--ok-fg: #166534;
+	--danger: #ff8a80;
+	--danger-hi: #ff6b5e;
+	--danger-deep: #ffd6d1;
+	--danger-line: #111111;
+	--danger-fg: #7a0000;
+	--warn-fg: #8a4b00;
+	--heat-0: #ffffff;
+	--heat-1: #d9ffd0;
+	--heat-2: #a6f59a;
+	--heat-3: #4fd66b;
+	--heat-4: #1f9e46;
+	--chart-grid: #11111126;
+	--chart-axis: #111111;
+	--chart-track: #e4dfd2;
+	--tip-bg: #ffffff;
+	--tip-line: #111111;
+	--tip-fg: #111111;
+	--funnel-0: #b5a1ff;
+	--funnel-1: #ff90e8;
+	--funnel-2: #ffe45c;
+	--funnel-3: #b8ff9f;
+	--funnel-4: #ff8a80;
+	/* Flat fills for the brutal layout's coloured cards and title bars. */
+	--nb-yellow: #ffe45c;
+	--nb-pink: #ff90e8;
+	--nb-lime: #b8ff9f;
+	--nb-violet: #b5a1ff;
+	--nb-cyan: #7de3ea;
+	--nb-coral: #ff8a80;
+}
+
 @theme inline {
-	--color-bg-primary: var(--bg-primary);
-	--color-bg-secondary: var(--bg-secondary);
-	--color-bg-tertiary: var(--bg-tertiary);
-	--color-accent-blue: var(--accent-blue);
-	--color-accent-blue-light: var(--accent-blue-light);
+	--color-page: var(--page);
+	--color-panel: var(--panel);
+	--color-surface: var(--surface);
+	--color-raised: var(--raised);
+	--color-subtle: var(--subtle);
+	--color-subtle-hi: var(--subtle-hi);
+	--color-ink: var(--ink);
+	--color-muted: var(--muted);
+	--color-faint: var(--faint);
+	--color-line: var(--line);
+	--color-line-strong: var(--line-strong);
+	--color-accent: var(--accent);
+	--color-accent-hi: var(--accent-hi);
+	--color-accent-deep: var(--accent-deep);
+	--color-accent-line: var(--accent-line);
+	--color-accent-hi-line: var(--accent-hi-line);
+	--color-accent-fg: var(--accent-fg);
+	--color-accent-hi-fg: var(--accent-hi-fg);
+	--color-highlight-fg: var(--highlight-fg);
+	--color-ok: var(--ok);
+	--color-ok-hi: var(--ok-hi);
+	--color-ok-line: var(--ok-line);
+	--color-ok-fg: var(--ok-fg);
+	--color-danger: var(--danger);
+	--color-danger-hi: var(--danger-hi);
+	--color-danger-deep: var(--danger-deep);
+	--color-danger-line: var(--danger-line);
+	--color-danger-fg: var(--danger-fg);
+	--color-warn-fg: var(--warn-fg);
 }
 
 * {
@@ -49,8 +167,8 @@
 }
 
 body {
-	background-color: var(--bg-primary);
-	color: var(--text-primary);
+	background-color: var(--page);
+	color: var(--ink);
 	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
@@ -59,4 +177,196 @@ body {
 #root {
 	width: 100%;
 	min-height: 100vh;
+}
+/* Brutal-only structure. These rules sit outside Tailwind's layers, so they
+   win over its utilities without !important, and only apply in this theme. */
+:root[data-theme="brutal"] body {
+	font-family: 'Space Grotesk', system-ui, sans-serif;
+}
+
+:root[data-theme="brutal"] :is(h1, h2, h3) {
+	font-family: 'Archivo Black', sans-serif;
+	font-weight: 400;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+
+:root[data-theme="brutal"] .bg-page {
+	background-image:
+		linear-gradient(#1111111a 1px, transparent 1px),
+		linear-gradient(90deg, #1111111a 1px, transparent 1px);
+	background-size: 32px 32px;
+}
+
+/* Generic rules go through :where() so they add no specificity, which lets
+   the component rules further down override them. */
+:root[data-theme="brutal"] :where(.border) { border-width: 2px; }
+:root[data-theme="brutal"] :where(.border-t) { border-top-width: 2px; }
+:root[data-theme="brutal"] :where(.border-b) { border-bottom-width: 2px; }
+
+/* Hard offset shadows on cards, panels and buttons instead of soft blur. */
+:root[data-theme="brutal"] :where(.shadow, .shadow-md, .shadow-lg, .rounded-lg.border) {
+	box-shadow: 4px 4px 0 var(--line);
+}
+
+/* Markup that belongs to one theme. revert-layer hands display back to the
+   element's own Tailwind classes, so a flex row comes back as a flex row. */
+.brutal-only { display: none; }
+:root[data-theme="brutal"] .brutal-only { display: revert-layer; }
+:root[data-theme="brutal"] .dark-only { display: none; }
+
+:root[data-theme="brutal"] .nb-fill-yellow { background-color: var(--nb-yellow); }
+:root[data-theme="brutal"] .nb-fill-pink { background-color: var(--nb-pink); }
+:root[data-theme="brutal"] .nb-fill-lime { background-color: var(--nb-lime); }
+:root[data-theme="brutal"] .nb-fill-violet { background-color: var(--nb-violet); }
+:root[data-theme="brutal"] .nb-fill-cyan { background-color: var(--nb-cyan); }
+
+/* Controls that lift on hover and press flat when clicked. */
+:root[data-theme="brutal"] .nb-raise {
+	box-shadow: 3px 3px 0 var(--line);
+	transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+:root[data-theme="brutal"] .nb-raise:hover { transform: translate(-2px, -2px); }
+:root[data-theme="brutal"] .nb-raise:active { transform: translate(3px, 3px); box-shadow: none; }
+
+:root[data-theme="brutal"] .nb-header { border-bottom-width: 3px; }
+
+/* Tabs: bare until selected, then a filled block with a hard shadow. */
+:root[data-theme="brutal"] .nb-tab {
+	background: transparent;
+	border: 2px solid transparent;
+	color: var(--ink);
+	font-weight: 700;
+	box-shadow: none;
+}
+:root[data-theme="brutal"] .nb-tab:hover { border-color: var(--line); }
+:root[data-theme="brutal"] .nb-btn {
+	background: var(--surface);
+	border: 2px solid var(--line);
+	color: var(--ink);
+	font-weight: 700;
+	box-shadow: none;
+}
+:root[data-theme="brutal"] :is(.nb-tab, .nb-btn):is([aria-pressed="true"], [aria-current="page"]) {
+	background: var(--nb-yellow);
+	border-color: var(--line);
+	box-shadow: 3px 3px 0 var(--line);
+}
+:root[data-theme="brutal"] .nb-tabbar {
+	gap: 8px;
+	padding: 8px;
+	background: var(--surface);
+	border: 2px solid var(--line);
+	box-shadow: 5px 5px 0 var(--line);
+}
+:root[data-theme="brutal"] .nb-tabbar .nb-tab[aria-pressed="true"] { background: var(--nb-pink); }
+
+:root[data-theme="brutal"] .nb-pagehead h1 { font-size: 72px; line-height: 1; margin: 0; }
+:root[data-theme="brutal"] .nb-pagehead p {
+	display: inline-block;
+	margin-top: 12px;
+	padding: 6px 12px;
+	color: var(--ink);
+	font-weight: 500;
+	background: var(--surface);
+	border: 2px solid var(--line);
+	border-radius: 8px;
+}
+@media (max-width: 760px) {
+	:root[data-theme="brutal"] .nb-pagehead h1 { font-size: 44px; }
+}
+
+/* Window panels: a coloured title bar with × □ − controls over the body. */
+:root[data-theme="brutal"] .nb-window {
+	padding: 0;
+	overflow: hidden;
+	background: var(--surface);
+	box-shadow: 6px 6px 0 var(--line);
+}
+:root[data-theme="brutal"] .nb-titlebar {
+	align-items: center;
+	gap: 14px;
+	padding: 10px 18px;
+	border-bottom: 2px solid var(--line);
+}
+:root[data-theme="brutal"] .nb-titlebar h3 { margin: 0; font-size: 20px; }
+:root[data-theme="brutal"] .nb-body { padding: 24px; }
+
+:root[data-theme="brutal"] .nb-stat {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	box-shadow: 6px 6px 0 var(--line);
+}
+:root[data-theme="brutal"] .nb-stat > p { margin: 0; color: var(--ink); }
+:root[data-theme="brutal"] .nb-stat > p:first-child {
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+:root[data-theme="brutal"] :is(.nb-stat > p:nth-child(2), .nb-num) {
+	font-family: 'Archivo Black', sans-serif;
+	font-weight: 400;
+	line-height: 1;
+	color: var(--ink);
+}
+:root[data-theme="brutal"] .nb-stat > p:nth-child(2) { font-size: 52px; }
+:root[data-theme="brutal"] .nb-num { font-size: 40px; margin: 0; }
+
+:root[data-theme="brutal"] .nb-chip {
+	align-self: flex-start;
+	padding: 2px 10px;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--ink);
+	background: var(--surface);
+	border: 2px solid var(--line);
+	border-radius: 999px;
+}
+:root[data-theme="brutal"] .nb-chip-dark { color: var(--surface); background: var(--ink); }
+
+:root[data-theme="brutal"] .nb-heat { border: 1.5px solid var(--line); }
+:root[data-theme="brutal"] .nb-heat-0 { background-color: var(--heat-0); }
+:root[data-theme="brutal"] .nb-heat-1 { background-color: var(--heat-1); }
+:root[data-theme="brutal"] .nb-heat-2 { background-color: var(--heat-2); }
+:root[data-theme="brutal"] .nb-heat-3 { background-color: var(--heat-4); }
+
+:root[data-theme="brutal"] .nb-cover-grid {
+	/* Banner-sized tiles, about as many per row as the dark theme's grid. */
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: 18px;
+}
+:root[data-theme="brutal"] .nb-tile {
+	border-color: var(--line);
+	box-shadow: 4px 4px 0 var(--line);
+	transition: transform 0.1s ease;
+}
+:root[data-theme="brutal"] .nb-tile .nb-chip { padding: 0 7px; font-size: 11px; border-width: 1.5px; }
+:root[data-theme="brutal"] .nb-tile:hover { transform: translate(-3px, -3px) rotate(-0.5deg); }
+
+:root[data-theme="brutal"] .nb-track {
+	height: 44px;
+	background: var(--surface);
+	border: 2px solid var(--line);
+}
+:root[data-theme="brutal"] .nb-bar {
+	border-right: 2px solid var(--line);
+	font-family: 'Archivo Black', sans-serif;
+	font-size: 18px;
+	color: var(--ink);
+}
+
+:root[data-theme="brutal"] .nb-summary {
+	display: flex;
+	align-items: center;
+	gap: 18px;
+	box-shadow: 6px 6px 0 var(--line);
+}
+:root[data-theme="brutal"] .nb-summary .nb-label {
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--ink);
 }

@@ -12,7 +12,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
 		
 		// For Steam games, extract appId from platformGameId
 		if (game.platform === 'steam') {
-			return `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.platformGameId}/library_600x900.jpg`;
+			return `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.platformGameId}/header.jpg`;
 		}
 		
 		return 'https://via.placeholder.com/300x400/2a2a2a/5a5a5a?text=No+Image';
@@ -29,8 +29,8 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
 	};
 
 	return (
-		<div onClick={onClick} className="group relative cursor-pointer">
-			<div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-[#1a1a1a] border border-[#333333] transition-all duration-300 hover:border-[#5a7fa3]">
+		<div onClick={onClick} className="group relative cursor-pointer" title={game.name}>
+			<div className="relative aspect-[460/215] rounded-lg overflow-hidden bg-surface border border-line transition-all duration-300 hover:border-accent-line">
 				<img
 					src={getGameImage(game)}
 					alt={game.name}
@@ -40,36 +40,28 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
 					}}
 				/>
 				
-				<div className="absolute inset-0 bg-black/50 opacity-60 group-hover:opacity-40 transition-opacity duration-300" />
-
 				{/* Platform Badge */}
-				<div className="absolute top-4 left-4">
+				<div className="absolute top-2 left-2">
 					<PlatformBadge platform={game.platform} />
 				</div>
 
 				{/* 100% Achievement Badge */}
 				{is100Percent() && (
-					<div className="absolute top-4 right-4 bg-[#5a7fa3] rounded px-2 py-1 flex items-center gap-1">
-						<span className="text-[#e5e5e5] text-sm">🏆</span>
-						<span className="text-[#e5e5e5] text-xs font-semibold">100%</span>
+					<div className="absolute top-2 right-2 bg-accent rounded px-2 py-1 flex items-center gap-1">
+						<span className="text-ink text-sm">🏆</span>
+						<span className="text-ink text-xs font-semibold">100%</span>
 					</div>
 				)}
 
-				<div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-					<h3 className="text-sm font-semibold text-[#e5e5e5] line-clamp-2 mb-3">
-						{game.name}
-					</h3>
-					
-					{/* Achievement Progress Bar */}
-					{game.achievementsTotal && game.achievementsTotal > 0 && (
-						<div className="relative h-1.5 bg-[#333333] rounded-full overflow-hidden">
-							<div
-								className="absolute inset-0 bg-[#5a7fa3] rounded-full transition-all duration-300"
-								style={{ width: `${getAchievementPercentage()}%` }}
-							/>
-						</div>
-					)}
-				</div>
+				{/* Achievement Progress Bar */}
+				{(game.achievementsTotal ?? 0) > 0 && (
+					<div className="absolute bottom-2 left-2 right-2 h-1.5 bg-subtle rounded-full overflow-hidden">
+						<div
+							className="absolute inset-0 bg-accent rounded-full transition-all duration-300"
+							style={{ width: `${getAchievementPercentage()}%` }}
+						/>
+					</div>
+				)}
 			</div>
 		</div>
 	);

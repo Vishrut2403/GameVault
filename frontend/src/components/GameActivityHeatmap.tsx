@@ -97,11 +97,11 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 	
 	// GitHub's contribution-graph scale.
 	const getColorIntensity = (hours: number): { backgroundColor: string } => {
-		if (hours === 0) return { backgroundColor: '#161b22' };
-		if (hours < 0.5) return { backgroundColor: '#0e4429' };
-		if (hours < 1) return { backgroundColor: '#006d32' };
-		if (hours < 2) return { backgroundColor: '#26a641' };
-		return { backgroundColor: '#39d353' };
+		if (hours === 0) return { backgroundColor: 'var(--heat-0)' };
+		if (hours < 0.5) return { backgroundColor: 'var(--heat-1)' };
+		if (hours < 1) return { backgroundColor: 'var(--heat-2)' };
+		if (hours < 2) return { backgroundColor: 'var(--heat-3)' };
+		return { backgroundColor: 'var(--heat-4)' };
 	};
 	
 	const weeks = useMemo(() => {
@@ -180,20 +180,20 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 
 	if (loading) {
 		return (
-			<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
+			<div className="bg-surface border border-line rounded-lg p-6">
 				<div className="flex items-center justify-center py-8">
-					<div className="w-8 h-8 border-4 border-[#2a2a2a] border-t-[#5a7fa3] rounded-full animate-spin" />
-					<span className="ml-3 text-[#a0a0a0]">Loading activity data...</span>
+					<div className="w-8 h-8 border-4 border-line border-t-accent-line rounded-full animate-spin" />
+					<span className="ml-3 text-muted">Loading activity data...</span>
 				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className="bg-[#1a1a1a] border border-[#333333] rounded-lg p-6">
+		<div className="bg-surface border border-line rounded-lg p-6">
 			<div className="mb-6">
-				<h3 className="text-xl font-bold text-[#e5e5e5] mb-2">Gaming Activity</h3>
-				<div className="flex items-center gap-6 text-sm text-[#a0a0a0]">
+				<h3 className="text-xl font-bold text-ink mb-2">Gaming Activity</h3>
+				<div className="flex items-center gap-6 text-sm text-muted">
 					<span>{activeDays} active days in the last year</span>
 					<span>{Math.round(totalHours)}h total playtime</span>
 					<span>{currentStreak} day current streak</span>
@@ -213,7 +213,7 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 						{weeks.map((_, weekIdx) => (
 							<div key={weekIdx} className="w-3 h-4 shrink-0 relative">
 								{monthByCol.has(weekIdx) && (
-									<span className="absolute left-0 top-0 text-xs text-[#696969] whitespace-nowrap">
+									<span className="absolute left-0 top-0 text-xs text-faint whitespace-nowrap">
 										{monthByCol.get(weekIdx)}
 									</span>
 								)}
@@ -224,7 +224,7 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 
 				{/* Day labels */}
 				<div className="flex">
-					<div className="flex flex-col gap-[3px] text-xs text-gray-500 mr-2 w-8 shrink-0">
+					<div className="flex flex-col gap-[3px] text-xs text-faint mr-2 w-8 shrink-0">
 						<div className="h-3">Mon</div>
 						<div className="h-3"></div>
 						<div className="h-3">Wed</div>
@@ -248,7 +248,7 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 									return (
 										<div
 											key={day.date}
-											className="w-3 h-3 rounded-sm cursor-pointer transition-all hover:ring-2 hover:ring-[#5a7fa3]"
+											className="w-3 h-3 rounded-sm cursor-pointer transition-all hover:ring-2 hover:ring-accent-line"
 											style={getColorIntensity(day.hours)}
 											onMouseEnter={() => setHoveredDay(day)}
 											onMouseLeave={() => setHoveredDay(null)}
@@ -263,26 +263,26 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 				</div>
 				
 				{/* Legend */}
-				<div className="flex items-center gap-2 mt-4 text-xs text-[#696969]">
+				<div className="flex items-center gap-2 mt-4 text-xs text-faint">
 					<span>Less</span>
-				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#161b22' }} />
-				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#0e4429' }} />
-				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#006d32' }} />
-				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#26a641' }} />
-				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#39d353' }} />
+				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'var(--heat-0)' }} />
+				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'var(--heat-1)' }} />
+				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'var(--heat-2)' }} />
+				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'var(--heat-3)' }} />
+				<div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'var(--heat-4)' }} />
 					<span>More</span>
 				</div>
 			</div>
 			
 			{/* Hover tooltip */}
 			{hoveredDay && hoveredDay.hours > 0 && (
-				<div className="mt-4 p-4 bg-[#1a1a1a] border border-[#333333] rounded-lg">
-					<div className="font-semibold text-[#e5e5e5] mb-1">{formatDate(hoveredDay.date)}</div>
-					<div className="text-sm text-[#a0a0a0] mb-2">
+				<div className="mt-4 p-4 bg-surface border border-line rounded-lg">
+					<div className="font-semibold text-ink mb-1">{formatDate(hoveredDay.date)}</div>
+					<div className="text-sm text-muted mb-2">
 						{hoveredDay.hours.toFixed(1)} hours played
 					</div>
 					{hoveredDay.games.length > 0 && (
-						<div className="text-xs text-[#696969]">
+						<div className="text-xs text-faint">
 							{hoveredDay.games.slice(0, 3).join(', ')}
 							{hoveredDay.games.length > 3 && ` +${hoveredDay.games.length - 3} more`}
 						</div>
@@ -297,36 +297,36 @@ export const GameActivityHeatmap: React.FC<GameActivityHeatmapProps> = ({ games,
 					onClick={() => setSelectedDay(null)}
 				>
 					<div 
-						className="bg-[#000000] border border-[#333333] rounded-lg p-6 max-w-md w-full"
+						className="bg-panel border border-line rounded-lg p-6 max-w-md w-full"
 						onClick={(e) => e.stopPropagation()}
 					>
 						<div className="flex items-center justify-between mb-4">
-							<h3 className="text-xl font-bold text-[#e5e5e5]">{formatDate(selectedDay.date)}</h3>
+							<h3 className="text-xl font-bold text-ink">{formatDate(selectedDay.date)}</h3>
 							<button 
 								onClick={() => setSelectedDay(null)}
-								className="text-[#a0a0a0] hover:text-[#e5e5e5] text-2xl"
+								className="text-muted hover:text-ink text-2xl"
 							>
 								×
 							</button>
 						</div>
 						
 						<div className="mb-4">
-							<div className="text-3xl font-bold text-[#7aaa8a]">
+							<div className="text-3xl font-bold text-ok-fg">
 								{selectedDay.hours.toFixed(1)} hours
 							</div>
-							<div className="text-sm text-[#a0a0a0]">
+							<div className="text-sm text-muted">
 								{selectedDay.count} game{selectedDay.count !== 1 ? 's' : ''} played
 							</div>
 						</div>
 						
 						{selectedDay.games.length > 0 && (
 							<div>
-								<div className="text-sm font-semibold text-[#e5e5e5] mb-2">Games Played:</div>
+								<div className="text-sm font-semibold text-ink mb-2">Games Played:</div>
 								<div className="space-y-2">
 									{selectedDay.games.map((game, idx) => (
 										<div 
 											key={idx}
-											className="px-3 py-2 bg-[#1a1a1a] border border-[#333333] rounded-lg text-sm text-[#e5e5e5]"
+											className="px-3 py-2 bg-surface border border-line rounded-lg text-sm text-ink"
 										>
 											{game}
 										</div>

@@ -82,11 +82,11 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 	};
 
 	const getRatingColor = (rating: number | null) => {
-		if (!rating) return 'text-[#a0a0a0]';
-		if (rating >= 90) return 'text-[#7a9fc3]';
-		if (rating >= 80) return 'text-[#7a9fc3]';
-		if (rating >= 70) return 'text-[#a0a0a0]';
-		return 'text-[#a0a0a0]';
+		if (!rating) return 'text-muted';
+		if (rating >= 90) return 'text-accent-hi-fg';
+		if (rating >= 80) return 'text-accent-hi-fg';
+		if (rating >= 70) return 'text-muted';
+		return 'text-muted';
 	};
 
 	const formatRating = (game: LibraryGame) => {
@@ -96,17 +96,17 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 	};
 
 	return (
-		<div className="bg-[#1a1a1a] rounded-lg border border-[#333333] overflow-hidden">
+		<div className="bg-surface rounded-lg border border-line overflow-hidden">
 			<div className="overflow-x-auto">
 				<table className="w-full">
-					<thead className="bg-[#000000] border-b border-[#333333]">
+					<thead className="bg-panel border-b border-line">
 						<tr>
-							<th className="px-6 py-4 text-left text-sm font-semibold text-[#a0a0a0]">Name</th>
-							<th className="px-6 py-4 text-right text-sm font-semibold text-[#a0a0a0]">Price/Hour</th>
-							<th className="px-6 py-4 text-right text-sm font-semibold text-[#a0a0a0]">Price</th>
-							<th className="px-6 py-4 text-right text-sm font-semibold text-[#a0a0a0]">Time</th>
-							<th className="px-6 py-4 text-center text-sm font-semibold text-[#a0a0a0]">Rating</th>
-							<th className="px-6 py-4 text-left text-sm font-semibold text-[#a0a0a0]">Tags</th>
+							<th className="px-6 py-4 text-left text-sm font-semibold text-muted">Name</th>
+							<th className="px-6 py-4 text-right text-sm font-semibold text-muted">Price/Hour</th>
+							<th className="px-6 py-4 text-right text-sm font-semibold text-muted">Price</th>
+							<th className="px-6 py-4 text-right text-sm font-semibold text-muted">Time</th>
+							<th className="px-6 py-4 text-center text-sm font-semibold text-muted">Rating</th>
+							<th className="px-6 py-4 text-left text-sm font-semibold text-muted">Tags</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -121,8 +121,8 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 							return (
 								<tr
 									key={game.id}
-									className={`border-b border-[#333333] transition-all duration-200 ${
-										index % 2 === 0 ? 'bg-[#1a1a1a] hover:bg-[#404040]' : 'bg-[#353535] hover:bg-[#404040]'
+									className={`border-b border-line transition-all duration-200 ${
+										index % 2 === 0 ? 'bg-surface hover:bg-subtle-hi' : 'bg-raised hover:bg-subtle-hi'
 									}`}
 								>
 									{/* Name Column */}
@@ -131,7 +131,7 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 											className="flex items-center gap-4 cursor-pointer"
 											onClick={() => onGameClick(game)}
 										>
-											<div className="relative w-24 h-14 rounded-md overflow-hidden flex-shrink-0 border border-[#333333]">
+											<div className="relative w-24 h-14 rounded-md overflow-hidden flex-shrink-0 border border-line">
 												<img
 													src={getGameImage(game)}
 													alt={game.name}
@@ -142,7 +142,7 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 												/>
 											</div>
 											<div>
-												<div className="text-[#e5e5e5] font-medium mb-1">{game.name}</div>
+												<div className="text-ink font-medium mb-1">{game.name}</div>
 												<div className="flex items-center gap-2">
 													<PlatformBadge platform={game.platform} />
 												</div>
@@ -154,14 +154,14 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 									<td className="px-6 py-4 text-right">
 										{game.pricePerHour && (game.playtimeForever || 0) > 0 ? (
 											<span className={`font-semibold ${
-												game.pricePerHour < 10 ? 'text-[#4ddc4d]' :
-												game.pricePerHour < 50 ? 'text-[#ffdd44]' : 
-												'text-[#ff6666]'
+												game.pricePerHour < 10 ? 'text-ok-fg' :
+												game.pricePerHour < 50 ? 'text-warn-fg' : 
+												'text-danger-fg'
 											}`}>
 												₹{game.pricePerHour.toFixed(2)}
 											</span>
 										) : (
-											<span className="text-[#696969]">-</span>
+											<span className="text-faint">-</span>
 										)}
 									</td>
 
@@ -188,20 +188,20 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 															});
 														}
 													}}
-													className="w-24 px-3 py-1.5 bg-[#333333] border border-[#5a7fa3] rounded text-[#e5e5e5] text-sm text-right focus:outline-none focus:border-[#7a9fc3]"
+													className="w-24 px-3 py-1.5 bg-subtle border border-accent-line rounded text-ink text-sm text-right focus:outline-none focus:border-accent-hi-line"
 													autoFocus
 												/>
 												<button
 													onClick={() => handleSavePrice(game)}
 													disabled={isSavingPriceField}
-													className="px-3 py-1.5 bg-[#5a7fa3] text-[#e5e5e5] text-xs font-semibold rounded hover:bg-[#7a9fc3] transition-all duration-200 disabled:opacity-50"
+													className="px-3 py-1.5 bg-accent text-ink text-xs font-semibold rounded hover:bg-accent-hi transition-all duration-200 disabled:opacity-50"
 												>
 													{isSavingPriceField ? '...' : 'Save'}
 												</button>
 											</div>
 										) : (
 											<div className="flex items-center justify-end gap-2">
-												<span className="text-[#e5e5e5] font-medium">
+												<span className="text-ink font-medium">
 													{game.pricePaid !== null && game.pricePaid !== undefined
 														? `₹ ${game.pricePaid.toFixed(0)}`
 														: 'Free'}
@@ -213,7 +213,7 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 															[gameKey]: game.pricePaid?.toString() || '',
 														}))
 													}
-													className="text-[#696969] hover:text-[#5a7fa3] text-xs transition-colors"
+													className="text-faint hover:text-accent-fg text-xs transition-colors"
 												>
 													✎
 												</button>
@@ -223,7 +223,7 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 
 									{/* Time */}
 									<td className="px-6 py-4 text-right">
-										<span className="text-[#e5e5e5] font-medium">{hours}h</span>
+										<span className="text-ink font-medium">{hours}h</span>
 									</td>
 
 									{/* Rating */}
@@ -250,13 +250,13 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 														});
 													}}
 													placeholder="tag1, tag2, tag3"
-													className="flex-1 px-3 py-1.5 bg-[#333333] border border-[#5a7fa3] rounded text-[#e5e5e5] text-sm focus:outline-none focus:border-[#7a9fc3]"
+													className="flex-1 px-3 py-1.5 bg-subtle border border-accent-line rounded text-ink text-sm focus:outline-none focus:border-accent-hi-line"
 													autoFocus
 												/>
 												<button
 													onClick={() => handleSaveTags(game)}
 													disabled={isSavingTag}
-													className="px-3 py-1.5 bg-[#5a7fa3] text-[#e5e5e5] text-xs font-semibold rounded hover:bg-[#7a9fc3] transition-all duration-200"
+													className="px-3 py-1.5 bg-accent text-ink text-xs font-semibold rounded hover:bg-accent-hi transition-all duration-200"
 												>
 													{isSavingTag ? '...' : 'Save'}
 												</button>
@@ -266,7 +266,7 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 												{game.userTags?.map((tag) => (
 													<span
 														key={tag}
-														className="px-3 py-1 bg-[#333333] rounded-full border border-[#5a5a5a] text-xs font-medium text-[#a0a0a0]"
+														className="px-3 py-1 bg-subtle rounded-full border border-line-strong text-xs font-medium text-muted"
 													>
 														{tag}
 													</span>
@@ -276,7 +276,7 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 														...prev,
 														[gameKey]: game.userTags?.join(', ') || '',
 													}))}
-													className="px-3 py-1 text-[#696969] hover:text-[#5a7fa3] text-xs transition-colors"
+													className="px-3 py-1 text-faint hover:text-accent-fg text-xs transition-colors"
 												>
 													{game.userTags?.length ? '✎' : '+ Tag'}
 												</button>

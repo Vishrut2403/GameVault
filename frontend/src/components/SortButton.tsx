@@ -23,13 +23,13 @@ export const SortButton: React.FC<SortButtonProps> = ({
 			onClick={() => onSort(field)}
 			className={`group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 ${
 				isActive
-					? 'bg-[#5a7fa3] border border-[#5a7fa3] text-[#e5e5e5]'
-					: 'bg-[#1a1a1a] border border-[#333333] text-[#a0a0a0] hover:bg-[#2a2a2a] hover:text-[#e5e5e5] hover:border-[#5a7fa3]'
+					? 'bg-accent border border-accent-line text-ink'
+					: 'bg-surface border border-line text-muted hover:bg-raised hover:text-ink hover:border-accent-line'
 			}`}
 		>
 			<span>{label}</span>
 			{isActive && (
-				<span className="text-[#e5e5e5] font-bold text-xs">
+				<span className="text-ink font-bold text-xs">
 					{currentDirection === 'asc' ? '↑' : '↓'}
 				</span>
 			)}

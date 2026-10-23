@@ -14,6 +14,17 @@ const GameModal = lazy(() => import('../components/GameModal').then(m => ({ defa
 const Analytics = lazy(() => import('../components/Analytics').then(m => ({ default: m.Analytics })));
 const TierList = lazy(() => import('../components/TierList').then(m => ({ default: m.TierList })));
 
+const TABS: { key: TabType; label: string }[] = [
+	{ key: 'profile', label: 'Profile' },
+	{ key: 'journal', label: 'Journal' },
+	{ key: 'dashboard', label: 'Dashboard' },
+	{ key: 'wishlist', label: 'Wishlist' },
+	{ key: 'recommendations', label: 'Recommendations' },
+	{ key: 'smart-recommendations', label: 'Smart Pick' },
+	{ key: 'analytics', label: 'Analytics' },
+	{ key: 'tierlist', label: 'Tier List' },
+];
+
 interface HomeProps {
 	user: any;
 	onLogout: () => void;
@@ -27,6 +38,14 @@ function Home({ user, onLogout }: HomeProps) {
 	const [error, setError] = useState('');
 	const [selectedGame, setSelectedGame] = useState<LibraryGame | null>(null);
 	const [activeTab, setActiveTab] = useState<TabType>('journal');
+	const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || 'dark');
+
+	const toggleTheme = () => {
+		const next = theme === 'dark' ? 'brutal' : 'dark';
+		document.documentElement.dataset.theme = next;
+		try { localStorage.setItem('theme', next); } catch { /* private mode: theme lasts this visit only */ }
+		setTheme(next);
+	};
 
 	const [sortField, setSortField] = useState<SortField>('playtime');
 	const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -232,29 +251,61 @@ function Home({ user, onLogout }: HomeProps) {
 				</div>
 			</div>
 		}>
-		<div className="min-h-screen bg-[#000000] text-[#e5e5e5]">
+		<div className="min-h-screen bg-page text-ink">
 			{/* Header */}
-			<div className="sticky top-0 z-50 bg-[#1a1a1a] border-b border-[#333333]">
+			<div className="nb-header sticky top-0 z-50 bg-surface border-b border-line">
 				<div className="max-w-[1800px] mx-auto px-8 py-5">
-					<div className="flex items-center justify-between">
-						<div>
-							<h1 className="text-2xl font-bold tracking-tight text-[#e5e5e5]">Game Vault</h1>
-							<p className="text-xs text-[#a0a0a0] font-medium">Pro Edition</p>
-						</div>
-						<div className="flex items-center gap-4">
-							<div className="text-right">
-								<p className="text-sm font-semibold text-[#e5e5e5]">{user.displayName || user.username}</p>
-								<p className="text-xs text-[#a0a0a0]">Level {user.level} • {user.xp} XP</p>
+					<div className="flex flex-wrap items-center justify-between gap-4">
+						<div className="flex items-center gap-3">
+							<span className="brutal-only nb-raise nb-fill-yellow w-11 h-11 flex items-center justify-center rounded-lg border border-line" aria-hidden="true">
+								<svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 2C13 9 15 11 22 12C15 13 13 15 12 22C11 15 9 13 2 12C9 11 11 9 12 2Z" fill="currentColor" /></svg>
+							</span>
+							<div>
+								<h1 className="text-2xl font-bold tracking-tight text-ink">Game Vault</h1>
+								<p className="dark-only text-xs text-muted font-medium">Pro Edition</p>
 							</div>
+						</div>
+						<nav aria-label="Main" className="brutal-only flex flex-wrap gap-1.5">
+							{TABS.map(({ key, label }) => (
+								<button
+									key={key}
+									onClick={() => setActiveTab(key)}
+									aria-current={activeTab === key ? 'page' : undefined}
+									className="nb-tab nb-raise min-h-11 px-3.5 py-2 rounded-lg text-[15px]"
+								>
+									{label}
+								</button>
+							))}
+						</nav>
+						<div className="flex items-center gap-4">
+							<span
+								className="brutal-only nb-fill-pink w-11 h-11 flex items-center justify-center rounded-full border border-line font-bold"
+								role="img"
+								aria-label={`${user.displayName || user.username}, level ${user.level}`}
+								title={`${user.displayName || user.username} · Level ${user.level} · ${user.xp} XP`}
+							>
+								{(user.displayName || user.username).slice(0, 2).toUpperCase()}
+							</span>
+							<div className="dark-only text-right">
+								<p className="text-sm font-semibold text-ink">{user.displayName || user.username}</p>
+								<p className="text-xs text-muted">Level {user.level} • {user.xp} XP</p>
+							</div>
+							<button
+								onClick={toggleTheme}
+								aria-pressed={theme === 'brutal'}
+								className="nb-raise px-4 py-2 bg-accent border border-accent-line rounded text-sm text-ink hover:bg-accent-hi transition-all"
+							>
+								{theme === 'dark' ? 'Brutal theme' : 'Dark theme'}
+							</button>
 							<a
 								href="/profile"
-								className="px-4 py-2 bg-[#5a7fa3] border border-[#5a7fa3] rounded text-sm text-[#e5e5e5] hover:bg-[#7a9fc3] transition-all"
+								className="nb-raise px-4 py-2 bg-accent border border-accent-line rounded text-sm text-ink hover:bg-accent-hi transition-all"
 							>
 								Settings
 							</a>
 							<button
 								onClick={onLogout}
-								className="px-4 py-2 bg-[#5a7fa3] border border-[#5a7fa3] rounded text-sm text-[#e5e5e5] hover:bg-[#7a9fc3] transition-all"
+								className="nb-raise px-4 py-2 bg-accent border border-accent-line rounded text-sm text-ink hover:bg-accent-hi transition-all"
 							>
 								Logout
 							</button>
@@ -264,25 +315,16 @@ function Home({ user, onLogout }: HomeProps) {
 			</div>
 
 			<div className="max-w-[1800px] mx-auto px-8 py-16">
-				{/* Tabs */}
-				<div className="flex gap-3 mb-12 flex-wrap">
-					{[
-						{ key: 'profile', label: 'Profile' },
-						{ key: 'journal', label: 'Journal' },
-						{ key: 'dashboard', label: 'Dashboard' },
-						{ key: 'wishlist', label: 'Wishlist' },
-						{ key: 'recommendations', label: 'Recommendations' },
-						{ key: 'smart-recommendations', label: 'Smart Pick' },
-						{ key: 'analytics', label: 'Analytics' },
-						{ key: 'tierlist', label: 'Tier List' },
-					].map(({ key, label }) => (
+				{/* Tabs (the brutal theme shows them in the header instead) */}
+				<div className="dark-only flex gap-3 mb-12 flex-wrap">
+					{TABS.map(({ key, label }) => (
 						<button
 							key={key}
-							onClick={() => setActiveTab(key as TabType)}
+							onClick={() => setActiveTab(key)}
 							className={`px-6 py-3 rounded-lg font-semibold text-base transition-all duration-200 border ${
 								activeTab === key
-									? 'bg-[#5a7fa3] text-[#e5e5e5] border-[#7a9fc3]'
-									: 'bg-[#1a1a1a] text-[#a0a0a0] border-[#333333] hover:text-[#e5e5e5] hover:bg-[#2a2a2a] hover:border-[#5a7fa3]'
+									? 'bg-accent text-ink border-accent-hi-line'
+									: 'bg-surface text-muted border-line hover:text-ink hover:bg-raised hover:border-accent-line'
 							}`}
 						>
 							{label}
@@ -299,7 +341,7 @@ function Home({ user, onLogout }: HomeProps) {
 							placeholder="Search games by name..."
 							value={filters.searchQuery}
 							onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
-							className="w-full px-4 py-2 bg-[#2a2a2a] rounded border border-[#333333] text-[#e5e5e5] placeholder-[#696969] focus:border-[#5a7fa3] outline-none transition-all duration-200"
+							className="w-full px-4 py-2 bg-raised rounded border border-line text-ink placeholder-faint focus:border-accent-line outline-none transition-all duration-200"
 						/>
 
 						{/* Game Filters, Sort & Action Buttons - Same Row */}
@@ -317,8 +359,8 @@ function Home({ user, onLogout }: HomeProps) {
 										onClick={() => setShowSortDropdown(!showSortDropdown)}
 										className={`flex items-center gap-2 px-4 py-2 rounded border transition-all duration-200 whitespace-nowrap ${
 											sortField !== 'playtime'
-												? 'bg-[#5a7fa3] border-[#7a9fc3] text-[#e5e5e5]'
-												: 'bg-[#2a2a2a] border-[#333333] text-[#a0a0a0] hover:bg-[#333333]'
+												? 'bg-accent border-accent-hi-line text-ink'
+												: 'bg-raised border-line text-muted hover:bg-subtle'
 										}`}
 									>
 										Sort: {getSortLabel()} {sortDirection === 'asc' ? '↑' : '↓'}
@@ -328,7 +370,7 @@ function Home({ user, onLogout }: HomeProps) {
 									</button>
 									
 									{showSortDropdown && (
-										<div className="absolute top-full left-0 mt-2 w-48 bg-[#1a1a1a] border border-[#333333] rounded shadow-lg z-50 overflow-hidden">
+										<div className="absolute top-full left-0 mt-2 w-48 bg-surface border border-line rounded shadow-lg z-50 overflow-hidden">
 											{[
 												{ field: 'playtime' as SortField, label: 'Playtime' },
 												{ field: 'pricePaid' as SortField, label: 'Price' },
@@ -348,8 +390,8 @@ function Home({ user, onLogout }: HomeProps) {
 														}
 														setShowSortDropdown(false);
 													}}
-													className={`w-full px-4 py-2.5 text-left hover:bg-[#333333] transition-colors flex items-center justify-between ${
-														sortField === field ? 'bg-[#5a7fa3] text-[#e5e5e5]' : 'text-[#a0a0a0]'
+													className={`w-full px-4 py-2.5 text-left hover:bg-subtle transition-colors flex items-center justify-between ${
+														sortField === field ? 'bg-accent text-ink' : 'text-muted'
 													}`}
 												>
 													<span>{label}</span>
@@ -370,7 +412,7 @@ function Home({ user, onLogout }: HomeProps) {
 								<button
 									onClick={syncFromSteam}
 									disabled={syncing || !user.steamId}
-									className="px-6 py-2.5 bg-[#1a1a1a] rounded-xl border border-[#333333] font-semibold hover:bg-[#2a2a2a] transition-all duration-300 shadow-md disabled:opacity-50 text-[#e5e5e5] whitespace-nowrap"
+									className="px-6 py-2.5 bg-surface rounded-xl border border-line font-semibold hover:bg-raised transition-all duration-300 shadow-md disabled:opacity-50 text-ink whitespace-nowrap"
 								>
 									{syncing ? '⟳ Syncing...' : '⟳ Sync Steam'}
 								</button>
@@ -381,7 +423,7 @@ function Home({ user, onLogout }: HomeProps) {
 
 				{/* Error */}
 				{error && (
-					<div className="mb-6 p-4 bg-[#8b3a3a]/10 border border-[#a84a4a] rounded-lg text-[#ff9999] shadow-md">
+					<div className="mb-6 p-4 bg-danger/10 border border-danger-line rounded-lg text-danger-fg shadow-md">
 						{error}
 					</div>
 				)}
@@ -402,7 +444,7 @@ function Home({ user, onLogout }: HomeProps) {
 				)}
 
 				{activeTab === 'journal' && !loading && (
-					<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-5">
+					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 gap-5">
 						{filteredGames.map((game: LibraryGame) => (
 							<GameCard
 								key={game.id}
@@ -449,12 +491,12 @@ function Home({ user, onLogout }: HomeProps) {
 				{filteredGames.length === 0 && !loading && activeTab !== 'profile' && activeTab !== 'wishlist' && activeTab !== 'recommendations' && activeTab !== 'smart-recommendations' && activeTab !== 'analytics' && activeTab !== 'tierlist' && (
 					<div className="flex items-center justify-center min-h-[400px]">
 						<div className="text-center mx-auto px-6">
-							<div className="w-20 h-20 mx-auto mb-4 rounded-lg bg-[#1a1a1a] border border-[#333333] flex items-center justify-center shadow-md">
+							<div className="w-20 h-20 mx-auto mb-4 rounded-lg bg-surface border border-line flex items-center justify-center shadow-md">
 								<span className="text-4xl">🎮</span>
 							</div>
-							<p className="text-gray-400 text-lg font-medium">No games found</p>
+							<p className="text-muted text-lg font-medium">No games found</p>
 							{!user.steamId && (
-								<p className="text-[#696969] text-sm mt-2">Link your Steam account in Profile to get started!</p>
+								<p className="text-faint text-sm mt-2">Link your Steam account in Profile to get started!</p>
 							)}
 						</div>
 					</div>

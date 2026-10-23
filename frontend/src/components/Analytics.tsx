@@ -5,6 +5,13 @@ const AnalyticsDashboardPage = lazy(() => import('./analytics/AnalyticsDashboard
 const AnalyticsAchievementsPage = lazy(() => import('./analytics/AnalyticsAchievementsPage').then(m => ({ default: m.AnalyticsAchievementsPage })));
 const AnalyticsValuePage = lazy(() => import('./analytics/AnalyticsValuePage').then(m => ({ default: m.AnalyticsValuePage })));
 
+// A 14-point starburst for the brutal page header, as SVG polygon points.
+const STARBURST = Array.from({ length: 28 }, (_, i) => {
+	const angle = (Math.PI * 2 * i) / 28 - Math.PI / 2;
+	const r = i % 2 === 0 ? 48 : 30;
+	return `${(50 + r * Math.cos(angle)).toFixed(1)},${(50 + r * Math.sin(angle)).toFixed(1)}`;
+}).join(' ');
+
 interface AnalyticsProps {
 	games: LibraryGame[];
 }
@@ -21,30 +28,36 @@ export const Analytics: React.FC<AnalyticsProps> = ({ games }) => {
 	];
 
 	return (
-		<Suspense fallback={<div className="py-12 text-[#a0a0a0]">Loading analytics…</div>}>
+		<Suspense fallback={<div className="py-12 text-muted">Loading analytics…</div>}>
 		<div className="space-y-6">
 			{/* Header */}
-			<div>
-				<h1 className="text-3xl font-bold text-[#e5e5e5] mb-2">Analytics</h1>
-				<p className="text-[#a0a0a0]">Deep insights into your gaming library</p>
+			<div className="nb-pagehead flex items-end justify-between gap-6">
+				<div>
+					<h1 className="text-3xl font-bold text-ink mb-2">Analytics</h1>
+					<p className="text-muted">Deep insights into your gaming library</p>
+				</div>
+				<svg className="brutal-only shrink-0 mr-10 -rotate-8 max-md:hidden" width="150" height="150" viewBox="0 0 100 100" aria-hidden="true">
+					<polygon points={STARBURST} fill="var(--nb-pink)" stroke="var(--line)" strokeWidth="2.5" strokeLinejoin="round" />
+				</svg>
 			</div>
 
 			{/* Sub-navigation */}
-			<div className="flex gap-1 p-1.5 bg-[#1a1a1a] rounded-lg border border-[#333333] w-fit">
+			<div className="nb-tabbar flex flex-wrap gap-1 p-1.5 bg-surface rounded-lg border border-line w-fit">
 				{tabs.map(({ key, label, icon }) => (
 					<button
 						key={key}
 						onClick={() => setActiveTab(key)}
-						className={`group relative px-6 py-3 rounded font-semibold text-base transition-all duration-200 flex items-center gap-2 ${
+						aria-pressed={activeTab === key}
+						className={`nb-tab nb-raise group relative px-6 py-3 rounded font-semibold text-base transition-all duration-200 flex items-center gap-2 ${
 							activeTab === key
-								? 'bg-[#5a7fa3] text-[#e5e5e5] border border-[#7a9fc3]'
-								: 'text-[#a0a0a0] hover:text-[#e5e5e5] hover:bg-[#333333]'
+								? 'bg-accent text-ink border border-accent-hi-line'
+								: 'text-muted hover:text-ink hover:bg-subtle'
 						}`}
 					>
-						<span>{icon}</span>
+						<span className="dark-only">{icon}</span>
 						<span>{label}</span>
 						{activeTab === key && (
-							<div className="absolute inset-0 rounded bg-[#5a7fa3]/10 pointer-events-none" />
+							<div className="dark-only absolute inset-0 rounded bg-accent/10 pointer-events-none" />
 						)}
 					</button>
 				))}

@@ -69,23 +69,23 @@ function AuthPage() {
 	};
 
 	return (
-		<div className="min-h-screen bg-[#000000] flex items-center justify-center p-4">
+		<div className="min-h-screen bg-page flex items-center justify-center p-4">
 			<div className="w-full max-w-md">
-				<div className="bg-[#1a1a1a] rounded-lg border border-[#333333] p-8 shadow-lg">
-					<h1 className="text-3xl font-bold text-[#e5e5e5] mb-2 text-center">Game Vault</h1>
-					<p className="text-center text-[#a0a0a0] mb-8">
+				<div className="bg-surface rounded-lg border border-line p-8 shadow-lg">
+					<h1 className="text-3xl font-bold text-ink mb-2 text-center">Game Vault</h1>
+					<p className="text-center text-muted mb-8">
 						{isLogin ? 'Sign in to your account' : 'Create a new account'}
 					</p>
 
 					<form onSubmit={handleSubmit} className="space-y-4">
 						{!isLogin && (
 							<div>
-								<label className="block text-sm font-medium text-[#a0a0a0] mb-2">Email</label>
+								<label className="block text-sm font-medium text-muted mb-2">Email</label>
 								<input
 									type="email"
 									value={formData.email}
 									onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-									className="w-full px-4 py-2 bg-[#2a2a2a] border border-[#333333] rounded text-[#e5e5e5] placeholder-[#696969] focus:border-[#5a7fa3] focus:outline-none"
+									className="w-full px-4 py-2 bg-raised border border-line rounded text-ink placeholder-faint focus:border-accent-line focus:outline-none"
 									placeholder="you@example.com"
 									required={!isLogin}
 								/>
@@ -93,7 +93,7 @@ function AuthPage() {
 						)}
 
 						<div>
-							<label className="block text-sm font-medium text-[#a0a0a0] mb-2">
+							<label className="block text-sm font-medium text-muted mb-2">
 								{isLogin ? 'Email or Username' : 'Username'}
 							</label>
 							<input
@@ -105,19 +105,19 @@ function AuthPage() {
 										[isLogin ? 'email' : 'username']: e.target.value
 									})
 								}
-								className="w-full px-4 py-2 bg-[#2a2a2a] border border-[#333333] rounded text-[#e5e5e5] placeholder-[#696969] focus:border-[#5a7fa3] focus:outline-none"
+								className="w-full px-4 py-2 bg-raised border border-line rounded text-ink placeholder-faint focus:border-accent-line focus:outline-none"
 								placeholder={isLogin ? 'Email or username' : 'vishydaperry'}
 								required
 							/>
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium text-[#a0a0a0] mb-2">Password</label>
+							<label className="block text-sm font-medium text-muted mb-2">Password</label>
 							<input
 								type="password"
 								value={formData.password}
 								onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-								className="w-full px-4 py-2 bg-[#2a2a2a] border border-[#333333] rounded text-[#e5e5e5] placeholder-[#696969] focus:border-[#5a7fa3] focus:outline-none"
+								className="w-full px-4 py-2 bg-raised border border-line rounded text-ink placeholder-faint focus:border-accent-line focus:outline-none"
 								placeholder="••••••••"
 								required
 							/>
@@ -125,12 +125,12 @@ function AuthPage() {
 
 						{!isLogin && (
 							<div>
-								<label className="block text-sm font-medium text-[#a0a0a0] mb-2">Confirm Password</label>
+								<label className="block text-sm font-medium text-muted mb-2">Confirm Password</label>
 								<input
 									type="password"
 									value={formData.confirmPassword}
 									onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-									className="w-full px-4 py-2 bg-[#2a2a2a] border border-[#333333] rounded text-[#e5e5e5] placeholder-[#696969] focus:border-[#5a7fa3] focus:outline-none"
+									className="w-full px-4 py-2 bg-raised border border-line rounded text-ink placeholder-faint focus:border-accent-line focus:outline-none"
 									placeholder="••••••••"
 									required={!isLogin}
 								/>
@@ -138,7 +138,7 @@ function AuthPage() {
 						)}
 
 						{error && (
-							<div className="p-3 bg-[#4a3a3a] border border-[#5a4a4a] rounded text-[#a0a0a0] text-sm">
+							<div className="p-3 bg-danger-deep border border-danger-line rounded text-muted text-sm">
 								{error}
 							</div>
 						)}
@@ -146,18 +146,18 @@ function AuthPage() {
 						<button
 							type="submit"
 							disabled={loading}
-							className="w-full py-3 bg-[#5a7fa3] text-[#e5e5e5] rounded font-semibold hover:bg-[#7a9fc3] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+							className="w-full py-3 bg-accent text-ink rounded font-semibold hover:bg-accent-hi transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							{loading ? 'Loading...' : isLogin ? 'Sign In' : 'Create Account'}
 						</button>
 					</form>
 
 					<div className="mt-6 text-center">
-						<p className="text-[#a0a0a0] text-sm">
+						<p className="text-muted text-sm">
 							{isLogin ? "Don't have an account?" : 'Already have an account?'}
 							<button
 								onClick={() => setIsLogin(!isLogin)}
-								className="ml-2 text-[#5a7fa3] hover:text-[#7a9fc3] font-semibold transition-colors"
+								className="ml-2 text-accent-fg hover:text-accent-hi-fg font-semibold transition-colors"
 							>
 								{isLogin ? 'Sign Up' : 'Sign In'}
 							</button>
@@ -165,7 +165,7 @@ function AuthPage() {
 					</div>
 				</div>
 
-				<p className="text-center text-[#696969] text-xs mt-6">
+				<p className="text-center text-faint text-xs mt-6">
 					GameVault © 2026 • Minimalist Edition
 				</p>
 			</div>
