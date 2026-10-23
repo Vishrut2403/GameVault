@@ -82,7 +82,7 @@ export default function SmartRecommendationsList({
 				{recommendations.map((rec, index) => (
 					<div
 						key={rec.gameId}
-						className="bg-surface rounded-lg overflow-hidden hover:bg-raised transition-colors cursor-pointer"
+						className="nb-card bg-surface rounded-lg overflow-hidden hover:bg-raised transition-colors cursor-pointer"
 						onClick={() => onSelectGame?.(rec.gameId)}
 					>
 						<div className="p-4">

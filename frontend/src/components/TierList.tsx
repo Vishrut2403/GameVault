@@ -111,7 +111,7 @@ export const TierList: React.FC<TierListProps> = ({ games }) => {
 	return (
 		<div className="space-y-4">
 			{/* Header */}
-			<div className="bg-surface border border-line rounded-lg p-6">
+			<div className="nb-fill-yellow bg-surface border border-line rounded-lg p-6">
 				<div className="flex items-center justify-between">
 					<div>
 						<h2 className="text-2xl font-bold text-ink mb-2">🏆 Your Gaming Tier List</h2>
@@ -199,8 +199,8 @@ export const TierList: React.FC<TierListProps> = ({ games }) => {
 			))}
 
 			{/* Stats Summary */}
-			<div className="bg-surface border border-line rounded-lg p-6">
-				<h3 className="text-lg font-bold text-ink mb-4">Tier Distribution</h3>
+			<div className="nb-panel nb-bar-lime bg-surface border border-line rounded-lg p-6">
+				<h3 className="nb-title text-lg font-bold text-ink mb-4">Tier Distribution</h3>
 				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
 					{tierData.map(({ tier, games, color }) => {
 						const percentage = totalRatedGames > 0 

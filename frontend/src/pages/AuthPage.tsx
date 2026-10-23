@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { API_BASE_URL as API_URL } from '../services/api';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 function AuthPage() {
 	const [isLogin, setIsLogin] = useState(true);
@@ -70,9 +71,10 @@ function AuthPage() {
 
 	return (
 		<div className="min-h-screen bg-page flex items-center justify-center p-4">
+			<ThemeToggle className="fixed top-4 right-4 px-4 py-2 bg-accent border border-accent-line rounded text-sm text-ink hover:bg-accent-hi transition-all" />
 			<div className="w-full max-w-md">
-				<div className="bg-surface rounded-lg border border-line p-8 shadow-lg">
-					<h1 className="text-3xl font-bold text-ink mb-2 text-center">Game Vault</h1>
+				<div className="nb-panel nb-bar-yellow bg-surface rounded-lg border border-line p-8 shadow-lg">
+					<h1 className="nb-title text-3xl font-bold text-ink mb-2 text-center">Game Vault</h1>
 					<p className="text-center text-muted mb-8">
 						{isLogin ? 'Sign in to your account' : 'Create a new account'}
 					</p>

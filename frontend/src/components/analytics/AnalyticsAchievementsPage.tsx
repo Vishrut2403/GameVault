@@ -34,8 +34,8 @@ export const AnalyticsAchievementsPage: React.FC<AnalyticsAchievementsPageProps>
 	return (
 		<div className="space-y-8">
 			{/* Achievement Progress Rings */}
-			<div className="bg-surface border border-line rounded-lg p-6">
-				<h3 className="text-xl font-bold text-ink mb-6">Achievement Progress</h3>
+			<div className="nb-panel nb-bar-lime bg-surface border border-line rounded-lg p-6">
+				<h3 className="nb-title text-xl font-bold text-ink mb-6">Achievement Progress</h3>
 				<div className="grid grid-cols-2 md:grid-cols-4 gap-6">
 					{topProgress.map((game, idx) => {
 						const circumference = 2 * Math.PI * 45;
@@ -89,8 +89,8 @@ export const AnalyticsAchievementsPage: React.FC<AnalyticsAchievementsPageProps>
 			
 			{/* Perfect Games */}
 			{perfectGames.length > 0 && (
-				<div className="bg-surface border border-line rounded-lg p-6">
-					<h3 className="text-xl font-bold text-ink mb-6">
+				<div className="nb-panel nb-bar-pink bg-surface border border-line rounded-lg p-6">
+					<h3 className="nb-title text-xl font-bold text-ink mb-6">
 						Perfect Games 🏆 ({perfectGames.length})
 					</h3>
 					<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">

@@ -189,7 +189,7 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
 			onClick={onClose}
 		>
 			<div
-				className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-panel rounded-lg shadow-lg border border-line"
+				className="nb-modal relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-panel rounded-lg shadow-lg border border-line"
 				onClick={(e) => e.stopPropagation()}
 			>
 				{/* Hero image */}

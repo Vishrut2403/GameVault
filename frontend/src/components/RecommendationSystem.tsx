@@ -87,7 +87,7 @@ function RecommendationSystem({ userId }: RecommendationSystemProps) {
 	return (
 		<div className="space-y-8">
 			{/* Header */}
-			<div className="text-center mb-12">
+			<div className="nb-pagehead text-center mb-12">
 				<h2 className="text-3xl font-bold text-ink mb-3">Recommendation System</h2>
 				<p className="text-muted">
 					Optimal game picks within your budget — scored by discount, HLTB value, and your taste
@@ -166,7 +166,7 @@ function RecommendationSystem({ userId }: RecommendationSystemProps) {
 							return (
 								<div
 									key={game.id}
-									className="bg-surface border border-line rounded-lg overflow-hidden hover:border-accent-line hover:shadow-lg hover:shadow-accent-line/10 transition-all duration-300"
+									className="nb-card bg-surface border border-line rounded-lg overflow-hidden hover:border-accent-line hover:shadow-lg hover:shadow-accent-line/10 transition-all duration-300"
 								>
 									<div className="p-6 space-y-4">
 										{/* Name */}

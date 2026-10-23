@@ -6,6 +6,7 @@ import { GameTable } from '../components/GameTable';
 import { GameFilters, type GameFilterState } from '../components/GameFilters';
 import type { LibraryGame, TabType, SortField, SortDirection } from '../types/games.types';
 import type { User } from '../types/user.types';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 const ProfilePage = lazy(() => import('../pages/ProfilePage'));
 const SteamWishlist = lazy(() => import('../components/SteamWishlist'));
@@ -42,14 +43,6 @@ function Home({ user, onLogout }: HomeProps) {
 	const [error, setError] = useState('');
 	const [selectedGame, setSelectedGame] = useState<LibraryGame | null>(null);
 	const [activeTab, setActiveTab] = useState<TabType>('journal');
-	const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || 'dark');
-
-	const toggleTheme = () => {
-		const next = theme === 'dark' ? 'brutal' : 'dark';
-		document.documentElement.dataset.theme = next;
-		try { localStorage.setItem('theme', next); } catch { /* private mode: theme lasts this visit only */ }
-		setTheme(next);
-	};
 
 	const [sortField, setSortField] = useState<SortField>('playtime');
 	const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -295,13 +288,7 @@ function Home({ user, onLogout }: HomeProps) {
 								<p className="text-sm font-semibold text-ink">{user.displayName || user.username}</p>
 								<p className="text-xs text-muted">Level {user.level} • {user.xp} XP</p>
 							</div>
-							<button
-								onClick={toggleTheme}
-								aria-pressed={theme === 'brutal'}
-								className="nb-raise px-4 py-2 bg-accent border border-accent-line rounded text-sm text-ink hover:bg-accent-hi transition-all"
-							>
-								{theme === 'dark' ? 'Brutal theme' : 'Dark theme'}
-							</button>
+							<ThemeToggle className="nb-raise px-4 py-2 bg-accent border border-accent-line rounded text-sm text-ink hover:bg-accent-hi transition-all" />
 							<a
 								href="/profile"
 								className="nb-raise px-4 py-2 bg-accent border border-accent-line rounded text-sm text-ink hover:bg-accent-hi transition-all"

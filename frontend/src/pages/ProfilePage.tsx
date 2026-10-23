@@ -41,7 +41,7 @@ export default function ProfilePage({ user, onUpdate }: ProfilePageProps) {
 	return (
 		<div className="max-w-4xl mx-auto">
 			{/* User Info Card */}
-			<div className="bg-surface border border-line rounded-lg p-8 mb-8">
+			<div className="nb-fill-violet bg-surface border border-line rounded-lg p-8 mb-8">
 				<div className="flex items-center gap-6">
 					<div className="w-24 h-24 rounded-full bg-accent flex items-center justify-center text-4xl font-bold text-ink">
 						{user.username.charAt(0).toUpperCase()}
@@ -67,8 +67,8 @@ export default function ProfilePage({ user, onUpdate }: ProfilePageProps) {
 			</div>
 
 			{/* Platform Connections */}
-			<div className="bg-surface border border-line rounded-lg p-8">
-				<h3 className="text-2xl font-bold text-ink mb-2">Account Links</h3>
+			<div className="nb-panel nb-bar-cyan bg-surface border border-line rounded-lg p-8">
+				<h3 className="nb-title text-2xl font-bold text-ink mb-2">Account Links</h3>
 				<p className="text-muted mb-6">
 					Connect your Steam account to automatically sync your library and track progress.
 				</p>

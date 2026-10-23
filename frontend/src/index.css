@@ -261,7 +261,7 @@ body {
 }
 :root[data-theme="brutal"] .nb-tabbar .nb-tab[aria-pressed="true"] { background: var(--nb-pink); }
 
-:root[data-theme="brutal"] .nb-pagehead h1 { font-size: 72px; line-height: 1; margin: 0; }
+:root[data-theme="brutal"] .nb-pagehead :is(h1, h2) { font-size: 72px; line-height: 1; margin: 0; }
 :root[data-theme="brutal"] .nb-pagehead p {
 	display: inline-block;
 	margin-top: 12px;
@@ -273,7 +273,7 @@ body {
 	border-radius: 8px;
 }
 @media (max-width: 760px) {
-	:root[data-theme="brutal"] .nb-pagehead h1 { font-size: 44px; }
+	:root[data-theme="brutal"] .nb-pagehead :is(h1, h2) { font-size: 44px; }
 }
 
 /* Window panels: a coloured title bar with × □ − controls over the body. */
@@ -369,4 +369,74 @@ body {
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
 	color: var(--ink);
+}
+
+/* Window panels without extra markup: the panel's .nb-title child stretches
+   into a coloured title bar, with the × □ − controls drawn as a CSS image.
+   The bar colour comes from an nb-bar-* class on the panel. */
+.nb-bar-lime { --nb-bar: var(--nb-lime); }
+.nb-bar-pink { --nb-bar: var(--nb-pink); }
+.nb-bar-yellow { --nb-bar: var(--nb-yellow); }
+.nb-bar-cyan { --nb-bar: var(--nb-cyan); }
+.nb-bar-violet { --nb-bar: var(--nb-violet); }
+
+:root[data-theme="brutal"] .nb-panel {
+	padding: 24px;
+	overflow: hidden;
+	background: var(--surface);
+	box-shadow: 6px 6px 0 var(--line);
+}
+:root[data-theme="brutal"] .nb-panel > .nb-title {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 14px;
+	margin: -24px -24px 24px;
+	padding: 10px 18px;
+	font-size: 20px;
+	text-align: left;
+	background: var(--nb-bar, var(--nb-lime));
+	border-bottom: 2px solid var(--line);
+}
+:root[data-theme="brutal"] .nb-panel > .nb-title::before {
+	content: "";
+	flex: none;
+	width: 66px;
+	height: 16px;
+	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='66' height='16' fill='none' stroke='%23111' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M3 3l10 10M13 3L3 13'/%3E%3Crect x='27.5' y='2.5' width='11' height='11'/%3E%3Cpath d='M52 8h12'/%3E%3C/svg%3E") no-repeat;
+}
+
+/* Muted greys are too faint on the pastel fills; use full ink there. */
+:root[data-theme="brutal"] [class*="nb-fill-"] :is(.text-muted, .text-faint) { color: var(--ink); }
+
+/* Primary buttons: outlined, with a hard shadow that presses flat. */
+:root[data-theme="brutal"] :where(button.bg-accent, a.bg-accent, button.bg-ok, button.bg-danger) {
+	border: 2px solid var(--line);
+	box-shadow: 3px 3px 0 var(--line);
+	transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+:root[data-theme="brutal"] :where(button.bg-accent, a.bg-accent, button.bg-ok, button.bg-danger):hover { transform: translate(-2px, -2px); }
+:root[data-theme="brutal"] :where(button.bg-accent, a.bg-accent, button.bg-ok, button.bg-danger):active {
+	transform: translate(3px, 3px);
+	box-shadow: none;
+}
+
+/* Clickable cards: framed in ink, lifting on hover. */
+:root[data-theme="brutal"] .nb-card {
+	border: 2px solid var(--line);
+	box-shadow: 5px 5px 0 var(--line);
+	transition: transform 0.1s ease;
+}
+:root[data-theme="brutal"] .nb-card:hover { transform: translate(-3px, -3px); }
+
+:root[data-theme="brutal"] .nb-modal { border-width: 3px; box-shadow: 10px 10px 0 var(--line); }
+
+:root[data-theme="brutal"] .nb-thead { background: var(--nb-yellow); border-bottom-width: 2px; }
+:root[data-theme="brutal"] .nb-thead th { color: var(--ink); }
+
+/* Chart bars and scatter dots get the same ink outline as everything else. */
+:root[data-theme="brutal"] :is(.recharts-bar-rectangle .recharts-rectangle, .recharts-scatter-symbol .recharts-symbols) {
+	stroke: var(--line);
+	stroke-width: 2px;
 }

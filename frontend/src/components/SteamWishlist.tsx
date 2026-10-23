@@ -168,7 +168,7 @@ function SteamWishlist() {
 	return (
 		<div className="space-y-8">
 			{/* Header */}
-			<div className="flex items-center justify-between mb-2">
+			<div className="nb-pagehead flex items-center justify-between mb-2">
 				<div>
 					<h2 className="text-3xl font-bold text-ink mb-2">Wishlist</h2>
 					<p className="text-muted text-sm">Track games you want to buy and monitor their prices</p>
@@ -192,8 +192,8 @@ function SteamWishlist() {
 
 			{/* Add/Edit Form */}
 			{showAddForm && (
-				<div className="bg-surface border border-line rounded-lg p-6">
-					<h3 className="text-lg font-semibold text-ink mb-4">
+				<div className="nb-panel nb-bar-pink bg-surface border border-line rounded-lg p-6">
+					<h3 className="nb-title text-lg font-semibold text-ink mb-4">
 						{editingId ? 'Edit Game' : 'Add New Game'}
 					</h3>
 					<form onSubmit={handleSubmit} className="space-y-4">
@@ -303,7 +303,7 @@ function SteamWishlist() {
 				<div className="bg-surface rounded-lg border border-line overflow-hidden">
 					<div className="overflow-x-auto">
 						<table className="w-full">
-							<thead className="bg-surface border-b border-line">
+							<thead className="nb-thead bg-surface border-b border-line">
 								<tr>
 									<th className="px-6 py-4 text-left text-sm font-semibold text-muted">Game</th>
 									<th className="px-6 py-4 text-left text-sm font-semibold text-muted">Tags</th>

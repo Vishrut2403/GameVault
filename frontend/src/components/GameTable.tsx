@@ -99,7 +99,7 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 		<div className="bg-surface rounded-lg border border-line overflow-hidden">
 			<div className="overflow-x-auto">
 				<table className="w-full">
-					<thead className="bg-panel border-b border-line">
+					<thead className="nb-thead bg-panel border-b border-line">
 						<tr>
 							<th className="px-6 py-4 text-left text-sm font-semibold text-muted">Name</th>
 							<th className="px-6 py-4 text-right text-sm font-semibold text-muted">Price/Hour</th>

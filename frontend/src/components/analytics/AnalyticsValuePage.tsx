@@ -79,7 +79,7 @@ export const AnalyticsValuePage: React.FC<AnalyticsValuePageProps> = ({ games })
 		<div className="space-y-8">
 			{/* Stats Cards */}
 			<div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-				<div className="bg-surface border border-line rounded-lg p-6">
+				<div className="nb-fill-yellow bg-surface border border-line rounded-lg p-6">
 					<div className="text-muted text-sm mb-2">Total Spent</div>
 					<div className="text-3xl font-bold text-ink">{formatCurrency(stats.totalSpent)}</div>
 					<div className="text-xs text-faint mt-1">
@@ -87,7 +87,7 @@ export const AnalyticsValuePage: React.FC<AnalyticsValuePageProps> = ({ games })
 					</div>
 				</div>
 				
-				<div className="bg-surface border border-line rounded-lg p-6">
+				<div className="nb-fill-pink bg-surface border border-line rounded-lg p-6">
 					<div className="text-muted text-sm mb-2">Average Game Price</div>
 					<div className="text-3xl font-bold text-ink">{formatCurrency(stats.avgPrice)}</div>
 					<div className="text-xs text-faint mt-1">
@@ -95,7 +95,7 @@ export const AnalyticsValuePage: React.FC<AnalyticsValuePageProps> = ({ games })
 					</div>
 				</div>
 				
-				<div className="bg-surface border border-line rounded-lg p-6">
+				<div className="nb-fill-lime bg-surface border border-line rounded-lg p-6">
 					<div className="text-muted text-sm mb-2">Total Hours</div>
 					<div className="text-3xl font-bold text-ink">{Math.round(stats.totalHours)}h</div>
 					<div className="text-xs text-faint mt-1">
@@ -103,7 +103,7 @@ export const AnalyticsValuePage: React.FC<AnalyticsValuePageProps> = ({ games })
 					</div>
 				</div>
 				
-				<div className="bg-surface border border-line rounded-lg p-6">
+				<div className="nb-fill-violet bg-surface border border-line rounded-lg p-6">
 					<div className="text-muted text-sm mb-2">Avg Price/Hour</div>
 					<div className="text-3xl font-bold text-ink">{formatCurrency(stats.avgPricePerHour)}</div>
 					<div className="text-xs text-faint mt-1">
@@ -113,8 +113,8 @@ export const AnalyticsValuePage: React.FC<AnalyticsValuePageProps> = ({ games })
 			</div>
 			
 			{/* Price vs Playtime Scatter Plot */}
-			<div className="bg-surface border border-line rounded-lg p-6">
-				<h3 className="text-xl font-bold text-ink mb-2">Price vs Playtime</h3>
+			<div className="nb-panel nb-bar-yellow bg-surface border border-line rounded-lg p-6">
+				<h3 className="nb-title text-xl font-bold text-ink mb-2">Price vs Playtime</h3>
 				<p className="text-sm text-muted mb-6">
 					Bottom-right = best value (high hours, low price) • Top-left = worst value
 				</p>
@@ -162,8 +162,8 @@ export const AnalyticsValuePage: React.FC<AnalyticsValuePageProps> = ({ games })
 			</div>
 			
 			{/* Best Value Games */}
-			<div className="bg-surface border border-line rounded-lg p-6">
-				<h3 className="text-xl font-bold text-ink mb-6">Best Value Games (Lowest $/Hour)</h3>
+			<div className="nb-panel nb-bar-lime bg-surface border border-line rounded-lg p-6">
+				<h3 className="nb-title text-xl font-bold text-ink mb-6">Best Value Games (Lowest $/Hour)</h3>
 				<div className="space-y-4">
 					{bestValue.map((game, idx) => (
 						<div 
@@ -194,8 +194,8 @@ export const AnalyticsValuePage: React.FC<AnalyticsValuePageProps> = ({ games })
 			
 			{/* Most Expensive + Price Per Hour */}
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-				<div className="bg-surface border border-line rounded-lg p-6">
-					<h3 className="text-xl font-bold text-ink mb-6">Most Expensive Games</h3>
+				<div className="nb-panel nb-bar-pink bg-surface border border-line rounded-lg p-6">
+					<h3 className="nb-title text-xl font-bold text-ink mb-6">Most Expensive Games</h3>
 					<ResponsiveContainer width="100%" height={400}>
 						<BarChart data={mostExpensive} layout="vertical">
 							<CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
@@ -211,8 +211,8 @@ export const AnalyticsValuePage: React.FC<AnalyticsValuePageProps> = ({ games })
 					</ResponsiveContainer>
 				</div>
 				
-				<div className="bg-surface border border-line rounded-lg p-6">
-					<h3 className="text-xl font-bold text-ink mb-6">Price per Hour Ranking</h3>
+				<div className="nb-panel nb-bar-cyan bg-surface border border-line rounded-lg p-6">
+					<h3 className="nb-title text-xl font-bold text-ink mb-6">Price per Hour Ranking</h3>
 					<ResponsiveContainer width="100%" height={400}>
 						<BarChart data={pricePerHour} layout="vertical">
 							<CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />

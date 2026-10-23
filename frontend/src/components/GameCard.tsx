@@ -10,7 +10,7 @@ interface GameCardProps {
 export const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
 	return (
 		<div onClick={onClick} className="group relative cursor-pointer" title={game.name}>
-			<div className="relative aspect-[460/215] rounded-lg overflow-hidden bg-surface border border-line transition-all duration-300 hover:border-accent-line">
+			<div className="nb-card relative aspect-[460/215] rounded-lg overflow-hidden bg-surface border border-line transition-all duration-300 hover:border-accent-line">
 				<img
 					src={getGameImage(game)}
 					alt={game.name}
