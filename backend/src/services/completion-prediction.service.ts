@@ -1,4 +1,27 @@
 import { PrismaClient } from '@prisma/client';
+import { istDayBucket } from '../utils/dates';
+
+const HABIT_WINDOW_DAYS = 30;
+
+/**
+ * Gaming habits over a window of IST days: how long you play on the days you
+ * play, and the share of days you play at all. Sessions are one row per game
+ * per day, so a day spent on two games still counts as one play day.
+ */
+export function gamingHabits(sessions: { date: Date; minutes: number }[], windowDays = HABIT_WINDOW_DAYS) {
+	const playDays = new Set(sessions.map(s => s.date.getTime())).size;
+	if (playDays === 0) {
+		// No recent play to learn from: assume 2h a day, every day.
+		return { minutesPerPlayDay: 120, playDayRatio: 1 };
+	}
+	const totalMinutes = sessions.reduce((sum, s) => sum + s.minutes, 0);
+	return { minutesPerPlayDay: totalMinutes / playDays, playDayRatio: Math.min(1, playDays / windowDays) };
+}
+
+/** Recommended hours a play day, in half-hour steps and never under 30 minutes. */
+export function recommendedPaceMinutes(minutesPerPlayDay: number): number {
+	return Math.max(30, Math.round(minutesPerPlayDay / 30) * 30);
+}
 
 interface UserPlaystyle {
 	avgCompletionRate: number; // 0-1
@@ -19,6 +42,7 @@ interface PredictionResult {
 	hoursRemaining: number;
 	estimatedTotalHours: number;
 	avgHoursPerDay: number;
+	playDaysPerWeek: number;
 }
 
 export class CompletionPredictionService {
@@ -152,20 +176,18 @@ export class CompletionPredictionService {
 
 			const currentPlaytimeMinutes = game.playtimeForever || 0;
 
-			const allSessions = await this.prisma.gameSession.findMany({
-				where: { userId },
-				orderBy: { date: 'desc' },
-				take: 60,
+			const windowStart = istDayBucket(new Date(Date.now() - (HABIT_WINDOW_DAYS - 1) * 24 * 60 * 60 * 1000));
+			const recentSessions = await this.prisma.gameSession.findMany({
+				where: { userId, date: { gte: windowStart } },
+				select: { date: true, minutes: true },
 			});
-
-			let avgMinutesPerDay = 120; 
-			if (allSessions.length > 1) {
-				const latestDate = allSessions[0].date;
-				const oldestDate = allSessions[allSessions.length - 1].date;
-				const daysDiff = Math.max(1, (latestDate.getTime() - oldestDate.getTime()) / (1000 * 60 * 60 * 24));
-				const totalMinutes = allSessions.reduce((sum, s) => sum + s.minutes, 0);
-				avgMinutesPerDay = Math.max(30, totalMinutes / daysDiff); // At least 30 min/day
-			}
+			const habits = gamingHabits(recentSessions);
+			// Recommend a normal gaming day's worth for this game, then spread the
+			// play days over the calendar at the rate you actually play.
+			const paceMinutes = recommendedPaceMinutes(habits.minutesPerPlayDay);
+			const avgMinutesPerDay = habits.minutesPerPlayDay * habits.playDayRatio;
+			const paceHoursVal = paceMinutes / 60;
+			const playDaysPerWeekVal = Math.round(habits.playDayRatio * 7 * 10) / 10;
 
 			// Determine base estimate
 			let estimatedTotalMinutes = hltbCompletionistMinutes || (playstyle.avgPlaytimePerGame * 1.2);
@@ -212,8 +234,6 @@ export class CompletionPredictionService {
 			if (remainingMinutes <= 0 && game.status === 'completed') {
 				const hoursPlayedVal = currentPlaytimeMinutes > 0 ? Math.round((currentPlaytimeMinutes / 60) * 10) / 10 : 0;
 				const estimatedTotalHoursVal = estimatedTotalMinutes > 0 ? Math.round((estimatedTotalMinutes / 60) * 10) / 10 : 0;
-				const avgHoursPerDayVal = avgMinutesPerDay > 0 ? Math.round((avgMinutesPerDay / 60) * 10) / 10 : 0;
-				
 				return {
 					estimatedDays: 0,
 					estimatedCompletionDate: new Date().toISOString().split('T')[0],
@@ -223,12 +243,14 @@ export class CompletionPredictionService {
 					hoursPlayed: hoursPlayedVal,
 					hoursRemaining: 0,
 					estimatedTotalHours: estimatedTotalHoursVal,
-					avgHoursPerDay: avgHoursPerDayVal,
+					avgHoursPerDay: paceHoursVal,
+					playDaysPerWeek: playDaysPerWeekVal,
 				};
 			}
 
 			// Calculate estimated days to complete remaining time
-			const estimatedDays = Math.max(1, Math.ceil(remainingMinutes / avgMinutesPerDay));
+			const playDaysNeeded = Math.ceil(remainingMinutes / paceMinutes);
+			const estimatedDays = Math.max(1, Math.ceil(playDaysNeeded / habits.playDayRatio));
 
 			// Calculate estimated completion date
 			const completionDate = new Date();
@@ -238,8 +260,6 @@ export class CompletionPredictionService {
 			const hoursPlayedVal = currentPlaytimeMinutes > 0 ? Math.round((currentPlaytimeMinutes / 60) * 10) / 10 : 0;
 			const hoursRemainingVal = remainingMinutes > 0 ? Math.round((remainingMinutes / 60) * 10) / 10 : 0;
 			const estimatedTotalHoursVal = estimatedTotalMinutes > 0 ? Math.round((estimatedTotalMinutes / 60) * 10) / 10 : 0;
-			const avgHoursPerDayVal = avgMinutesPerDay > 0 ? Math.round((avgMinutesPerDay / 60) * 10) / 10 : 0;
-
 
 			return {
 				estimatedDays,
@@ -250,7 +270,8 @@ export class CompletionPredictionService {
 				hoursPlayed: hoursPlayedVal,
 				hoursRemaining: hoursRemainingVal,
 				estimatedTotalHours: estimatedTotalHoursVal,
-				avgHoursPerDay: avgHoursPerDayVal,
+				avgHoursPerDay: paceHoursVal,
+				playDaysPerWeek: playDaysPerWeekVal,
 			};
 		} catch (error) {
 			console.error('[Prediction] Error predicting completion:', error);

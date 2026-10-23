@@ -33,7 +33,8 @@ For each game, the system combines:
 The formula:
 ```
 Remaining Time = (HLTB Hours × Your Speed Ratio) - Current Hours
-Days to Complete = Remaining Time ÷ Your Avg Daily Minutes
+Daily Pace       = your avg playtime on days you play (last 30 days, nearest 0.5h)
+Days to Complete = (Remaining Time ÷ Daily Pace) ÷ share of days you play
 ```
 
 ### 3. **Confidence Scoring**
@@ -56,8 +57,8 @@ Higher confidence = more historical data to base prediction on.
 ```
 Adjusted Time = 180 × 0.8 = 144 hours
 Remaining = 144 - 40 = 104 hours
-Your Avg Daily Playtime = 3 hours/day
-Estimated Days = 104 ÷ 3 = ~35 days
+Daily Pace = 3 hours/day, played 5 days/week
+Estimated Days = (104 ÷ 3 = 35 play days) ÷ (5/7) = ~49 days
 Confidence = 82%
 ```
 

@@ -25,6 +25,7 @@ interface PredictionData {
 	hoursRemaining: number;
 	estimatedTotalHours: number;
 	avgHoursPerDay: number;
+	playDaysPerWeek: number;
 }
 
 interface GameModalProps {
@@ -321,6 +322,7 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
 											<div className="flex-1">
 												<p className="text-xs text-[#a0a0a0]">Daily Pace</p>
 												<p className="text-lg font-bold text-[#7a9fc3]">{typeof prediction.avgHoursPerDay === 'number' && !isNaN(prediction.avgHoursPerDay) ? prediction.avgHoursPerDay : '?'}h/day</p>
+												<p className="text-xs text-[#696969]">~{prediction.playDaysPerWeek} days/week</p>
 											</div>
 										</div>
 
