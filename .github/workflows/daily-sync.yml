@@ -1,11 +1,7 @@
 name: Daily Steam sync
 
-# Closes out the previous IST day so the activity heatmap has a point per day.
-#
-# GitHub schedules in UTC, so 18:30 UTC is 00:00 IST the following day. Runs can
-# start several minutes late when GitHub is busy; the endpoint attributes to the
-# IST day that just ended rather than to the clock time it was called, so a late
-# run still records against the right day.
+# Fallback for the on-time nightly sync (docs/setup.md). Often starts hours late;
+# users already synced for the day are skipped.
 on:
   schedule:
     - cron: '30 18 * * *'

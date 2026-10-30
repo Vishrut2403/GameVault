@@ -26,6 +26,7 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   lastLoginAt   DateTime?
+  dailySyncDay  DateTime? // last IST day synced by the nightly job
   
   games          LibraryGame[]
   sessions       GameSession[]

@@ -100,6 +100,23 @@ Open: http://localhost:5173
 
 ---
 
+## Nightly Sync
+
+Play sessions are recorded per IST day by a nightly job that credits everything played since the last run to the day that just ended. It has to run at midnight IST: a run hours late credits the new day's early play to the day before.
+
+Set `CRON_SECRET` (any long random string) in the backend environment, then add two jobs at [cron-job.org](https://cron-job.org), both with time zone **Asia/Kolkata**:
+
+| Job | Schedule | Request |
+|---|---|---|
+| Wake | 23:50 daily | `GET <APP_URL>/health` |
+| Nightly sync | 00:00 daily | `POST <APP_URL>/api/cron/daily-sync` with header `x-cron-secret: <CRON_SECRET>` |
+
+The wake job matters on a host that sleeps idle services (Render's free tier sleeps after 15 minutes): cron-job.org gives up on a request after 30 seconds, which a cold start can exceed. Ten minutes later the service is still awake, and the sync itself takes a few seconds.
+
+The GitHub workflow `.github/workflows/daily-sync.yml` calls the same endpoint as a fallback (repository secrets `APP_URL` and `CRON_SECRET`). GitHub often starts it hours late, so it only syncs users the on-time job didn't: each user's closed day is recorded, and a second call for the same day skips them. The response reports `synced`, `skipped` and `failed` counts.
+
+---
+
 ## Common Prism Launcher Paths
 
 | OS | Path |

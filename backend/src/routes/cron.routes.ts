@@ -28,6 +28,8 @@ function secretMatches(provided: string, expected: string): boolean {
 /**
  * Closes out the previous IST day for every user with a linked Steam account.
  *
+ * Users already synced for the day are skipped, so a late fallback run is safe.
+ *
  * Triggered by an external scheduler rather than an in-process timer: on hosts
  * that idle a free service to sleep, a timer inside this process simply would
  * not fire. An inbound request wakes the service and then does the work.
@@ -55,19 +57,27 @@ router.post('/daily-sync', async (req: Request, res: Response) => {
 	try {
 		const users = await prisma.user.findMany({
 			where: { steamId: { not: null } },
-			select: { id: true, steamId: true },
+			select: { id: true, steamId: true, dailySyncDay: true },
 		});
 
 		let synced = 0;
+		let skipped = 0;
 		let failed = 0;
 		let sessionsTracked = 0;
 		let wishlistsFailed = 0;
 
 		for (const user of users) {
+			if (user.dailySyncDay && user.dailySyncDay >= sessionDate) {
+				skipped++;
+				continue;
+			}
+
 			try {
 				const result = await syncSteamLibrary(user.steamId as string, { sessionDate });
 				sessionsTracked += result.sessionsTracked;
 				synced++;
+				// Only on success, so the fallback retries failures.
+				await prisma.user.update({ where: { id: user.id }, data: { dailySyncDay: sessionDate } });
 			} catch (error) {
 				// One user's failure must not abort the rest of the run.
 				failed++;
@@ -85,9 +95,9 @@ router.post('/daily-sync', async (req: Request, res: Response) => {
 		}
 
 		const day = sessionDate.toISOString().slice(0, 10);
-		console.log(`[cron] Daily sync for ${day}: ${synced} synced, ${failed} failed, ${sessionsTracked} sessions recorded, ${wishlistsFailed} wishlists failed`);
+		console.log(`[cron] Daily sync for ${day}: ${synced} synced, ${skipped} already done, ${failed} failed, ${sessionsTracked} sessions recorded, ${wishlistsFailed} wishlists failed`);
 
-		res.json({ success: true, day, synced, failed, sessionsTracked, wishlistsFailed });
+		res.json({ success: true, day, synced, skipped, failed, sessionsTracked, wishlistsFailed });
 	} catch (error) {
 		console.error('[cron] Daily sync failed:', error);
 		res.status(500).json({ success: false, error: 'Daily sync failed' });
