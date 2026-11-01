@@ -1,6 +1,6 @@
 import type { LibraryGame } from '../types/games.types';
 import { PlatformBadge } from './PlatformBadge';
-import { getGameImage, is100Percent, getAchievementPercentage } from '../utils/gameHelpers';
+import { getGameImage, is100Percent, getAchievementPercentage, GAME_PLACEHOLDER } from '../utils/gameHelpers';
 
 interface GameCardProps {
 	game: LibraryGame;
@@ -16,7 +16,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onClick }) => {
 					alt={game.name}
 					className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
 					onError={(e) => {
-						e.currentTarget.src = 'https://via.placeholder.com/460x215/2a2a2a/5a5a5a?text=No+Image';
+						if (!e.currentTarget.src.endsWith(GAME_PLACEHOLDER)) e.currentTarget.src = GAME_PLACEHOLDER;
 					}}
 				/>
 				

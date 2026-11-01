@@ -1,5 +1,7 @@
 import type { LibraryGame } from '../types/games.types';
 
+export const GAME_PLACEHOLDER = '/game-placeholder.svg';
+
 export const getGameImage = (game: LibraryGame): string => {
 	if (game.imageUrl) return game.imageUrl;
 	
@@ -8,7 +10,7 @@ export const getGameImage = (game: LibraryGame): string => {
 		return `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.platformGameId}/header.jpg`;
 	}
 	
-	return 'https://via.placeholder.com/460x215/1a1a1a/666?text=No+Image';
+	return GAME_PLACEHOLDER;
 };
 
 export const is100Percent = (game: LibraryGame): boolean => {

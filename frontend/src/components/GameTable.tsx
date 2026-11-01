@@ -2,7 +2,7 @@ import { useState } from 'react';
 import steamService from '../services/steam.service';
 import { PlatformBadge } from './PlatformBadge';
 import type { LibraryGame } from '../types/games.types';
-import { getGameImage } from '../utils/gameHelpers';
+import { getGameImage, GAME_PLACEHOLDER } from '../utils/gameHelpers';
 
 interface GameTableProps {
 	games: LibraryGame[];
@@ -137,7 +137,7 @@ export const GameTable: React.FC<GameTableProps> = ({ games, onGameClick, onRefr
 													alt={game.name}
 													className="w-full h-full object-cover"
 													onError={(e) => {
-														e.currentTarget.src = 'https://via.placeholder.com/300x400/2a2a2a/5a5a5a?text=No+Image';
+														if (!e.currentTarget.src.endsWith(GAME_PLACEHOLDER)) e.currentTarget.src = GAME_PLACEHOLDER;
 													}}
 												/>
 											</div>
