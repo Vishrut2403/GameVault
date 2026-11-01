@@ -1,7 +1,6 @@
 name: CI
 
-# Typecheck, lint, test and build on every push, so a broken build is caught
-# here instead of in the Render deploy.
+# Typecheck, lint, test and build on every push.
 on:
   push:
   pull_request:

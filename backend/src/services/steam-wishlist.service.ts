@@ -1,24 +1,15 @@
 import axios from 'axios';
 import prisma from '../prisma';
 
-// Two keyless calls per sync, however long the wishlist: the wishlist itself,
-// then store details for every game on it in batches. The old approach of one
-// store request per game is what ran into Steam's per-IP rate limit. Both
-// endpoints are the ones Steam's own store uses but are undocumented, so a
-// failure here is logged by the caller and the last saved wishlist stays.
+// Two calls per sync (wishlist, then batched store items); both endpoints are undocumented.
 const API = 'https://api.steampowered.com';
 // The store region prices are fetched for; the app shows rupees.
 const STORE_COUNTRY = 'IN';
 const ITEMS_PER_REQUEST = 100;
-// Sent when configured, so the calls count against the key's documented daily
-// quota rather than an unpublished per-IP limit shared with other tenants of
-// the host. Both endpoints also work without one.
+// Optional; counts calls against the key's quota instead of the shared IP.
 const apiKey = () => process.env.STEAM_API_KEY || undefined;
 
-// The sync buttons may run a wishlist sync once per user per window, so
-// repeated presses can't add up to a burst of Steam calls; failed attempts
-// count too. The nightly job always runs. Kept in memory: a restart only
-// forgets recent syncs, allowing at most one extra.
+// Manual syncs only; in memory, so a restart allows at most one extra.
 export const MANUAL_SYNC_COOLDOWN_MS = 10 * 60 * 1000;
 const lastSyncAt = new Map<string, number>();
 
@@ -51,10 +42,7 @@ export interface WishlistRow {
 	imageUrl: string;
 }
 
-/**
- * A store item as a wishlist row. Prices arrive in paise, as strings. A game
- * with no purchase option yet (unreleased, say) gets 0 for both prices.
- */
+/** Prices arrive in paise as strings; no purchase option yet means 0. */
 export function toWishlistRow(item: StoreItem): WishlistRow | null {
 	if (!item.appid) return null;
 	const option = item.best_purchase_option;
@@ -96,12 +84,7 @@ export async function fetchSteamWishlist(steamId: string): Promise<WishlistRow[]
 	return rows;
 }
 
-/**
- * Mirror the user's Steam wishlist into theirs: add new games, refresh names
- * and prices, and drop games removed on Steam. Manually added games (app ids
- * starting `manual_`) are left alone, except that one with the same name as a
- * Steam wishlist game is taken over by it, keeping its tags and HLTB data.
- */
+/** Mirror the Steam wishlist; `manual_` entries stay unless a same-name Steam game takes them over. */
 export async function syncSteamWishlist(userId: string, steamId: string) {
 	noteSyncAttempt(userId);
 	const rows = await fetchSteamWishlist(steamId);
@@ -123,8 +106,7 @@ export async function syncSteamWishlist(userId: string, steamId: string) {
 		}
 	}
 
-	// A private profile or a Steam hiccup also returns an empty wishlist, so
-	// an empty result never removes anything.
+	// An empty response (private profile, Steam hiccup) never removes anything.
 	let removed = 0;
 	if (rows.length > 0) {
 		const result = await prisma.steamWishlist.deleteMany({

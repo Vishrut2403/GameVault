@@ -1,7 +1,6 @@
 name: Daily Steam sync
 
-# Fallback for the on-time nightly sync (docs/setup.md). Often starts hours late;
-# users already synced for the day are skipped.
+# Late-running fallback for the on-time nightly sync (docs/setup.md); skips users already synced.
 on:
   schedule:
     - cron: '30 18 * * *'

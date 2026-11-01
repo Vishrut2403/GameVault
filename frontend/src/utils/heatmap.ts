@@ -1,5 +1,4 @@
-// Layout and shading for the Gaming Activity heatmap. Kept free of React so the
-// date and week arithmetic, which has broken before, can be tested directly.
+// Heatmap logic, kept out of React so it can be tested.
 
 export interface DayActivity {
 	date: string;
@@ -23,11 +22,7 @@ const localDateString = (date: Date): string => {
 	return `${year}-${month}-${day}`;
 };
 
-/**
- * The 365 days ending on `now`'s local date, each with the games played and
- * hours summed from `sessions`. Sessions are bucketed by the server as UTC
- * midnight of their IST date, so their ISO date is that day's label.
- */
+/** 365 days ending today; session dates are UTC midnight of their IST day. */
 export function buildYear(sessions: SessionRow[], now: Date): DayActivity[] {
 	const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 	const currentDate = new Date(today);
@@ -108,11 +103,7 @@ export function toWeeks(days: DayActivity[]): DayActivity[][] {
 	return result;
 }
 
-/**
- * One label slot per week column, filled where a new month starts. Two labels
- * closer than 3 columns would overlap; that only happens when the year opens
- * on a month's last few days, so the earlier, stub month gives way.
- */
+/** One label slot per week column; a stub first month gives way to the next. */
 export function monthLabels(weeks: DayActivity[][]): string[] {
 	const labels: string[] = weeks.map(() => '');
 	let currentMonth = '';
@@ -132,10 +123,7 @@ export function monthLabels(weeks: DayActivity[][]): string[] {
 	return labels;
 }
 
-/**
- * Consecutive played days ending today. Sessions are recorded by the midnight
- * sync, so today is usually still empty; count back from yesterday then.
- */
+/** Played-day streak; an empty today is skipped, as sessions arrive at midnight. */
 export function currentStreak(days: DayActivity[]): number {
 	const reversed = [...days].reverse();
 	if (reversed[0]?.count === 0) reversed.shift();

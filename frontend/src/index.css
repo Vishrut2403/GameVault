@@ -1,9 +1,7 @@
 @import "tailwindcss";
 
 :root {
-	/* Dark theme (default). Each name is a role, so the brutal theme below can
-	   give it a different value. Fill, line and text roles are kept apart
-	   because brutal draws every line in black while dark tints them. */
+	/* Dark (default). Line colours are separate roles: brutal makes them all black. */
 	--page: #000000;
 	--panel: #000000;
 	--surface: #1a1a1a;
@@ -178,8 +176,7 @@ body {
 	width: 100%;
 	min-height: 100vh;
 }
-/* Brutal-only structure. These rules sit outside Tailwind's layers, so they
-   win over its utilities without !important, and only apply in this theme. */
+/* Unlayered, so these beat Tailwind utilities. */
 :root[data-theme="brutal"] body {
 	font-family: 'Space Grotesk', system-ui, sans-serif;
 }
@@ -198,8 +195,7 @@ body {
 	background-size: 32px 32px;
 }
 
-/* Generic rules go through :where() so they add no specificity, which lets
-   the component rules further down override them. */
+/* :where() keeps these overridable by the component rules below. */
 :root[data-theme="brutal"] :where(.border) { border-width: 2px; }
 :root[data-theme="brutal"] :where(.border-t) { border-top-width: 2px; }
 :root[data-theme="brutal"] :where(.border-b) { border-bottom-width: 2px; }
@@ -209,8 +205,7 @@ body {
 	box-shadow: 4px 4px 0 var(--line);
 }
 
-/* Markup that belongs to one theme. revert-layer hands display back to the
-   element's own Tailwind classes, so a flex row comes back as a flex row. */
+/* revert-layer restores the element's own Tailwind display value. */
 .brutal-only { display: none; }
 :root[data-theme="brutal"] .brutal-only { display: revert-layer; }
 :root[data-theme="brutal"] .dark-only { display: none; }
@@ -371,9 +366,7 @@ body {
 	color: var(--ink);
 }
 
-/* Window panels without extra markup: the panel's .nb-title child stretches
-   into a coloured title bar, with the × □ − controls drawn as a CSS image.
-   The bar colour comes from an nb-bar-* class on the panel. */
+/* .nb-title becomes the panel's title bar; colour from nb-bar-*. */
 .nb-bar-lime { --nb-bar: var(--nb-lime); }
 .nb-bar-pink { --nb-bar: var(--nb-pink); }
 .nb-bar-yellow { --nb-bar: var(--nb-yellow); }

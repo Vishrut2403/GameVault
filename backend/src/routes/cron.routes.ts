@@ -84,8 +84,7 @@ router.post('/daily-sync', async (req: Request, res: Response) => {
 				console.error(`[cron] Steam sync failed for user ${user.id}:`, error);
 			}
 
-			// Separate from the library: a wishlist failure (say, a private
-			// profile) must not count against, or undo, the library sync.
+			// Separate try: a wishlist failure doesn't affect the library sync.
 			try {
 				await syncSteamWishlist(user.id, user.steamId as string);
 			} catch (error) {

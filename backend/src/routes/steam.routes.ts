@@ -46,9 +46,7 @@ router.get('/library/:steamId', authMiddleware, async (req: AuthRequest, res: Re
 
 		const { count, games } = await syncSteamLibrary(steamId);
 
-		// The sync button refreshes the wishlist too, unless it was synced in
-		// the last few minutes. Its failure is logged, not returned: the
-		// library sync above has already succeeded.
+		// Also refresh the wishlist (unless in cooldown); failures are only logged.
 		const userId = req.user!.userId;
 		if (!nextManualSyncAt(userId)) {
 			try {

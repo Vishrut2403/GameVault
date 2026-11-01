@@ -9,8 +9,7 @@ export interface HltbTimes {
 	gameplayCompletionist: number;
 }
 
-// Raw responses by lookup key; null records a confirmed miss (404) so it isn't
-// asked again. Transient failures are not cached.
+// null caches a confirmed 404; transient errors aren't cached.
 const cache = new Map<string, any | null>();
 
 async function cachedLookup(key: string, fetch: () => Promise<any | null>): Promise<HltbTimes | null> {

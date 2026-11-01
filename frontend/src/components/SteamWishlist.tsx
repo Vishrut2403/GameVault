@@ -24,8 +24,7 @@ function SteamWishlist() {
 	const [error, setError] = useState<string | null>(null);
 	const [syncing, setSyncing] = useState(false);
 	const [syncNote, setSyncNote] = useState<string | null>(null);
-	// Steam syncs by hand are limited to one every few minutes; the server says
-	// until when, in the wishlist response and in each sync response.
+	// The server reports when the next manual sync is allowed.
 	const [lockedUntil, setLockedUntil] = useState(0);
 	const [now, setNow] = useState(() => Date.now());
 	const cooldownUntil = Math.max(data?.nextSyncAt ?? 0, lockedUntil);

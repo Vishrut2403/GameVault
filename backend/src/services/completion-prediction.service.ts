@@ -4,11 +4,7 @@ import { hltbBySteamAppId } from './hltb.service';
 
 const HABIT_WINDOW_DAYS = 30;
 
-/**
- * Gaming habits over a window of IST days: how long you play on the days you
- * play, and the share of days you play at all. Sessions are one row per game
- * per day, so a day spent on two games still counts as one play day.
- */
+/** Play habits over the window; a day with several games counts once. */
 export function gamingHabits(sessions: { date: Date; minutes: number }[], windowDays = HABIT_WINDOW_DAYS) {
 	const playDays = new Set(sessions.map(s => s.date.getTime())).size;
 	if (playDays === 0) {
@@ -48,12 +44,7 @@ export interface PlannedGame extends BacklogGame {
 	finishDate: string; // IST calendar date, YYYY-MM-DD
 }
 
-/**
- * Finish dates for backlog games played one at a time, shortest first so the
- * most games get done soonest. Every play day goes to the current game at the
- * user's usual pace, and play days are spread over the calendar at the rate
- * they actually play.
- */
+/** Finish dates, shortest game first, at the user's pace and play frequency. */
 export function scheduleBacklog(games: BacklogGame[], habits: GamingHabits, now: Date): PlannedGame[] {
 	const pace = recommendedPaceMinutes(habits.minutesPerPlayDay);
 	const today = istDayBucket(now).getTime();
@@ -93,11 +84,7 @@ export class CompletionPredictionService {
 		return gamingHabits(recentSessions);
 	}
 
-	/**
-	 * When each backlog game would be finished at the user's pace, from HLTB
-	 * main-story time minus what they've played. Games HLTB doesn't know are
-	 * listed separately rather than guessed.
-	 */
+	/** Finish date per backlog game from HLTB main story; games HLTB lacks are listed apart. */
 	async planBacklog(userId: string) {
 		const backlog = await this.prisma.libraryGame.findMany({
 			where: { userId, platform: 'steam', status: 'backlog' },
@@ -172,8 +159,7 @@ export class CompletionPredictionService {
 		const totalPlaytime = completedGames.reduce((sum, g) => sum + (g.playtimeForever || 0), 0);
 		const avgPlaytimePerGame = totalPlaytime / completedGames.length;
 
-		// Days from first to last session per completed game, from the sessions
-		// loaded above. The genre pass below reuses these instead of querying again.
+		// Reused by the genre pass below instead of re-querying.
 		const daysSpentByGame = new Map<string, number>();
 		for (const game of completedGames) {
 			if (game.sessions && game.sessions.length > 0) {
@@ -256,8 +242,7 @@ export class CompletionPredictionService {
 			const currentPlaytimeMinutes = game.playtimeForever || 0;
 
 			const habits = await this.loadHabits(userId);
-			// Recommend a normal gaming day's worth for this game, then spread the
-			// play days over the calendar at the rate you actually play.
+			// A full play day for this game, spread at the user's play frequency.
 			const paceMinutes = recommendedPaceMinutes(habits.minutesPerPlayDay);
 			const avgMinutesPerDay = habits.minutesPerPlayDay * habits.playDayRatio;
 			const paceHoursVal = paceMinutes / 60;
