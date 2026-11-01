@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, Suspense, lazy } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense, lazy } from 'react';
 import steamService from '../services/steam.service';
 import { API_BASE_URL as API_URL } from '../services/api';
 import { GameCard } from '../components/GameCard';
@@ -68,8 +68,7 @@ function Home({ user, onLogout }: HomeProps) {
 	// The tabs that show the library itself, with its filters and toolbar.
 	const isLibraryTab = activeTab === 'journal' || activeTab === 'dashboard' || activeTab === 'library';
 
-	// Once the page has settled, load every tab's code and the data of the tabs
-	// that fetch their own, so even a tab's first visit doesn't wait on the network.
+	// Preload every tab's code and data once the page is idle.
 	useEffect(() => {
 		const id = setTimeout(() => {
 			PRELOAD.forEach((load) => load().catch(() => { /* the tab retries when opened */ }));
@@ -95,24 +94,8 @@ function Home({ user, onLogout }: HomeProps) {
 		searchQuery: '',
 	});
 
-	// Load library on mount
-	useEffect(() => {
-		if (user?.steamId) {
-			loadFromDB(user.steamId);
-		}
-	}, [user]);
 
-	useEffect(() => {
-		if (!user?.steamId) return;
-		
-		if (filters.statuses.length > 0 || filters.minRating !== null || filters.maxRating !== null || filters.maxPrice !== null || filters.tags.length > 0 || filters.searchQuery !== '') {
-			applyFilters();
-		} else {
-			loadFromDB(user.steamId);
-		}
-	}, [filters, user?.steamId]);
-
-	const loadFromDB = async (steamId: string) => {
+	const loadFromDB = useCallback(async (steamId: string) => {
 		if (!steamId) return;
 
 		setLoading(true);
@@ -127,10 +110,10 @@ function Home({ user, onLogout }: HomeProps) {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [user.id]);
 
-	const applyFilters = async () => {
-		if (!user?.steamId || !library?.games) return;
+	const applyFilters = useCallback(async () => {
+		if (!user?.steamId) return;
 
 		try {
 			console.log('Applying filters:', filters);
@@ -140,7 +123,19 @@ function Home({ user, onLogout }: HomeProps) {
 		} catch (err) {
 			console.error('Failed to apply filters:', err);
 		}
-	};
+	}, [filters, user.steamId, user.id]);
+
+	// Also the initial load: no filters means the full library.
+	useEffect(() => {
+		if (!user?.steamId) return;
+		
+		if (filters.statuses.length > 0 || filters.minRating !== null || filters.maxRating !== null || filters.maxPrice !== null || filters.tags.length > 0 || filters.searchQuery !== '') {
+			applyFilters();
+		} else {
+			loadFromDB(user.steamId);
+		}
+	}, [filters, user?.steamId, loadFromDB, applyFilters]);
+
 
 	const syncFromSteam = async () => {
 		if (!user?.steamId) {

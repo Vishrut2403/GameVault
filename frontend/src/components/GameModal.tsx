@@ -50,24 +50,8 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
 	const [prediction,  setPrediction]  = useState<PredictionData | null>(null);
 	const [predictionLoading, setPredictionLoading] = useState(false);
 
-	useEffect(() => {
-		setEditingReview(game.review || '');
-		setEditingImage(game.imageUrl || '');
-		setCurrentRating(game.rating || 0);
-		setActiveTab('overview');
-		setHltbData(null);
-		setPrediction(null);
-		fetchHltb();
-	}, [game]);
 
-	// Fetch prediction after HLTB data loads
-	useEffect(() => {
-		if (!hltbLoading) {
-			fetchPrediction();
-		}
-	}, [hltbLoading, hltbData, game.id]);
-
-	const fetchHltb = async () => {
+	const fetchHltb = useCallback(async () => {
 		setHltbLoading(true);
 		try {
 			const token = localStorage.getItem('token');
@@ -85,7 +69,7 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
 		} finally {
 			setHltbLoading(false);
 		}
-	};
+	}, [game.platform, game.platformGameId, game.name]);
 
 	const fetchPrediction = useCallback(async () => {
 		setPredictionLoading(true);
@@ -118,6 +102,24 @@ export const GameModal: React.FC<GameModalProps> = ({ game, onClose, onUpdate, s
 			setPredictionLoading(false);
 		}
 	}, [game.id, hltbData]);
+
+	useEffect(() => {
+		setEditingReview(game.review || '');
+		setEditingImage(game.imageUrl || '');
+		setCurrentRating(game.rating || 0);
+		setActiveTab('overview');
+		setHltbData(null);
+		setPrediction(null);
+		fetchHltb();
+	}, [game, fetchHltb]);
+
+	// Fetch prediction after HLTB data loads
+	useEffect(() => {
+		if (!hltbLoading) {
+			fetchPrediction();
+		}
+	}, [hltbLoading, fetchPrediction]);
+
 
 	const getAchievementPercentage = () => {
 		if (!game.achievementsTotal || game.achievementsTotal === 0) return 0;

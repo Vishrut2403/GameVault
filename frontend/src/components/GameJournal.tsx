@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import journalService from '../services/journal.service';
 import { errorMessage } from '../services/api';
+import { useCachedGet } from '../services/cachedGet';
 import type { JournalEntry } from '../services/journal.service';
 
 interface GameJournalProps {
@@ -10,9 +11,10 @@ interface GameJournalProps {
 }
 
 export const GameJournal: React.FC<GameJournalProps> = ({ gameId, gameName, userId }) => {
-	const [entries, setEntries] = useState<JournalEntry[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState('');
+	const { data, error: loadError, loading, reload: loadEntries } = useCachedGet<{ data?: JournalEntry[] }>(`/journal/${gameId}`);
+	const entries = data?.data ?? [];
+	const [actionError, setError] = useState('');
+	const error = actionError || (loadError ? errorMessage(loadError, 'Failed to load journal entries') : '');
 	const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
 	
 	const [newEntryHeading, setNewEntryHeading] = useState('');
@@ -22,22 +24,6 @@ export const GameJournal: React.FC<GameJournalProps> = ({ gameId, gameName, user
 	const [editContent, setEditContent] = useState('');
 	const [isAddingNew, setIsAddingNew] = useState(false);
 
-	useEffect(() => {
-		loadEntries();
-	}, [gameId, userId]);
-
-	const loadEntries = async () => {
-		try {
-			setLoading(true);
-			setError('');
-			const data = await journalService.getEntries(gameId);
-			setEntries(data);
-		} catch (err) {
-			setError(errorMessage(err, 'Failed to load journal entries'));
-		} finally {
-			setLoading(false);
-		}
-	};
 
 	const toggleEntry = (entryId: string) => {
 		const newExpanded = new Set(expandedEntries);

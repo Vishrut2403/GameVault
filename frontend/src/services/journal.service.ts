@@ -11,18 +11,6 @@ export interface JournalEntry {
 }
 
 class JournalService {
-	// Get all entries for a game
-	async getEntries(gameId: string): Promise<JournalEntry[]> {
-		const response = await api.get(`/journal/${gameId}`);
-		const data = response.data;
-		
-		if (!data.success) {
-			throw new Error(data.error || 'Failed to fetch journal entries');
-		}
-		
-		return data.data;
-	}
-
 	// Create a new entry
 	async createEntry(_userId: string, gameId: string, heading: string, content: string): Promise<JournalEntry> {
 		const response = await api.post('/journal', { gameId, heading, content });
